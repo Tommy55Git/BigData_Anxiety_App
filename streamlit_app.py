@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
 
 # Page config
 st.set_page_config(page_title="Mental Health Data Analysis", layout="wide")
@@ -90,14 +90,17 @@ elif page == "Visualizations":
         col1, col2 = st.columns(2)
         
         with col1:
-            # Correlation heatmap
+            # Correlation heatmap using plotly instead of seaborn
             st.subheader("Correlation Heatmap")
             numeric_cols = df_inner.select_dtypes(include=['number']).columns
             if len(numeric_cols) > 1:
                 corr = df_inner[numeric_cols].corr()
-                fig, ax = plt.subplots(figsize=(10, 8))
-                sns.heatmap(corr, annot=True, cmap='coolwarm', center=0, ax=ax)
-                st.pyplot(fig)
+                fig = px.imshow(corr, 
+                               text_auto=True, 
+                               aspect="auto",
+                               color_continuous_scale='RdBu_r',
+                               title="Correlation Matrix")
+                st.plotly_chart(fig)
         
         with col2:
             # Distribution plots
