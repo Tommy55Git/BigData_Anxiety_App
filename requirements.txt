@@ -1,5 +1,8 @@
 streamlit
 pandas
 plotly
-pymongo[srv]
+pymongo
+seaborn
+matplotlib
+pyspark
 dnspython
