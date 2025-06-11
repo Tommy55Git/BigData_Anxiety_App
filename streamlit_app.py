@@ -1,10 +1,8 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 from pymongo import MongoClient
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
 
 # Page config
 st.set_page_config(page_title="Mental Health Data Analysis", layout="wide")
@@ -90,7 +88,7 @@ elif page == "Visualizations":
         col1, col2 = st.columns(2)
         
         with col1:
-            # Correlation heatmap using plotly instead of seaborn
+            # Correlation heatmap using plotly
             st.subheader("Correlation Heatmap")
             numeric_cols = df_inner.select_dtypes(include=['number']).columns
             if len(numeric_cols) > 1:
@@ -100,7 +98,7 @@ elif page == "Visualizations":
                                aspect="auto",
                                color_continuous_scale='RdBu_r',
                                title="Correlation Matrix")
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, use_container_width=True)
         
         with col2:
             # Distribution plots
@@ -108,7 +106,7 @@ elif page == "Visualizations":
             if 'Anxiety Level (1-10)' in df_inner.columns:
                 fig = px.histogram(df_inner, x='Anxiety Level (1-10)', 
                                  title="Distribution of Anxiety Levels")
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, use_container_width=True)
         
         # Additional visualizations
         st.subheader("Additional Charts")
@@ -118,12 +116,24 @@ elif page == "Visualizations":
             fig = px.histogram(df_inner, x='Mental Health Condition_Bipolar', 
                              color='Anxiety Level (1-10)', 
                              title="Bipolar Condition vs Anxiety Level")
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True)
         
         if 'Caffeine Intake (mg/day)' in df_inner.columns:
             fig = px.histogram(df_inner, x='Caffeine Intake (mg/day)', 
                              title="Caffeine Intake Distribution")
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Box plots for occupation analysis
+        if 'Occupation_Doctor' in df_inner.columns and 'Anxiety Level (1-10)' in df_inner.columns:
+            fig = px.box(df_inner, x='Occupation_Doctor', y='Anxiety Level (1-10)',
+                        title="Anxiety Levels by Doctor Occupation")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Scatter plot for anxiety vs caffeine
+        if 'Anxiety Level (1-10)' in df_inner.columns and 'Caffeine Intake (mg/day)' in df_inner.columns:
+            fig = px.scatter(df_inner, x='Caffeine Intake (mg/day)', y='Anxiety Level (1-10)',
+                           title="Anxiety Level vs Caffeine Intake")
+            st.plotly_chart(fig, use_container_width=True)
     
     else:
         st.warning("No data available for visualizations")
@@ -156,21 +166,50 @@ elif page == "Analysis":
         if 'Anxiety Level (1-10)' in df_inner.columns:
             anxiety_stats = df_inner['Anxiety Level (1-10)'].describe()
             st.write("**Anxiety Level Statistics:**")
-            st.write(anxiety_stats)
+            st.dataframe(anxiety_stats)
         
         # Show column information
         st.subheader("Dataset Information")
         st.write("**Available Columns:**")
-        st.write(list(df_inner.columns))
+        col_df = pd.DataFrame({
+            'Column Name': df_inner.columns,
+            'Data Type': df_inner.dtypes,
+            'Non-Null Count': df_inner.count()
+        })
+        st.dataframe(col_df)
         
         # Data quality
         st.subheader("Data Quality")
         missing_data = df_inner.isnull().sum()
         if missing_data.sum() > 0:
             st.write("**Missing Values:**")
-            st.write(missing_data[missing_data > 0])
+            missing_df = pd.DataFrame({
+                'Column': missing_data.index,
+                'Missing Count': missing_data.values
+            })
+            missing_df = missing_df[missing_df['Missing Count'] > 0]
+            st.dataframe(missing_df)
         else:
-            st.write("✅ No missing values found!")
+            st.success("✅ No missing values found!")
+        
+        # Simple correlation analysis
+        st.subheader("Top Correlations")
+        if len(df_inner.select_dtypes(include=['number']).columns) > 1:
+            corr_matrix = df_inner.select_dtypes(include=['number']).corr()
+            
+            # Get top correlations (excluding self-correlations)
+            corr_pairs = []
+            for i in range(len(corr_matrix.columns)):
+                for j in range(i+1, len(corr_matrix.columns)):
+                    corr_pairs.append({
+                        'Variable 1': corr_matrix.columns[i],
+                        'Variable 2': corr_matrix.columns[j],
+                        'Correlation': corr_matrix.iloc[i, j]
+                    })
+            
+            corr_df = pd.DataFrame(corr_pairs)
+            corr_df = corr_df.sort_values('Correlation', key=abs, ascending=False).head(10)
+            st.dataframe(corr_df)
     
     else:
         st.warning("No data available for analysis")
