@@ -84,23 +84,102 @@ if page == "Data Overview":
         else:
             st.warning("No combined data available")
 
-# Page 2: Visualizations
 elif page == "Visualizations":
     st.header("Data Visualizations")
 
     if not df_inner.empty:
-        # Criar abas para cada grupo de variáveis
         tab1, tab2, tab3 = st.tabs(["📊 Sociodemográficos", "🧠 Psicológicos", "🏃 Estilo de Vida"])
 
+        # --- Sociodemográficos ---
         with tab1:
             st.subheader("Variáveis Sociodemográficas")
-            sociodemographic_cols = ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income']
-            for col in sociodemographic_cols:
-                if col in df_inner.columns:
-                    fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
-                                       title=f"{col} vs Nível de Ansiedade", barmode="group")
+
+            # Preparar colunas e dados para filtros dinâmicos
+            df = df_inner.copy()  # trabalhar em uma cópia para evitar alterações globais
+
+            # Criar coluna 'Country' a partir das dummies
+            country_cols = [c for c in df.columns if c.startswith('Country_')]
+            if country_cols:
+                df['Country'] = ''
+                for c in country_cols:
+                    df.loc[df[c] == 1, 'Country'] = c.replace('Country_', '')
+            else:
+                df['Country'] = 'Unknown'
+
+            # Criar coluna 'Occupation' a partir das dummies
+            occupation_cols = [
+                'Occupation_Artist', 'Occupation_Athlete', 'Occupation_Chef', 'Occupation_Doctor',
+                'Occupation_Engineer', 'Occupation_Freelancer', 'Occupation_Lawyer', 'Occupation_Musician',
+                'Occupation_Nurse', 'Occupation_Other', 'Occupation_Scientist', 'Occupation_Student',
+                'Occupation_Teacher'
+            ]
+            occupation_cols = [c for c in occupation_cols if c in df.columns]
+            if occupation_cols:
+                def get_occupation(row):
+                    for col in occupation_cols:
+                        if row[col] == 1:
+                            return col.replace('Occupation_', '')
+                    return 'Unknown'
+                df['Occupation'] = df.apply(get_occupation, axis=1)
+            else:
+                df['Occupation'] = 'Unknown'
+
+            # Criar coluna 'Gender'
+            if all(x in df.columns for x in ['Gender_Female', 'Gender_Male', 'Gender_Other']):
+                def get_gender(row):
+                    if row['Gender_Female'] == 1:
+                        return 'Female'
+                    elif row['Gender_Male'] == 1:
+                        return 'Male'
+                    elif row['Gender_Other'] == 1:
+                        return 'Other'
+                    else:
+                        return 'Unknown'
+                df['Gender'] = df.apply(get_gender, axis=1)
+            else:
+                df['Gender'] = 'Unknown'
+
+            # Criar faixa etária
+            bins = [10, 20, 30, 40, 50, 60, 70, 80]
+            labels = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69', '70+']
+            df['Age Group'] = pd.cut(df['Age'], bins=bins, labels=labels, right=False)
+
+            # Filtros do usuário
+            filter_type = st.selectbox("Filtrar por:", options=["Nenhum", "País", "Ocupação", "Gênero", "Faixa Etária"])
+
+            if filter_type == "País":
+                options = sorted(df['Country'].unique())
+                selected = st.selectbox("Escolha o país:", options=options)
+                filtered_df = df[df['Country'] == selected]
+            elif filter_type == "Ocupação":
+                options = sorted(df['Occupation'].unique())
+                selected = st.selectbox("Escolha a ocupação:", options=options)
+                filtered_df = df[df['Occupation'] == selected]
+            elif filter_type == "Gênero":
+                options = sorted(df['Gender'].unique())
+                selected = st.selectbox("Escolha o gênero:", options=options)
+                filtered_df = df[df['Gender'] == selected]
+            elif filter_type == "Faixa Etária":
+                options = sorted(df['Age Group'].dropna().unique())
+                selected = st.selectbox("Escolha a faixa etária:", options=options)
+                filtered_df = df[df['Age Group'] == selected]
+            else:
+                filtered_df = df
+
+            # Agora gráficos com filtered_df
+            st.write("Distribuição de nível de ansiedade por variáveis sociodemográficas:")
+            for col in ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income', 'Country', 'Occupation', 'Age Group']:
+                if col in filtered_df.columns:
+                    fig = px.histogram(
+                        filtered_df,
+                        x=col,
+                        color='Anxiety Level (1-10)' if 'Anxiety Level (1-10)' in filtered_df.columns else None,
+                        title=f"{col} vs Nível de Ansiedade",
+                        barmode='group'
+                    )
                     st.plotly_chart(fig, use_container_width=True)
 
+        # --- Psicológicos ---
         with tab2:
             st.subheader("Variáveis Psicológicas")
             psychological_cols = ['Mental Health Condition_Anxiety', 'Mental Health Condition_Depression', 
@@ -111,6 +190,7 @@ elif page == "Visualizations":
                                        title=f"{col} vs Nível de Ansiedade", barmode="group")
                     st.plotly_chart(fig, use_container_width=True)
 
+        # --- Estilo de Vida ---
         with tab3:
             st.subheader("Variáveis de Estilo de Vida")
             lifestyle_cols = ['Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
@@ -120,9 +200,9 @@ elif page == "Visualizations":
                     fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
                                        title=f"{col} vs Nível de Ansiedade", barmode="group")
                     st.plotly_chart(fig, use_container_width=True)
-
     else:
         st.warning("Nenhum dado disponível para visualização.")
+
 
 
 # Page 3: Analysis
