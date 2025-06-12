@@ -87,27 +87,30 @@ if page == "Data Overview":
 elif page == "Visualizations":
     st.header("🌍 Mapa Global: Ansiedade e Estilo de Vida")
 
-    # Cópia de trabalho segura
+    # Cópia de trabalho segura do DataFrame de clusters
     df_map = df_clusters.copy()
 
-    # Verificar e criar a coluna 'Country' se não existir
+    # Criar coluna 'Country' se não existir, a partir de colunas binárias 'Country_XXX'
     if 'Country' not in df_map.columns:
         country_cols = [col for col in df_map.columns if col.startswith('Country_')]
         if country_cols:
             df_map['Country'] = ''
             for col in country_cols:
-                df_map.loc[df_map[col] == 1, 'Country'] = col.replace('Country_', '')
+                country_name = col.replace('Country_', '')
+                # Define o país onde o valor é 1 para essa coluna binária
+                df_map.loc[df_map[col] == 1, 'Country'] = country_name
 
-    # Limpar valores inválidos
+    # Remover linhas sem país válido
     df_map = df_map[df_map['Country'].notna() & (df_map['Country'] != '')]
 
-    # Colunas exigidas para o gráfico
+    # Verificar se todas as colunas necessárias existem no DataFrame
     required_cols = [
         'Country', 'Anxiety Level (1-10)', 'Sleep_Stress_Ratio',
         'Therapy Sessions (per month)', 'Work_Exercise_Ratio'
     ]
 
     if all(col in df_map.columns for col in required_cols):
+        # Criar o gráfico geográfico de dispersão
         fig = px.scatter_geo(
             df_map,
             locations="Country",
@@ -126,15 +129,20 @@ elif page == "Visualizations":
             title="🌍 Ansiedade Média, Terapia e Estilo de Vida por País"
         )
 
+        # Ajustes no layout para mostrar contornos dos países e linhas costeiras
         fig.update_layout(
             margin=dict(l=0, r=0, t=50, b=0),
-            geo=dict(showframe=False, showcoastlines=False)
+            geo=dict(
+                showframe=False,
+                showcoastlines=True,
+                showcountries=True,
+                projection_type="natural earth"
+            )
         )
 
         st.plotly_chart(fig, use_container_width=True)
-
     else:
-        st.warning("❗ Algumas colunas obrigatórias estão ausentes. Verifique seu dataset.")
+        st.warning("❗ Algumas colunas obrigatórias estão ausentes no dataset. Verifique seu arquivo de dados.")
 
 
     if not df_inner.empty:
