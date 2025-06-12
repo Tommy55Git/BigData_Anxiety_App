@@ -590,6 +590,7 @@ elif page == "Regression Model":
             "Anxiety Level (1-10)"
         ]].dropna()
 
+
         # 3. Definir variáveis independentes e alvo
         X = df_reg.drop(columns=["Anxiety Level (1-10)"])
         y = df_reg["Anxiety Level (1-10)"]
