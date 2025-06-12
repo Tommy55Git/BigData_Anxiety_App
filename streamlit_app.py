@@ -24,12 +24,12 @@ def load_data_from_mongo():
         anxiety_data = list(db['anxiety'].find())
         mental_data = list(db['mental_health'].find())
         df_inner_data = list(db['df_inner'].find())
-        
+        modeling = list(['modelação/clusters'].find())
         # Convert to DataFrames
         df_anxiety = pd.DataFrame(anxiety_data)
         df_mental = pd.DataFrame(mental_data)
         df_inner = pd.DataFrame(df_inner_data)
-        
+        modeling = pd.DataFrame(modeling)
         # Remove MongoDB _id column if exists
         for df in [df_anxiety, df_mental, df_inner]:
             if '_id' in df.columns:
@@ -41,7 +41,7 @@ def load_data_from_mongo():
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 # Load data
-df_anxiety, df_mental, df_inner = load_data_from_mongo()
+df_anxiety, df_mental, df_inner, modeling = load_data_from_mongo()
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
