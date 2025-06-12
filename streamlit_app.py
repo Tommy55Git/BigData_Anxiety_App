@@ -24,33 +24,34 @@ def load_data_from_mongo():
         anxiety_data = list(db['anxiety'].find())
         mental_data = list(db['mental_health'].find())
         df_inner_data = list(db['df_inner'].find())
+        cluster_data = list(db['clusters'].find())  # <- NEW COLLECTION
         
         # Convert to DataFrames
         df_anxiety = pd.DataFrame(anxiety_data)
         df_mental = pd.DataFrame(mental_data)
         df_inner = pd.DataFrame(df_inner_data)
-       
+        df_clusters = pd.DataFrame(cluster_data)  # <- NEW DF
+        
         # Remove MongoDB _id column if exists
-        for df in [df_anxiety, df_mental, df_inner]:
+        for df in [df_anxiety, df_mental, df_inner, df_clusters]:
             if '_id' in df.columns:
                 df.drop('_id', axis=1, inplace=True)
         
-        return df_anxiety, df_mental, df_inner
+        return df_anxiety, df_mental, df_inner, df_clusters
     except Exception as e:
         st.error(f"Error loading data: {e}")
-        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 # Load data
-df_anxiety, df_mental, df_inner = load_data_from_mongo()
+df_anxiety, df_mental, df_inner, df_clusters = load_data_from_mongo()
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.selectbox("Choose a page", ["Data Overview", "Visualizations", "Analysis"])
+page = st.sidebar.selectbox("Choose a page", ["Data Overview", "Visualizations", "Analysis", "Cluster Analysis"])
 
+# Page 1: Data Overview
 if page == "Data Overview":
     st.header("Data Overview")
-    
-    # Tabs for different datasets
     tab1, tab2, tab3 = st.tabs(["Anxiety Data", "Mental Health Data", "Combined Data"])
     
     with tab1:
@@ -83,55 +84,50 @@ if page == "Data Overview":
         else:
             st.warning("No combined data available")
 
+# Page 2: Visualizations
 elif page == "Visualizations":
     st.header("Data Visualizations")
-    
-    if not df_inner.empty:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Correlation heatmap
-            st.subheader("Correlation Heatmap")
-            numeric_cols = df_inner.select_dtypes(include=['number']).columns
-            if len(numeric_cols) > 1:
-                corr = df_inner[numeric_cols].corr()
-                fig, ax = plt.subplots(figsize=(10, 8))
-                sns.heatmap(corr, annot=True, cmap='coolwarm', center=0, ax=ax)
-                st.pyplot(fig)
-        
-        with col2:
-            # Distribution plots
-            st.subheader("Data Distributions")
-            if 'Anxiety Level (1-10)' in df_inner.columns:
-                fig = px.histogram(df_inner, x='Anxiety Level (1-10)', 
-                                 title="Distribution of Anxiety Levels")
-                st.plotly_chart(fig)
-        
-        # Additional visualizations
-        st.subheader("Additional Charts")
-        
-        # Check for specific columns and create visualizations
-        if 'Mental Health Condition_Bipolar' in df_inner.columns and 'Anxiety Level (1-10)' in df_inner.columns:
-            fig = px.histogram(df_inner, x='Mental Health Condition_Bipolar', 
-                             color='Anxiety Level (1-10)', 
-                             title="Bipolar Condition vs Anxiety Level")
-            st.plotly_chart(fig)
-        
-        if 'Caffeine Intake (mg/day)' in df_inner.columns:
-            fig = px.histogram(df_inner, x='Caffeine Intake (mg/day)', 
-                             title="Caffeine Intake Distribution")
-            st.plotly_chart(fig)
-    
-    else:
-        st.warning("No data available for visualizations")
 
+    if not df_inner.empty:
+        st.subheader("1. Variáveis Sociodemográficas")
+        sociodemographic_cols = ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income']
+        for col in sociodemographic_cols:
+            if col in df_inner.columns:
+                st.write(f"Distribuição por: **{col}**")
+                fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
+                                   title=f"{col} vs Nível de Ansiedade", barmode="group")
+                st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("2. Variáveis Psicológicas")
+        psychological_cols = ['Mental Health Condition_Anxiety', 'Mental Health Condition_Depression', 
+                              'Mental Health Condition_Bipolar', 'Therapy', 'Self Esteem']
+        for col in psychological_cols:
+            if col in df_inner.columns:
+                st.write(f"Relação com: **{col}**")
+                fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
+                                   title=f"{col} vs Nível de Ansiedade", barmode="group")
+                st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("3. Estilo de Vida")
+        lifestyle_cols = ['Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
+                          'Exercise Frequency (days/week)', 'Social Media Usage (hours/day)']
+        for col in lifestyle_cols:
+            if col in df_inner.columns:
+                st.write(f"Distribuição de: **{col}**")
+                fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
+                                   title=f"{col} vs Nível de Ansiedade", barmode="group")
+                st.plotly_chart(fig, use_container_width=True)
+
+    else:
+        st.warning("No data available for visualizations.")
+
+
+# Page 3: Analysis
 elif page == "Analysis":
     st.header("Data Analysis & Insights")
     
     if not df_inner.empty:
-        # Basic statistics
         st.subheader("Key Statistics")
-        
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -147,20 +143,15 @@ elif page == "Analysis":
                 anxiety_rate = df_inner['Mental Health Condition_Anxiety'].mean() * 100
                 st.metric("Anxiety Condition Rate", f"{anxiety_rate:.1f}%")
         
-        # Data insights
         st.subheader("Data Insights")
-        
         if 'Anxiety Level (1-10)' in df_inner.columns:
-            anxiety_stats = df_inner['Anxiety Level (1-10)'].describe()
             st.write("**Anxiety Level Statistics:**")
-            st.write(anxiety_stats)
+            st.write(df_inner['Anxiety Level (1-10)'].describe())
         
-        # Show column information
         st.subheader("Dataset Information")
         st.write("**Available Columns:**")
         st.write(list(df_inner.columns))
         
-        # Data quality
         st.subheader("Data Quality")
         missing_data = df_inner.isnull().sum()
         if missing_data.sum() > 0:
@@ -171,6 +162,30 @@ elif page == "Analysis":
     
     else:
         st.warning("No data available for analysis")
+
+# Page 4: Cluster Analysis
+elif page == "Cluster Analysis":
+    st.header("Cluster Analysis")
+    
+    if not df_clusters.empty:
+        st.write("### Clustered Dataset")
+        st.dataframe(df_clusters.head())
+
+        if {'PCA1', 'PCA2', 'Cluster'}.issubset(df_clusters.columns):
+            fig = px.scatter(
+                df_clusters, x='PCA1', y='PCA2', color='Cluster',
+                title="Clusters (2D PCA)", labels={'Cluster': 'Grupo'}
+            )
+            st.plotly_chart(fig)
+
+        if 'Anxiety Level (1-10)' in df_clusters.columns and 'Cluster' in df_clusters.columns:
+            fig2 = px.box(
+                df_clusters, x='Cluster', y='Anxiety Level (1-10)',
+                title="Distribuição de Níveis de Ansiedade por Cluster"
+            )
+            st.plotly_chart(fig2)
+    else:
+        st.warning("Cluster data not found.")
 
 # Footer
 st.sidebar.markdown("---")
