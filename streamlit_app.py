@@ -366,7 +366,21 @@ elif page == "Visualizations":
         fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
         st.plotly_chart(fig3, use_container_width=True)
 
- 
+    # 4) Distribuição da ansiedade por condição mental
+    if 'Mental Health Condition' in df.columns:
+        fig4 = px.box(
+            df,
+            x='Mental Health Condition',
+            y='Anxiety Level (1-10)',
+            title="Distribuição da Ansiedade por Condição Mental",
+            points="all"
+        )
+        fig4.update_layout(yaxis=dict(title='Anxiety Level (1-10)'))
+        st.plotly_chart(fig4, use_container_width=True)
+
+  
+    
+       
 
 
 
@@ -375,16 +389,147 @@ elif page == "Visualizations":
 
         # --- Estilo de Vida ---
         with tab3:
-            st.subheader("Variáveis de Estilo de Vida")
-            lifestyle_cols = ['Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
-                              'Exercise Frequency (days/week)', 'Social Media Usage (hours/day)']
-            for col in lifestyle_cols:
-                if col in df_inner.columns:
-                    fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
-                                       title=f"{col} vs Nível de Ansiedade", barmode="group")
-                    st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("Nenhum dado disponível para visualização.")
+         st.subheader("Variáveis de Estilo de Vida")
+
+    # Cópia do DataFrame com filtros já aplicados
+    df_lifestyle = df.copy()
+
+    # -------------------- GRÁFICO 1: Estilo de Vida --------------------
+    lifestyle_cols = [
+        'Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
+        'Exercise Frequency (days/week)', 'Social Media Usage (hours/day)'
+    ]
+
+    st.markdown("### Estilo de Vida vs Ansiedade")
+
+    for col in lifestyle_cols:
+        if col in df_lifestyle.columns:
+            fig = px.histogram(
+                df_lifestyle,
+                x=col,
+                color='Anxiety Level (1-10)',
+                title=f"{col} vs Nível de Ansiedade",
+                barmode="group",
+                color_discrete_sequence=px.colors.sequential.Reds
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+    # -------------------- GRÁFICO 2: Ocupações --------------------
+    st.markdown("### Ocupação e Indicadores Psicológicos")
+
+    occupation_cols = [
+        'Occupation_Artist', 'Occupation_Athlete', 'Occupation_Chef', 'Occupation_Doctor',
+        'Occupation_Engineer', 'Occupation_Freelancer', 'Occupation_Lawyer', 'Occupation_Musician',
+        'Occupation_Nurse', 'Occupation_Other', 'Occupation_Scientist', 'Occupation_Student',
+        'Occupation_Teacher'
+    ]
+
+    def get_occupation(row):
+        for col in occupation_cols:
+            if col in row and row[col] == 1:
+                return col.replace('Occupation_', '')
+        return 'Unknown'
+    df_lifestyle['Occupation'] = df_lifestyle.apply(get_occupation, axis=1)
+
+    occupation_summary = df_lifestyle.groupby('Occupation')[
+        ['Anxiety Level (1-10)', 'Sleep_Stress_Ratio', 'Therapy Sessions (per month)', 'Work_Exercise_Ratio']
+    ].mean().reset_index()
+
+    fig_occ = px.scatter(
+        occupation_summary,
+        x='Work_Exercise_Ratio',
+        y='Sleep_Stress_Ratio',
+        size='Anxiety Level (1-10)',
+        color='Sleep_Stress_Ratio',
+        hover_name='Occupation',
+        color_continuous_scale='Viridis',
+        title='Work x Exercise vs Sleep x Stress (por Ocupação)',
+    )
+    st.plotly_chart(fig_occ, use_container_width=True)
+
+    # -------------------- GRÁFICO 3: Tipo de Dieta --------------------
+    st.markdown("### Dieta e Ansiedade")
+
+    def get_diet_type(row):
+        if row.get('Diet Type_Balanced', 0) == 1:
+            return 'Balanced'
+        elif row.get('Diet Type_Junk Food', 0) == 1:
+            return 'Junk Food'
+        elif row.get('Diet Type_Keto', 0) == 1:
+            return 'Keto'
+        elif row.get('Diet Type_Vegan', 0) == 1:
+            return 'Vegan'
+        elif row.get('Diet Type_Vegetarian', 0) == 1:
+            return 'Vegetarian'
+        else:
+            return 'Unknown'
+
+    df_lifestyle['Diet Type'] = df_lifestyle.apply(get_diet_type, axis=1)
+
+    mean_anxiety_diet = df_lifestyle.groupby('Diet Type')['Anxiety Level (1-10)'].mean().reset_index()
+
+    fig_diet = px.bar(
+        mean_anxiety_diet,
+        x='Diet Type',
+        y='Anxiety Level (1-10)',
+        color='Anxiety Level (1-10)',
+        color_continuous_scale='Viridis',
+        title='Média de Ansiedade por Tipo de Dieta'
+    )
+    fig_diet.update_layout(coloraxis_colorbar=dict(title="Ansiedade Média"))
+    st.plotly_chart(fig_diet, use_container_width=True)
+
+    # -------------------- GRÁFICO 4: Tempo de Tela x Idade --------------------
+    st.markdown("### Tempo de Tela e Idade vs Ansiedade")
+
+    age_bins = [10, 20, 30, 40, 50, 60, 70]
+    age_labels = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69']
+    df_lifestyle['Age Group'] = pd.cut(df_lifestyle['Age'], bins=age_bins, labels=age_labels, right=False)
+
+    screen_bins = [0, 2, 4, 6, 8, 24]
+    screen_labels = ['0–2h', '2–4h', '4–6h', '6–8h', '8+h']
+    df_lifestyle['Screen Time Group'] = pd.cut(df_lifestyle['Screen Time per Day (Hours)'], bins=screen_bins, labels=screen_labels, right=False)
+
+    df_screen = df_lifestyle.groupby(['Age Group', 'Screen Time Group'])['Anxiety Level (1-10)'].mean().reset_index()
+
+    fig_screen = px.area(
+        df_screen,
+        x='Age Group',
+        y='Anxiety Level (1-10)',
+        color='Screen Time Group',
+        line_group='Screen Time Group',
+        category_orders={'Age Group': age_labels},
+        title='Influência do Tempo de Tela e Idade na Ansiedade',
+        labels={'Anxiety Level (1-10)': 'Nível Médio de Ansiedade'},
+        color_discrete_sequence=px.colors.sequential.Blues
+    )
+    st.plotly_chart(fig_screen, use_container_width=True)
+
+    # -------------------- GRÁFICO 5: Atividade Física x Idade --------------------
+    st.markdown("### Atividade Física e Idade vs Ansiedade")
+
+    activity_bins = [0, 1, 3, 5, 7, 20]
+    activity_labels = ['0–1h', '1–3h', '3–5h', '5–7h', '7+h']
+    df_lifestyle['Physical Activity Group'] = pd.cut(df_lifestyle['Physical Activity (hrs/week)'], bins=activity_bins, labels=activity_labels, right=False)
+
+    df_activity = df_lifestyle.groupby(['Age Group', 'Physical Activity Group'])['Anxiety Level (1-10)'].mean().reset_index()
+
+    fig_activity = px.area(
+        df_activity,
+        x='Age Group',
+        y='Anxiety Level (1-10)',
+        color='Physical Activity Group',
+        line_group='Physical Activity Group',
+        category_orders={'Age Group': age_labels},
+        title='Atividade Física e Idade vs Ansiedade Média',
+        labels={'Anxiety Level (1-10)': 'Nível Médio de Ansiedade'},
+        color_discrete_sequence=px.colors.sequential.Greens
+    )
+    st.plotly_chart(fig_activity, use_container_width=True)
+
+    if df_lifestyle.empty:
+        st.warning("Nenhum dado disponível para visualização com os filtros aplicados.")
+
 
 
 
