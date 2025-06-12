@@ -572,11 +572,12 @@ elif page == "Cluster Analysis":
     else:
         st.warning("Cluster data not found.")
 
-#Page 5: Regression Model
+# Page 5: Regression Model
 elif page == "Regression Model":
     st.header("Modelos de Regressão para Predição da Ansiedade")
 
     if not df_inner.empty:
+        # 2. Selecionar colunas relevantes
         df_reg = df_inner[[
             "Age",
             "Sleep Hours",
@@ -589,20 +590,14 @@ elif page == "Regression Model":
             "Anxiety Level (1-10)"
         ]].dropna()
 
-        from sklearn.model_selection import train_test_split
-        from sklearn.linear_model import LinearRegression
-        from sklearn.ensemble import RandomForestRegressor
-        from sklearn.tree import DecisionTreeRegressor
-        from sklearn.neighbors import KNeighborsRegressor
-        from sklearn.svm import SVR
-        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-        import numpy as np
-
+        # 3. Definir variáveis independentes e alvo
         X = df_reg.drop(columns=["Anxiety Level (1-10)"])
         y = df_reg["Anxiety Level (1-10)"]
 
+        # 4. Dividir em treino e teste
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+        # 5. Modelos a comparar
         models = {
             'Linear Regression': LinearRegression(),
             'Decision Tree': DecisionTreeRegressor(random_state=42),
@@ -612,41 +607,71 @@ elif page == "Regression Model":
         }
 
         st.subheader("Comparando Modelos")
-        metrics = []
-        predictions = {}
+        model_metrics = []
 
         for name, model in models.items():
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
-            predictions[name] = y_pred
+
             mae = mean_absolute_error(y_test, y_pred)
             rmse = np.sqrt(mean_squared_error(y_test, y_pred))
             r2 = r2_score(y_test, y_pred)
-            metrics.append({"Model": name, "MAE": mae, "RMSE": rmse, "R2": r2})
 
-        import pandas as pd
-        df_metrics = pd.DataFrame(metrics)
-        st.dataframe(df_metrics.style.format("{:.2f}"))
+            model_metrics.append({
+                'Model': name,
+                'MAE': mae,
+                'RMSE': rmse,
+                'R2': r2
+            })
 
-        import matplotlib.pyplot as plt
-        fig, axs = plt.subplots(2, 3, figsize=(18, 10))
+        # 7. Tabela comparativa
+        metrics_df = pd.DataFrame(model_metrics)
+        st.write("### Tabela Comparativa")
+        st.dataframe(metrics_df.round(2))
+
+        # 8. Gráfico de comparação
+        st.write("### Gráfico Comparativo")
+        fig_bar, ax_bar = plt.subplots(figsize=(10, 6))
+        metrics_df.set_index('Model')[['MAE', 'RMSE', 'R2']].plot(kind='bar', ax=ax_bar, cmap='Set2')
+        ax_bar.set_title("Comparação dos Modelos de Regressão")
+        ax_bar.set_ylabel("Métrica")
+        ax_bar.set_xticklabels(metrics_df['Model'], rotation=45)
+        ax_bar.grid(True)
+        st.pyplot(fig_bar)
+
+        # 9. Gráficos de dispersão com linha de regressão linear
+        st.write("### Correlações Individuais")
+        sns.set_style("whitegrid")
+        ncols = len(X.columns)
+        fig, axes = plt.subplots(nrows=1, ncols=ncols, figsize=(6 * ncols, 5))
+        if ncols == 1:
+            axes = [axes]
+        for idx, col in enumerate(X.columns):
+            sns.regplot(x=col, y='Anxiety Level (1-10)', data=df_reg, ax=axes[idx])
+            axes[idx].set_title(f"{col} vs Ansiedade")
+        plt.tight_layout()
+        st.pyplot(fig)
+
+        # 10. Gráficos Real vs Predito por Modelo
+        st.write("### Real vs Predito por Modelo")
+        fig_pred, axs = plt.subplots(2, 3, figsize=(18, 10))
         axs = axs.flatten()
-
-        for i, (name, y_pred) in enumerate(predictions.items()):
+        for i, (name, model) in enumerate(models.items()):
+            y_pred = model.predict(X_test)
             axs[i].scatter(y_test, y_pred, alpha=0.6, edgecolor='k')
             axs[i].plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
             axs[i].set_title(f"{name} - Real vs Predito")
             axs[i].set_xlabel("Valor Real")
             axs[i].set_ylabel("Valor Predito")
-
         for j in range(i + 1, len(axs)):
-            fig.delaxes(axs[j])
-
-        fig.suptitle("Comparando Predições dos Modelos", fontsize=16)
-        st.pyplot(fig)
+            fig_pred.delaxes(axs[j])
+        fig_pred.suptitle("Comparação entre Valores Reais e Preditos por Modelo", fontsize=16)
+        fig_pred.tight_layout(rect=[0, 0, 1, 0.95])
+        st.pyplot(fig_pred)
 
     else:
         st.warning("Dados insuficientes para regressão.")
+
 
 
 # Footer
