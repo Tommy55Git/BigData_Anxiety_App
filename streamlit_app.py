@@ -237,9 +237,8 @@ elif page == "Visualizations":
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
-        # --- Psicológicos ---
-        with tab2:
-         st.subheader("Variáveis Psicológicas")
+    with tab2:
+      st.subheader("Variáveis Psicológicas")
 
     # Cópia para não mexer no original
     df = df_clusters.copy()
@@ -256,7 +255,7 @@ elif page == "Visualizations":
             return 'Unknown'
     df['Gender'] = df.apply(get_gender, axis=1)
 
-    # Mapear Condição Mental
+    # Mapear condição mental
     conditions = [
         'Mental Health Condition_Anxiety',
         'Mental Health Condition_Bipolar',
@@ -276,9 +275,38 @@ elif page == "Visualizations":
     labels = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69', '70+']
     df['Age Group'] = pd.cut(df['Age'], bins=bins, labels=labels, right=False)
 
+    # Mapear histórico familiar e eventos
+    df['Family History Anxiety'] = df.get('Family History of Anxiety_Yes', 0).map({1: 'Yes', 0: 'No'})
+    df['Life Event'] = df.get('Recent Major Life Event_Yes', 0).map({1: 'Yes', 0: 'No'})
+
+    # --------------------- FILTROS ---------------------
+    st.markdown("### Filtros")
+
+    genders = df['Gender'].unique().tolist()
+    conditions_list = df['Mental Health Condition'].unique().tolist()
+    age_groups = df['Age Group'].dropna().unique().tolist()
+    family_hist_options = df['Family History Anxiety'].unique().tolist()
+    life_event_options = df['Life Event'].unique().tolist()
+
+    selected_gender = st.multiselect("Filtrar por Gênero", genders, default=genders)
+    selected_condition = st.multiselect("Filtrar por Condição Mental", conditions_list, default=conditions_list)
+    selected_ages = st.multiselect("Filtrar por Faixa Etária", age_groups, default=age_groups)
+    selected_family_history = st.multiselect("Histórico Familiar de Ansiedade", family_hist_options, default=family_hist_options)
+    selected_life_event = st.multiselect("Teve Evento de Vida Recente?", life_event_options, default=life_event_options)
+
+    # Aplicar filtros
+    df = df[
+        (df['Gender'].isin(selected_gender)) &
+        (df['Mental Health Condition'].isin(selected_condition)) &
+        (df['Age Group'].isin(selected_ages)) &
+        (df['Family History Anxiety'].isin(selected_family_history)) &
+        (df['Life Event'].isin(selected_life_event))
+    ]
+
+    # --------------------- GRÁFICOS ---------------------
+
     # 1) Ansiedade média por Faixa Etária, Gênero e Condição Mental
     df_grouped_1 = df.groupby(['Age Group', 'Gender', 'Mental Health Condition'])['Anxiety Level (1-10)'].mean().reset_index()
-
     fig1 = px.bar(
         df_grouped_1,
         x='Age Group',
@@ -298,37 +326,31 @@ elif page == "Visualizations":
     fig1.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
     st.plotly_chart(fig1, use_container_width=True)
 
-    # 2) Influência do Histórico Familiar de Ansiedade no Nível Médio de Ansiedade
-    if 'Family History of Anxiety_Yes' in df.columns:
-        df['Family History Anxiety'] = df['Family History of Anxiety_Yes'].map({1: 'Yes', 0: 'No'})
-        df_grouped_2 = df.groupby(['Age Group', 'Gender', 'Family History Anxiety'])['Anxiety Level (1-10)'].mean().reset_index()
+    # 2) Influência do Histórico Familiar de Ansiedade
+    df_grouped_2 = df.groupby(['Age Group', 'Gender', 'Family History Anxiety'])['Anxiety Level (1-10)'].mean().reset_index()
+    fig2 = px.bar(
+        df_grouped_2,
+        x='Age Group',
+        y='Anxiety Level (1-10)',
+        color='Family History Anxiety',
+        barmode='group',
+        facet_col='Gender',
+        category_orders={'Age Group': labels},
+        labels={
+            'Age Group': 'Faixa Etária',
+            'Anxiety Level (1-10)': 'Nível Médio de Ansiedade',
+            'Family History Anxiety': 'Histórico Familiar'
+        },
+        title='Influência do Histórico Familiar no Nível Médio de Ansiedade',
+        color_discrete_map={'Yes': 'crimson', 'No': 'steelblue'}
+    )
+    fig2.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
+    st.plotly_chart(fig2, use_container_width=True)
 
-        fig2 = px.bar(
-            df_grouped_2,
-            x='Age Group',
-            y='Anxiety Level (1-10)',
-            color='Family History Anxiety',
-            barmode='group',
-            facet_col='Gender',
-            category_orders={'Age Group': labels},
-            labels={
-                'Age Group': 'Faixa Etária',
-                'Anxiety Level (1-10)': 'Nível Médio de Ansiedade',
-                'Family History Anxiety': 'Histórico Familiar de Ansiedade'
-            },
-            title='Influência do Histórico Familiar de Ansiedade no Nível Médio de Ansiedade por Faixa Etária e Gênero',
-            color_discrete_map={'Yes': 'red', 'No': 'blue'}
-        )
-        fig2.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
-        st.plotly_chart(fig2, use_container_width=True)
-    else:
-        st.info("Coluna 'Family History of Anxiety_Yes' não encontrada para análise do histórico familiar.")
-
-    # 3) Nível médio de ansiedade por gênero entre quem teve evento de vida recente
-    if 'Recent Major Life Event_Yes' in df.columns:
-        df_event = df[df['Recent Major Life Event_Yes'] == 1]
+    # 3) Ansiedade média por gênero entre quem teve evento de vida recente
+    df_event = df[df['Life Event'] == 'Yes']
+    if not df_event.empty:
         df_grouped_3 = df_event.groupby('Gender')['Anxiety Level (1-10)'].mean().reset_index()
-
         fig3 = px.bar(
             df_grouped_3,
             x='Gender',
@@ -339,11 +361,12 @@ elif page == "Visualizations":
                 'Gender': 'Gênero',
                 'Anxiety Level (1-10)': 'Nível Médio de Ansiedade'
             },
-            title='Nível Médio de Ansiedade por Gênero (com Evento de Vida Recente)'
+            title='Ansiedade Média por Gênero (com Evento de Vida Recente)'
         )
         fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
         st.plotly_chart(fig3, use_container_width=True)
     
+
 
 
         # --- Estilo de Vida ---
