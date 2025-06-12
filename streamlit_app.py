@@ -391,21 +391,35 @@ elif page == "Visualizations":
             fig5.update_layout(yaxis=dict(title='Sessões de Terapia por Mês'))
             st.plotly_chart(fig5, use_container_width=True)
     
-        # 6) Heatmap de correlação entre variáveis psicológicas
-        import seaborn as sns
-        import matplotlib.pyplot as plt
+    # 6) Heatmap interativo de correlação entre variáveis psicológicas
+    import plotly.graph_objects as go
     
-        psic_vars = [
-            'Anxiety Level (1-10)', 'Stress Level (1-10)',
-            'Social Interaction Score', 'Therapy Sessions (per month)'
-        ]
-        if all(col in df.columns for col in psic_vars):
-            psic_df = df[psic_vars].dropna()
-            if not psic_df.empty:
-                fig6, ax = plt.subplots()
-                sns.heatmap(psic_df.corr(), annot=True, cmap='coolwarm', ax=ax)
-                plt.title("Correlação entre Variáveis Psicológicas")
-                st.pyplot(fig6)
+    psic_vars = [
+        'Anxiety Level (1-10)', 'Stress Level (1-10)',
+        'Social Interaction Score', 'Therapy Sessions (per month)'
+    ]
+    if all(col in df.columns for col in psic_vars):
+        psic_df = df[psic_vars].dropna()
+        if not psic_df.empty:
+            corr_matrix = psic_df.corr()
+            fig6 = go.Figure(
+                data=go.Heatmap(
+                    z=corr_matrix.values,
+                    x=corr_matrix.columns,
+                    y=corr_matrix.index,
+                    colorscale='RdBu',
+                    zmin=-1, zmax=1,
+                    colorbar=dict(title="Correlação")
+                )
+            )
+            fig6.update_layout(
+                title="🔍 Correlação entre Variáveis Psicológicas (Interativo)",
+                xaxis=dict(tickangle=-45),
+                yaxis=dict(autorange='reversed'),
+                margin=dict(l=40, r=40, t=50, b=40)
+            )
+            st.plotly_chart(fig6, use_container_width=True)
+
     
         # 7) Cafeína vs Horas de Sono
         if 'Caffeine Intake (mg/day)' in df.columns and 'Sleep Hours' in df.columns:
