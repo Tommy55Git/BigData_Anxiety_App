@@ -88,6 +88,44 @@ elif page == "Visualizations":
     st.header("Data Visualizations")
 
     if not df_inner.empty:
+        df = df_inner.copy()  # Cópia para segurança
+
+        # ======== MAPA GLOBAL ========
+        st.subheader("🌍 Mapa Global de Ansiedade e Estilo de Vida")
+
+        # Criar coluna 'Country' a partir das dummies
+        country_cols = [c for c in df.columns if c.startswith('Country_')]
+        df['Country'] = ''
+        for col in country_cols:
+            df.loc[df[col] == 1, 'Country'] = col.replace('Country_', '')
+        df['Country'] = df['Country'].replace('', 'Unknown')
+
+        # Gerar mapa com scatter_geo
+        if 'Country' in df.columns and 'Anxiety Level (1-10)' in df.columns:
+            fig = px.scatter_geo(
+                df,
+                locations="Country",
+                locationmode="country names",
+                color="Anxiety Level (1-10)",
+                size="Therapy Sessions (per month)" if 'Therapy Sessions (per month)' in df.columns else None,
+                hover_name="Country",
+                hover_data={
+                    "Anxiety Level (1-10)": True,
+                    "Work_Exercise_Ratio": True if 'Work_Exercise_Ratio' in df.columns else False,
+                    "Therapy Sessions (per month)": True if 'Therapy Sessions (per month)' in df.columns else False,
+                    "Sleep_Stress_Ratio": True if 'Sleep_Stress_Ratio' in df.columns else False
+                },
+                size_max=40,
+                color_continuous_scale="Reds",
+                title="Ansiedade, Sono, Terapia e Estilo de Vida por País"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("Dados de país ou ansiedade não disponíveis para o mapa.")
+
+        st.markdown("---")
+
+    if not df_inner.empty:
         tab1, tab2, tab3 = st.tabs(["📊 Sociodemográficos", "🧠 Psicológicos", "🏃 Estilo de Vida"])
 
         # --- Sociodemográficos ---
