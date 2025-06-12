@@ -88,7 +88,7 @@ elif page == "Visualizations":
     st.header("🌍 Mapa Global: Ansiedade e Estilo de Vida")
 
     # Cópia de trabalho segura
-    df_map = cluster_data.copy() # type: ignore
+    df_map = df_clusters.copy()
 
     # Verificar e criar a coluna 'Country' se não existir
     if 'Country' not in df_map.columns:
