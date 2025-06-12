@@ -377,15 +377,29 @@ elif page == "Visualizations":
     with tab3:
       st.subheader("Variáveis de Estilo de Vida")
 
+    # =============================
+    # ➤ Filtros interativos
+    # =============================
+    age_filter = st.slider("Faixa Etária", min_value=10, max_value=70, value=(10, 70))
+    screen_time_filter = st.slider("Tempo de Tela por Dia (horas)", 0, 24, (0, 24))
+    activity_filter = st.slider("Atividade Física por Semana (horas)", 0, 20, (0, 20))
+
+    df_filtered = df[
+        (df['Age'] >= age_filter[0]) & (df['Age'] < age_filter[1]) &
+        (df['Screen Time per Day (Hours)'] >= screen_time_filter[0]) & (df['Screen Time per Day (Hours)'] <= screen_time_filter[1]) &
+        (df['Physical Activity (hrs/week)'] >= activity_filter[0]) & (df['Physical Activity (hrs/week)'] <= activity_filter[1])
+    ]
+
+    # =============================
+    # ➤ Gráficos básicos de estilo de vida
+    # =============================
     lifestyle_cols = [
         'Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
         'Exercise Frequency (days/week)', 'Social Media Usage (hours/day)'
     ]
-    
-    # Gráficos básicos de estilo de vida
     for col in lifestyle_cols:
-        if col in df_inner.columns:
-            fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
+        if col in df_filtered.columns:
+            fig = px.histogram(df_filtered, x=col, color='Anxiety Level (1-10)',
                                title=f"{col} vs Nível de Ansiedade", barmode="group")
             st.plotly_chart(fig, use_container_width=True)
 
@@ -406,7 +420,6 @@ elif page == "Visualizations":
         return 'Unknown'
 
     df['Occupation'] = df.apply(get_occupation, axis=1)
-
     occupation_summary = df.groupby('Occupation')[
         ['Anxiety Level (1-10)', 'Sleep_Stress_Ratio', 'Therapy Sessions (per month)', 'Work_Exercise_Ratio']
     ].mean().reset_index()
@@ -441,7 +454,6 @@ elif page == "Visualizations":
             return 'Unknown'
 
     df['Diet Type'] = df.apply(get_diet_type, axis=1)
-
     mean_anxiety_diet = df.groupby('Diet Type')['Anxiety Level (1-10)'].mean().reset_index()
 
     fig_diet = px.bar(
@@ -450,14 +462,12 @@ elif page == "Visualizations":
         y='Anxiety Level (1-10)',
         color='Anxiety Level (1-10)',
         color_continuous_scale='Viridis',
-        title='Média de Ansiedade por Tipo de Dieta',
-        labels={'Diet Type': 'Tipo de Dieta', 'Anxiety Level (1-10)': 'Ansiedade Média'}
+        title='Média de Ansiedade por Tipo de Dieta'
     )
-    fig_diet.update_layout(coloraxis_colorbar=dict(title="Ansiedade"))
     st.plotly_chart(fig_diet, use_container_width=True)
 
     # =============================
-    # ➤ Área + Linha: Tempo de Tela x Idade
+    # ➤ Área: Tempo de Tela vs Idade
     # =============================
     age_bins = [10, 20, 30, 40, 50, 60, 70]
     age_labels = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69']
@@ -476,14 +486,13 @@ elif page == "Visualizations":
         color='Screen Time Group',
         line_group='Screen Time Group',
         category_orders={'Age Group': age_labels, 'Screen Time Group': screen_labels},
-        title='Influência do Tempo de Tela e Idade no Nível de Ansiedade',
-        labels={'Age Group': 'Faixa Etária', 'Anxiety Level (1-10)': 'Ansiedade Média'}
+        title='Influência do Tempo de Tela e Idade no Nível de Ansiedade'
     )
     fig_screen.update_traces(mode='lines+markers', line=dict(width=2), marker=dict(size=6), opacity=0.6)
     st.plotly_chart(fig_screen, use_container_width=True)
 
     # =============================
-    # ➤ Área + Linha: Atividade Física x Idade
+    # ➤ Área: Atividade Física vs Idade
     # =============================
     activity_bins = [0, 1, 3, 5, 7, 20]
     activity_labels = ['0-1h', '1-3h', '3-5h', '5-7h', '7+h']
@@ -498,11 +507,29 @@ elif page == "Visualizations":
         color='Physical Activity Group',
         line_group='Physical Activity Group',
         category_orders={'Age Group': age_labels, 'Physical Activity Group': activity_labels},
-        title='Atividade Física e Idade vs Nível de Ansiedade',
-        labels={'Age Group': 'Faixa Etária', 'Anxiety Level (1-10)': 'Ansiedade Média'}
+        title='Atividade Física e Idade vs Nível de Ansiedade'
     )
     fig_activity.update_traces(mode='lines+markers', line=dict(width=2), marker=dict(size=6), opacity=0.6)
     st.plotly_chart(fig_activity, use_container_width=True)
+
+    # =============================
+    # ➤ Heatmap: Cafeína x Fumar
+    # =============================
+    df['Caffeine_bin'] = pd.cut(df['Caffeine Intake (mg/day)'], bins=30)
+    heatmap_data = df.groupby(['Caffeine_bin', 'Smoking_Yes'])['Anxiety Level (1-10)'].mean().reset_index()
+    heatmap_data['Caffeine_mid'] = heatmap_data['Caffeine_bin'].apply(lambda x: x.mid)
+    heatmap_data['Smoking_Status'] = heatmap_data['Smoking_Yes'].map({0: 'Não Fuma', 1: 'Fuma'})
+
+    fig_heat = px.density_heatmap(
+        heatmap_data,
+        x='Caffeine_mid',
+        y='Smoking_Status',
+        z='Anxiety Level (1-10)',
+        color_continuous_scale='Reds',
+        title='Consumo de Cafeína e Tabagismo x Ansiedade'
+    )
+    st.plotly_chart(fig_heat, use_container_width=True)
+
 
 
 
