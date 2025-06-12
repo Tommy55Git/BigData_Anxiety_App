@@ -377,25 +377,27 @@ elif page == "Visualizations":
     with tab3:
       st.subheader("Variáveis de Estilo de Vida")
 
-    # =============================
-    # ➤ Filtros interativos
+     # ➤ Filtros interativos (agora com horas de trabalho)
     # =============================
     age_filter = st.slider("Faixa Etária", min_value=10, max_value=70, value=(10, 70))
     screen_time_filter = st.slider("Tempo de Tela por Dia (horas)", 0, 24, (0, 24))
     activity_filter = st.slider("Atividade Física por Semana (horas)", 0, 20, (0, 20))
+    work_filter = st.slider("Horas de Trabalho por Semana", 0, 80, (0, 80))  # NOVO FILTRO
 
     df_filtered = df[
         (df['Age'] >= age_filter[0]) & (df['Age'] < age_filter[1]) &
         (df['Screen Time per Day (Hours)'] >= screen_time_filter[0]) & (df['Screen Time per Day (Hours)'] <= screen_time_filter[1]) &
-        (df['Physical Activity (hrs/week)'] >= activity_filter[0]) & (df['Physical Activity (hrs/week)'] <= activity_filter[1])
+        (df['Physical Activity (hrs/week)'] >= activity_filter[0]) & (df['Physical Activity (hrs/week)'] <= activity_filter[1]) &
+        (df['Working Hours per Week'] >= work_filter[0]) & (df['Working Hours per Week'] <= work_filter[1])  # NOVO
     ]
 
     # =============================
-    # ➤ Gráficos básicos de estilo de vida
+    # ➤ Gráficos básicos de estilo de vida (removidos cafeína e cigarro)
     # =============================
     lifestyle_cols = [
-        'Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
-        'Exercise Frequency (days/week)', 'Social Media Usage (hours/day)'
+        'Sleep Duration (hours/day)',
+        'Exercise Frequency (days/week)',
+        'Social Media Usage (hours/day)'
     ]
     for col in lifestyle_cols:
         if col in df_filtered.columns:
@@ -404,71 +406,46 @@ elif page == "Visualizations":
             st.plotly_chart(fig, use_container_width=True)
 
     # =============================
-    # ➤ Ocupação vs ansiedade
+    # ➤ Gráfico: Horas de Trabalho vs Ansiedade
     # =============================
-    occupation_cols = [
-        'Occupation_Artist', 'Occupation_Athlete', 'Occupation_Chef', 'Occupation_Doctor',
-        'Occupation_Engineer', 'Occupation_Freelancer', 'Occupation_Lawyer', 'Occupation_Musician',
-        'Occupation_Nurse', 'Occupation_Other', 'Occupation_Scientist', 'Occupation_Student',
-        'Occupation_Teacher'
-    ]
+    work_bins = [0, 10, 20, 30, 40, 50, 60, 80]
+    work_labels = ['0–9h', '10–19h', '20–29h', '30–39h', '40–49h', '50–59h', '60+h']
+    df['Work Group'] = pd.cut(df['Working Hours per Week'], bins=work_bins, labels=work_labels, right=False)
 
-    def get_occupation(row):
-        for col in occupation_cols:
-            if row.get(col, 0) == 1:
-                return col.replace('Occupation_', '')
-        return 'Unknown'
+    work_anxiety = df.groupby('Work Group')['Anxiety Level (1-10)'].mean().reset_index()
 
-    df['Occupation'] = df.apply(get_occupation, axis=1)
-    occupation_summary = df.groupby('Occupation')[
-        ['Anxiety Level (1-10)', 'Sleep_Stress_Ratio', 'Therapy Sessions (per month)', 'Work_Exercise_Ratio']
-    ].mean().reset_index()
-
-    fig_occ = px.scatter(
-        occupation_summary,
-        x='Work_Exercise_Ratio',
-        y='Sleep_Stress_Ratio',
-        size='Anxiety Level (1-10)',
-        color='Sleep_Stress_Ratio',
-        hover_name='Occupation',
-        color_continuous_scale='Viridis',
-        title='Relação Trabalho/Exercício vs Sono/Estresse por Ocupação'
-    )
-    st.plotly_chart(fig_occ, use_container_width=True)
-
-    # =============================
-    # ➤ Dieta vs ansiedade
-    # =============================
-    def get_diet_type(row):
-        if row.get('Diet Type_Balanced', 0) == 1:
-            return 'Balanced'
-        elif row.get('Diet Type_Junk Food', 0) == 1:
-            return 'Junk Food'
-        elif row.get('Diet Type_Keto', 0) == 1:
-            return 'Keto'
-        elif row.get('Diet Type_Vegan', 0) == 1:
-            return 'Vegan'
-        elif row.get('Diet Type_Vegetarian', 0) == 1:
-            return 'Vegetarian'
-        else:
-            return 'Unknown'
-
-    df['Diet Type'] = df.apply(get_diet_type, axis=1)
-    mean_anxiety_diet = df.groupby('Diet Type')['Anxiety Level (1-10)'].mean().reset_index()
-
-    fig_diet = px.bar(
-        mean_anxiety_diet,
-        x='Diet Type',
+    fig_work = px.bar(
+        work_anxiety,
+        x='Work Group',
         y='Anxiety Level (1-10)',
         color='Anxiety Level (1-10)',
-        color_continuous_scale='Viridis',
-        title='Média de Ansiedade por Tipo de Dieta'
+        color_continuous_scale='Oranges',
+        title='Horas de Trabalho por Semana vs Nível de Ansiedade'
     )
-    st.plotly_chart(fig_diet, use_container_width=True)
+    st.plotly_chart(fig_work, use_container_width=True)
 
     # =============================
-    # ➤ Área: Tempo de Tela vs Idade
+    # ➤ Gráfico: Atividade Física vs Ansiedade
     # =============================
+    activity_bins = [0, 1, 3, 5, 7, 20]
+    activity_labels = ['0–1h', '1–3h', '3–5h', '5–7h', '7+h']
+    df['Activity Group'] = pd.cut(df['Physical Activity (hrs/week)'], bins=activity_bins, labels=activity_labels, right=False)
+
+    activity_anxiety = df.groupby('Activity Group')['Anxiety Level (1-10)'].mean().reset_index()
+
+    fig_act = px.bar(
+        activity_anxiety,
+        x='Activity Group',
+        y='Anxiety Level (1-10)',
+        color='Anxiety Level (1-10)',
+        color_continuous_scale='Greens',
+        title='Atividade Física Semanal vs Nível de Ansiedade'
+    )
+    st.plotly_chart(fig_act, use_container_width=True)
+
+    # =============================
+# ➤ Linha: Tempo de Tela vs Idade (média ansiedade)
+# =============================
     age_bins = [10, 20, 30, 40, 50, 60, 70]
     age_labels = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69']
     df['Age Group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, right=False)
@@ -479,20 +456,19 @@ elif page == "Visualizations":
 
     df_screen = df.groupby(['Age Group', 'Screen Time Group'])['Anxiety Level (1-10)'].mean().reset_index()
 
-    fig_screen = px.area(
+    fig_screen = px.line(
         df_screen,
         x='Age Group',
         y='Anxiety Level (1-10)',
         color='Screen Time Group',
-        line_group='Screen Time Group',
+        markers=True,
         category_orders={'Age Group': age_labels, 'Screen Time Group': screen_labels},
         title='Influência do Tempo de Tela e Idade no Nível de Ansiedade'
     )
-    fig_screen.update_traces(mode='lines+markers', line=dict(width=2), marker=dict(size=6), opacity=0.6)
     st.plotly_chart(fig_screen, use_container_width=True)
 
     # =============================
-    # ➤ Área: Atividade Física vs Idade
+    # ➤ Linha: Atividade Física vs Idade (média ansiedade)
     # =============================
     activity_bins = [0, 1, 3, 5, 7, 20]
     activity_labels = ['0-1h', '1-3h', '3-5h', '5-7h', '7+h']
@@ -500,16 +476,15 @@ elif page == "Visualizations":
 
     df_activity = df.groupby(['Age Group', 'Physical Activity Group'])['Anxiety Level (1-10)'].mean().reset_index()
 
-    fig_activity = px.area(
+    fig_activity = px.line(
         df_activity,
         x='Age Group',
         y='Anxiety Level (1-10)',
         color='Physical Activity Group',
-        line_group='Physical Activity Group',
+        markers=True,
         category_orders={'Age Group': age_labels, 'Physical Activity Group': activity_labels},
         title='Atividade Física e Idade vs Nível de Ansiedade'
     )
-    fig_activity.update_traces(mode='lines+markers', line=dict(width=2), marker=dict(size=6), opacity=0.6)
     st.plotly_chart(fig_activity, use_container_width=True)
 
     # =============================
@@ -526,7 +501,7 @@ elif page == "Visualizations":
         y='Smoking_Status',
         z='Anxiety Level (1-10)',
         color_continuous_scale='Reds',
-        title='Consumo de Cafeína e Tabagismo x Ansiedade'
+        title='Consumo de Cafeína e Cigarros x Ansiedade'
     )
     st.plotly_chart(fig_heat, use_container_width=True)
 
