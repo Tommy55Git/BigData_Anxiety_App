@@ -24,7 +24,7 @@ def load_data_from_mongo():
         anxiety_data = list(db['anxiety'].find())
         mental_data = list(db['mental_health'].find())
         df_inner_data = list(db['df_inner'].find())
-        cluster_data = list(db['clusters'].find())  # <- NEW COLLECTION
+        cluster_data = list(db['modelação/clusters'].find())  # <- NEW COLLECTION
         
         # Convert to DataFrames
         df_anxiety = pd.DataFrame(anxiety_data)
@@ -88,7 +88,7 @@ elif page == "Visualizations":
     st.header("🌍 Mapa Global: Ansiedade e Estilo de Vida")
 
     # Cópia de trabalho segura
-    df_map = df_inner.copy()
+    df_map = cluster_data.copy() # type: ignore
 
     # Verificar e criar a coluna 'Country' se não existir
     if 'Country' not in df_map.columns:
