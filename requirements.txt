@@ -6,3 +6,4 @@ seaborn
 matplotlib
 pyspark
 dnspython
+statsmodels
