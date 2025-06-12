@@ -366,19 +366,7 @@ elif page == "Visualizations":
         fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
         st.plotly_chart(fig3, use_container_width=True)
 
-        # Scatter Plots com container exclusivo
-    psicologicas_cont = [
-        ("Stress Level (1-10)", "Nível de Estresse"),
-        ("Therapy Sessions (per month)", "Sessões de Terapia por Mês"),
-        ("Social Interaction Score", "Pontuação de Interação Social")
-    ]
-    
-    for col, label in psicologicas_cont:
-        if col in df.columns:
-            fig = px.scatter(df, x=col, y='Anxiety Level (1-10)',
-                             title=f"Ansiedade vs {label}")
-            with st.container():
-                st.plotly_chart(fig, use_container_width=True)
+
 
 
 
