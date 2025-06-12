@@ -366,17 +366,19 @@ elif page == "Visualizations":
         fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
         st.plotly_chart(fig3, use_container_width=True)
 
-    # Scatter Plots
+    # Scatter Plots com key única para evitar erro de ID duplicado
     psicologicas_cont = [
         ("Stress Level (1-10)", "Nível de Estresse"),
         ("Therapy Sessions (per month)", "Sessões de Terapia por Mês"),
         ("Social Interaction Score", "Pontuação de Interação Social")
     ]
-    for col, label in psicologicas_cont:
+    
+    for idx, (col, label) in enumerate(psicologicas_cont):
         if col in df.columns:
             fig = px.scatter(df, x=col, y='Anxiety Level (1-10)',
                              title=f"Ansiedade vs {label}", trendline="ols")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"scatter_{idx}")
+
 
 
 
