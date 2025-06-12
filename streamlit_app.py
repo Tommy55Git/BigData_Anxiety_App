@@ -366,17 +366,6 @@ elif page == "Visualizations":
         fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
         st.plotly_chart(fig3, use_container_width=True)
 
-    # 4) Distribuição da ansiedade por condição mental
-if 'Mental Health Condition' in df.columns:
-    fig4 = px.box(
-        df,
-        x='Mental Health Condition',
-        y='Anxiety Level (1-10)',
-        title="Distribuição da Ansiedade por Condição Mental",
-        points="all"
-    )
-    fig4.update_layout(yaxis=dict(title='Anxiety Level (1-10)'))
-    st.plotly_chart(fig4, use_container_width=True)
 
 
 
