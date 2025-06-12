@@ -85,7 +85,7 @@ if page == "Data Overview":
             st.warning("No combined data available")
 
 elif page == "Visualizations":
-    st.header("🌍 Mapa Global: Ansiedade e Estilo de Vida")
+    st.header(" Mapa Global")
 
     # Cópia de trabalho segura do DataFrame de clusters
     df_map = df_clusters.copy()
@@ -126,7 +126,7 @@ elif page == "Visualizations":
             },
             size_max=40,
             color_continuous_scale="Reds",
-            title="🌍 Ansiedade Média, Terapia e Estilo de Vida por País"
+            title=" Ansiedade Média, Terapia e Estilo de Vida por País"
         )
 
         # Ajustes no layout para mostrar contornos dos países e linhas costeiras
@@ -239,14 +239,112 @@ elif page == "Visualizations":
 
         # --- Psicológicos ---
         with tab2:
-            st.subheader("Variáveis Psicológicas")
-            psychological_cols = ['Mental Health Condition_Anxiety', 'Mental Health Condition_Depression', 
-                                  'Mental Health Condition_Bipolar', 'Therapy', 'Self Esteem']
-            for col in psychological_cols:
-                if col in df_inner.columns:
-                    fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
-                                       title=f"{col} vs Nível de Ansiedade", barmode="group")
-                    st.plotly_chart(fig, use_container_width=True)
+         st.subheader("Variáveis Psicológicas")
+
+    # Cópia para não mexer no original
+    df = df_clusters.copy()
+
+    # Função para mapear gênero
+    def get_gender(row):
+        if row.get('Gender_Female', 0) == 1:
+            return 'Female'
+        elif row.get('Gender_Male', 0) == 1:
+            return 'Male'
+        elif row.get('Gender_Other', 0) == 1:
+            return 'Other'
+        else:
+            return 'Unknown'
+    df['Gender'] = df.apply(get_gender, axis=1)
+
+    # Mapear Condição Mental
+    conditions = [
+        'Mental Health Condition_Anxiety',
+        'Mental Health Condition_Bipolar',
+        'Mental Health Condition_Depression',
+        'Mental Health Condition_None',
+        'Mental Health Condition_PTSD'
+    ]
+    def get_condition(row):
+        for cond in conditions:
+            if row.get(cond, 0) == 1:
+                return cond.replace('Mental Health Condition_', '')
+        return 'Unknown'
+    df['Mental Health Condition'] = df.apply(get_condition, axis=1)
+
+    # Faixas etárias
+    bins = [10, 20, 30, 40, 50, 60, 70, 80]
+    labels = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69', '70+']
+    df['Age Group'] = pd.cut(df['Age'], bins=bins, labels=labels, right=False)
+
+    # 1) Ansiedade média por Faixa Etária, Gênero e Condição Mental
+    df_grouped_1 = df.groupby(['Age Group', 'Gender', 'Mental Health Condition'])['Anxiety Level (1-10)'].mean().reset_index()
+
+    fig1 = px.bar(
+        df_grouped_1,
+        x='Age Group',
+        y='Anxiety Level (1-10)',
+        color='Mental Health Condition',
+        barmode='group',
+        facet_col='Gender',
+        category_orders={'Age Group': labels},
+        labels={
+            'Age Group': 'Faixa Etária',
+            'Anxiety Level (1-10)': 'Nível Médio de Ansiedade',
+            'Mental Health Condition': 'Condição Mental'
+        },
+        title='Ansiedade Média por Faixa Etária, Gênero e Condição Mental',
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    fig1.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # 2) Influência do Histórico Familiar de Ansiedade no Nível Médio de Ansiedade
+    if 'Family History of Anxiety_Yes' in df.columns:
+        df['Family History Anxiety'] = df['Family History of Anxiety_Yes'].map({1: 'Yes', 0: 'No'})
+        df_grouped_2 = df.groupby(['Age Group', 'Gender', 'Family History Anxiety'])['Anxiety Level (1-10)'].mean().reset_index()
+
+        fig2 = px.bar(
+            df_grouped_2,
+            x='Age Group',
+            y='Anxiety Level (1-10)',
+            color='Family History Anxiety',
+            barmode='group',
+            facet_col='Gender',
+            category_orders={'Age Group': labels},
+            labels={
+                'Age Group': 'Faixa Etária',
+                'Anxiety Level (1-10)': 'Nível Médio de Ansiedade',
+                'Family History Anxiety': 'Histórico Familiar de Ansiedade'
+            },
+            title='Influência do Histórico Familiar de Ansiedade no Nível Médio de Ansiedade por Faixa Etária e Gênero',
+            color_discrete_map={'Yes': 'red', 'No': 'blue'}
+        )
+        fig2.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
+        st.plotly_chart(fig2, use_container_width=True)
+    else:
+        st.info("Coluna 'Family History of Anxiety_Yes' não encontrada para análise do histórico familiar.")
+
+    # 3) Nível médio de ansiedade por gênero entre quem teve evento de vida recente
+    if 'Recent Major Life Event_Yes' in df.columns:
+        df_event = df[df['Recent Major Life Event_Yes'] == 1]
+        df_grouped_3 = df_event.groupby('Gender')['Anxiety Level (1-10)'].mean().reset_index()
+
+        fig3 = px.bar(
+            df_grouped_3,
+            x='Gender',
+            y='Anxiety Level (1-10)',
+            color='Anxiety Level (1-10)',
+            color_continuous_scale='Reds',
+            labels={
+                'Gender': 'Gênero',
+                'Anxiety Level (1-10)': 'Nível Médio de Ansiedade'
+            },
+            title='Nível Médio de Ansiedade por Gênero (com Evento de Vida Recente)'
+        )
+        fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
+        st.plotly_chart(fig3, use_container_width=True)
+    
+
 
         # --- Estilo de Vida ---
         with tab3:
