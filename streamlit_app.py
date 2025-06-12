@@ -320,7 +320,7 @@ elif page == "Visualizations":
             'Anxiety Level (1-10)': 'Nível Médio de Ansiedade',
             'Mental Health Condition': 'Condição Mental'
         },
-        title='Ansiedade Média por Faixa Etária, Gênero e Condição Mental',
+        title='Ansiedade Média por Faixa Etária, Género e Condição Mental',
         color_discrete_sequence=px.colors.qualitative.Pastel
     )
     fig1.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
@@ -347,7 +347,7 @@ elif page == "Visualizations":
     fig2.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
     st.plotly_chart(fig2, use_container_width=True)
 
-    # 3) Ansiedade média por gênero entre quem teve evento de vida recente
+    # 3) Ansiedade média por género entre quem teve evento de vida recente
     df_event = df[df['Life Event'] == 'Yes']
     if not df_event.empty:
         df_grouped_3 = df_event.groupby('Gender')['Anxiety Level (1-10)'].mean().reset_index()
@@ -361,7 +361,7 @@ elif page == "Visualizations":
                 'Gender': 'Gênero',
                 'Anxiety Level (1-10)': 'Nível Médio de Ansiedade'
             },
-            title='Ansiedade Média por Gênero (com Evento de Vida Recente)'
+            title='Ansiedade Média por Género (com Evento de Vida Recente)'
         )
         fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
         st.plotly_chart(fig3, use_container_width=True)
