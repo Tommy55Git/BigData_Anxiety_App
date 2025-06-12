@@ -456,17 +456,16 @@ elif page == "Visualizations":
 
     df_screen = df.groupby(['Age Group', 'Screen Time Group'])['Anxiety Level (1-10)'].mean().reset_index()
 
-    fig_screen = px.line(
+    fig_screen = px.bar(
         df_screen,
         x='Age Group',
         y='Anxiety Level (1-10)',
         color='Screen Time Group',
-        markers=True,
+        barmode='group',
         category_orders={'Age Group': age_labels, 'Screen Time Group': screen_labels},
-        title='Influência do Tempo de Tela e Idade no Nível de Ansiedade'
+        title='Nível Médio de Ansiedade por Idade e Tempo de Tela'
     )
     st.plotly_chart(fig_screen, use_container_width=True)
-
     # =============================
     # ➤ Linha: Atividade Física vs Idade (média ansiedade)
     # =============================
@@ -476,14 +475,15 @@ elif page == "Visualizations":
 
     df_activity = df.groupby(['Age Group', 'Physical Activity Group'])['Anxiety Level (1-10)'].mean().reset_index()
 
-    fig_activity = px.line(
+    fig_activity = px.scatter(
         df_activity,
         x='Age Group',
-        y='Anxiety Level (1-10)',
-        color='Physical Activity Group',
-        markers=True,
+        y='Physical Activity Group',
+        size='Anxiety Level (1-10)',
+        color='Anxiety Level (1-10)',
         category_orders={'Age Group': age_labels, 'Physical Activity Group': activity_labels},
-        title='Atividade Física e Idade vs Nível de Ansiedade'
+        color_continuous_scale='Viridis',
+        title='Relação entre Idade, Atividade Física e Ansiedade'
     )
     st.plotly_chart(fig_activity, use_container_width=True)
 
