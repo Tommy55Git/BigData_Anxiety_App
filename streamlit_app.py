@@ -378,7 +378,70 @@ elif page == "Visualizations":
         fig4.update_layout(yaxis=dict(title='Anxiety Level (1-10)'))
         st.plotly_chart(fig4, use_container_width=True)
 
-
+    # 5) Sessões de terapia por condição mental (violin plot)
+        if 'Therapy Sessions (per month)' in df.columns and 'Mental Health Condition' in df.columns:
+            fig5 = px.violin(
+                df,
+                x='Mental Health Condition',
+                y='Therapy Sessions (per month)',
+                box=True,
+                points="all",
+                title="Sessões de Terapia por Condição Mental"
+            )
+            fig5.update_layout(yaxis=dict(title='Sessões de Terapia por Mês'))
+            st.plotly_chart(fig5, use_container_width=True)
+    
+        # 6) Heatmap de correlação entre variáveis psicológicas
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+    
+        psic_vars = [
+            'Anxiety Level (1-10)', 'Stress Level (1-10)',
+            'Social Interaction Score', 'Therapy Sessions (per month)'
+        ]
+        if all(col in df.columns for col in psic_vars):
+            psic_df = df[psic_vars].dropna()
+            if not psic_df.empty:
+                fig6, ax = plt.subplots()
+                sns.heatmap(psic_df.corr(), annot=True, cmap='coolwarm', ax=ax)
+                plt.title("Correlação entre Variáveis Psicológicas")
+                st.pyplot(fig6)
+    
+        # 7) Cafeína vs Horas de Sono
+        if 'Caffeine Intake (mg/day)' in df.columns and 'Sleep Hours' in df.columns:
+            fig7 = px.scatter(
+                df,
+                x='Caffeine Intake (mg/day)',
+                y='Sleep Hours',
+                color='Anxiety Level (1-10)',
+                title="Cafeína vs Horas de Sono (colorido por Ansiedade)",
+                color_continuous_scale="RdBu"
+            )
+            fig7.update_layout(xaxis_title='Cafeína (mg/dia)', yaxis_title='Horas de Sono')
+            st.plotly_chart(fig7, use_container_width=True)
+    
+        # 8) Boxplot de ansiedade por tipo de dieta
+        diet_cols = [c for c in df.columns if c.startswith('Diet Type_')]
+        if diet_cols:
+            for col in diet_cols:
+                diet_name = col.replace('Diet Type_', '')
+                df[diet_name] = df[col]
+    
+            melted = df.melt(
+                id_vars=['Anxiety Level (1-10)'],
+                value_vars=[c.replace('Diet Type_', '') for c in diet_cols]
+            )
+            melted = melted[melted['value'] == 1]
+    
+            if not melted.empty:
+                fig8 = px.box(
+                    melted,
+                    x='variable',
+                    y='Anxiety Level (1-10)',
+                    title="Ansiedade por Tipo de Dieta"
+                )
+                fig8.update_layout(xaxis_title='Tipo de Dieta', yaxis_title='Nível de Ansiedade')
+                st.plotly_chart(fig8, use_container_width=True)
 
 
 
