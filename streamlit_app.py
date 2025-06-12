@@ -89,37 +89,40 @@ elif page == "Visualizations":
     st.header("Data Visualizations")
 
     if not df_inner.empty:
-        st.subheader("1. Variáveis Sociodemográficas")
-        sociodemographic_cols = ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income']
-        for col in sociodemographic_cols:
-            if col in df_inner.columns:
-                st.write(f"Distribuição por: **{col}**")
-                fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
-                                   title=f"{col} vs Nível de Ansiedade", barmode="group")
-                st.plotly_chart(fig, use_container_width=True)
+        # Criar abas para cada grupo de variáveis
+        tab1, tab2, tab3 = st.tabs(["📊 Sociodemográficos", "🧠 Psicológicos", "🏃 Estilo de Vida"])
 
-        st.subheader("2. Variáveis Psicológicas")
-        psychological_cols = ['Mental Health Condition_Anxiety', 'Mental Health Condition_Depression', 
-                              'Mental Health Condition_Bipolar', 'Therapy', 'Self Esteem']
-        for col in psychological_cols:
-            if col in df_inner.columns:
-                st.write(f"Relação com: **{col}**")
-                fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
-                                   title=f"{col} vs Nível de Ansiedade", barmode="group")
-                st.plotly_chart(fig, use_container_width=True)
+        with tab1:
+            st.subheader("Variáveis Sociodemográficas")
+            sociodemographic_cols = ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income']
+            for col in sociodemographic_cols:
+                if col in df_inner.columns:
+                    fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
+                                       title=f"{col} vs Nível de Ansiedade", barmode="group")
+                    st.plotly_chart(fig, use_container_width=True)
 
-        st.subheader("3. Estilo de Vida")
-        lifestyle_cols = ['Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
-                          'Exercise Frequency (days/week)', 'Social Media Usage (hours/day)']
-        for col in lifestyle_cols:
-            if col in df_inner.columns:
-                st.write(f"Distribuição de: **{col}**")
-                fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
-                                   title=f"{col} vs Nível de Ansiedade", barmode="group")
-                st.plotly_chart(fig, use_container_width=True)
+        with tab2:
+            st.subheader("Variáveis Psicológicas")
+            psychological_cols = ['Mental Health Condition_Anxiety', 'Mental Health Condition_Depression', 
+                                  'Mental Health Condition_Bipolar', 'Therapy', 'Self Esteem']
+            for col in psychological_cols:
+                if col in df_inner.columns:
+                    fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
+                                       title=f"{col} vs Nível de Ansiedade", barmode="group")
+                    st.plotly_chart(fig, use_container_width=True)
+
+        with tab3:
+            st.subheader("Variáveis de Estilo de Vida")
+            lifestyle_cols = ['Caffeine Intake (mg/day)', 'Smoking_Yes', 'Sleep Duration (hours/day)',
+                              'Exercise Frequency (days/week)', 'Social Media Usage (hours/day)']
+            for col in lifestyle_cols:
+                if col in df_inner.columns:
+                    fig = px.histogram(df_inner, x=col, color='Anxiety Level (1-10)',
+                                       title=f"{col} vs Nível de Ansiedade", barmode="group")
+                    st.plotly_chart(fig, use_container_width=True)
 
     else:
-        st.warning("No data available for visualizations.")
+        st.warning("Nenhum dado disponível para visualização.")
 
 
 # Page 3: Analysis
