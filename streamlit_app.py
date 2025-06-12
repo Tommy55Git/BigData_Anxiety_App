@@ -572,6 +572,83 @@ elif page == "Cluster Analysis":
     else:
         st.warning("Cluster data not found.")
 
+#Page 5: Regression Model
+elif page == "Regression Model":
+    st.header("Modelos de Regressão para Predição da Ansiedade")
+
+    if not df_inner.empty:
+        df_reg = df_inner[[
+            "Age",
+            "Sleep Hours",
+            "Physical Activity (hrs/week)",
+            "Diet Quality (1-10)",
+            "Stress Level (1-10)",
+            "Caffeine Intake (mg/day)",
+            "Heart Rate (bpm)",
+            "Breathing Rate (breaths/min)",
+            "Anxiety Level (1-10)"
+        ]].dropna()
+
+        from sklearn.model_selection import train_test_split
+        from sklearn.linear_model import LinearRegression
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.tree import DecisionTreeRegressor
+        from sklearn.neighbors import KNeighborsRegressor
+        from sklearn.svm import SVR
+        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+        import numpy as np
+
+        X = df_reg.drop(columns=["Anxiety Level (1-10)"])
+        y = df_reg["Anxiety Level (1-10)"]
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        models = {
+            'Linear Regression': LinearRegression(),
+            'Decision Tree': DecisionTreeRegressor(random_state=42),
+            'Random Forest': RandomForestRegressor(random_state=42),
+            'k-NN': KNeighborsRegressor(),
+            'SVR': SVR()
+        }
+
+        st.subheader("Comparando Modelos")
+        metrics = []
+        predictions = {}
+
+        for name, model in models.items():
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            predictions[name] = y_pred
+            mae = mean_absolute_error(y_test, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+            r2 = r2_score(y_test, y_pred)
+            metrics.append({"Model": name, "MAE": mae, "RMSE": rmse, "R2": r2})
+
+        import pandas as pd
+        df_metrics = pd.DataFrame(metrics)
+        st.dataframe(df_metrics.style.format("{:.2f}"))
+
+        import matplotlib.pyplot as plt
+        fig, axs = plt.subplots(2, 3, figsize=(18, 10))
+        axs = axs.flatten()
+
+        for i, (name, y_pred) in enumerate(predictions.items()):
+            axs[i].scatter(y_test, y_pred, alpha=0.6, edgecolor='k')
+            axs[i].plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
+            axs[i].set_title(f"{name} - Real vs Predito")
+            axs[i].set_xlabel("Valor Real")
+            axs[i].set_ylabel("Valor Predito")
+
+        for j in range(i + 1, len(axs)):
+            fig.delaxes(axs[j])
+
+        fig.suptitle("Comparando Predições dos Modelos", fontsize=16)
+        st.pyplot(fig)
+
+    else:
+        st.warning("Dados insuficientes para regressão.")
+
+
 # Footer
 st.sidebar.markdown("---")
 st.sidebar.info("Mental Health Data Dashboard - Built with Streamlit")
