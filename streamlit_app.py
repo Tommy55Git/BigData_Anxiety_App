@@ -85,45 +85,57 @@ if page == "Data Overview":
             st.warning("No combined data available")
 
 elif page == "Visualizations":
-    st.header("Data Visualizations")
+    st.header("🌍 Mapa Global: Ansiedade e Estilo de Vida")
 
-    if not df_inner.empty:
-        df = df_inner.copy()  # Cópia para segurança
+    # Cópia de trabalho segura
+    df_map = df_inner.copy()
 
-        # ======== MAPA GLOBAL ========
-        st.subheader("🌍 Mapa Global de Ansiedade e Estilo de Vida")
+    # Verificar e criar a coluna 'Country' se não existir
+    if 'Country' not in df_map.columns:
+        country_cols = [col for col in df_map.columns if col.startswith('Country_')]
+        if country_cols:
+            df_map['Country'] = ''
+            for col in country_cols:
+                df_map.loc[df_map[col] == 1, 'Country'] = col.replace('Country_', '')
 
-        # Criar coluna 'Country' a partir das dummies
-        country_cols = [c for c in df.columns if c.startswith('Country_')]
-        df['Country'] = ''
-        for col in country_cols:
-            df.loc[df[col] == 1, 'Country'] = col.replace('Country_', '')
-        df['Country'] = df['Country'].replace('', 'Unknown')
+    # Limpar valores inválidos
+    df_map = df_map[df_map['Country'].notna() & (df_map['Country'] != '')]
 
-        # Gerar mapa com scatter_geo
-        if 'Country' in df.columns and 'Anxiety Level (1-10)' in df.columns:
-            fig = px.scatter_geo(
-                df,
-                locations="Country",
-                locationmode="country names",
-                color="Anxiety Level (1-10)",
-                size="Therapy Sessions (per month)" if 'Therapy Sessions (per month)' in df.columns else None,
-                hover_name="Country",
-                hover_data={
-                    "Anxiety Level (1-10)": True,
-                    "Work_Exercise_Ratio": True if 'Work_Exercise_Ratio' in df.columns else False,
-                    "Therapy Sessions (per month)": True if 'Therapy Sessions (per month)' in df.columns else False,
-                    "Sleep_Stress_Ratio": True if 'Sleep_Stress_Ratio' in df.columns else False
-                },
-                size_max=40,
-                color_continuous_scale="Reds",
-                title="Ansiedade, Sono, Terapia e Estilo de Vida por País"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("Dados de país ou ansiedade não disponíveis para o mapa.")
+    # Colunas exigidas para o gráfico
+    required_cols = [
+        'Country', 'Anxiety Level (1-10)', 'Sleep_Stress_Ratio',
+        'Therapy Sessions (per month)', 'Work_Exercise_Ratio'
+    ]
 
-        st.markdown("---")
+    if all(col in df_map.columns for col in required_cols):
+        fig = px.scatter_geo(
+            df_map,
+            locations="Country",
+            locationmode="country names",
+            color="Anxiety Level (1-10)",
+            size="Therapy Sessions (per month)",
+            hover_name="Country",
+            hover_data={
+                "Anxiety Level (1-10)": ':.2f',
+                "Work_Exercise_Ratio": ':.2f',
+                "Therapy Sessions (per month)": ':.2f',
+                "Sleep_Stress_Ratio": ':.2f'
+            },
+            size_max=40,
+            color_continuous_scale="Reds",
+            title="🌍 Ansiedade Média, Terapia e Estilo de Vida por País"
+        )
+
+        fig.update_layout(
+            margin=dict(l=0, r=0, t=50, b=0),
+            geo=dict(showframe=False, showcoastlines=False)
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    else:
+        st.warning("❗ Algumas colunas obrigatórias estão ausentes. Verifique seu dataset.")
+
 
     if not df_inner.empty:
         tab1, tab2, tab3 = st.tabs(["📊 Sociodemográficos", "🧠 Psicológicos", "🏃 Estilo de Vida"])
