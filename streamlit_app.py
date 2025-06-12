@@ -375,23 +375,22 @@ elif page == "Visualizations":
 
         # --- Estilo de Vida ---
     with tab3:
-      st.subheader("Variáveis de Estilo de Vida")
+     st.subheader("Variáveis de Estilo de Vida")
 
-     # ➤ Filtros interativos (agora com horas de trabalho)
+    # ➤ Filtros interativos (agora com horas de trabalho)
     # =============================
     age_filter = st.slider("Faixa Etária", min_value=10, max_value=70, value=(10, 70))
     screen_time_filter = st.slider("Tempo de Tela por Dia (horas)", 0, 24, (0, 24))
     activity_filter = st.slider("Atividade Física por Semana (horas)", 0, 20, (0, 20))
-    work_filter = st.slider("Horas de Trabalho por Semana", 0, 80, (0, 80))  # NOVO FILTRO
+    work_filter = st.slider("Horas de Trabalho por Semana", 0, 80, (0, 80))  # Corrigido
 
     df_filtered = df[
         (df['Age'] >= age_filter[0]) & (df['Age'] < age_filter[1]) &
         (df['Screen Time per Day (Hours)'] >= screen_time_filter[0]) & (df['Screen Time per Day (Hours)'] <= screen_time_filter[1]) &
         (df['Physical Activity (hrs/week)'] >= activity_filter[0]) & (df['Physical Activity (hrs/week)'] <= activity_filter[1]) &
-        (df['Working Hours per Week'] >= work_filter[0]) & (df['Working Hours per Week'] <= work_filter[1])  # NOVO
+        (df['Work Hours per Week'] >= work_filter[0]) & (df['Work Hours per Week'] <= work_filter[1])  # Corrigido
     ]
 
-    # =============================
     # ➤ Gráficos básicos de estilo de vida (removidos cafeína e cigarro)
     # =============================
     lifestyle_cols = [
@@ -405,12 +404,11 @@ elif page == "Visualizations":
                                title=f"{col} vs Nível de Ansiedade", barmode="group")
             st.plotly_chart(fig, use_container_width=True)
 
-    # =============================
     # ➤ Gráfico: Horas de Trabalho vs Ansiedade
     # =============================
     work_bins = [0, 10, 20, 30, 40, 50, 60, 80]
     work_labels = ['0–9h', '10–19h', '20–29h', '30–39h', '40–49h', '50–59h', '60+h']
-    df['Work Group'] = pd.cut(df['Working Hours per Week'], bins=work_bins, labels=work_labels, right=False)
+    df['Work Group'] = pd.cut(df['Work Hours per Week'], bins=work_bins, labels=work_labels, right=False)
 
     work_anxiety = df.groupby('Work Group')['Anxiety Level (1-10)'].mean().reset_index()
 
@@ -424,7 +422,6 @@ elif page == "Visualizations":
     )
     st.plotly_chart(fig_work, use_container_width=True)
 
-    # =============================
     # ➤ Gráfico: Atividade Física vs Ansiedade
     # =============================
     activity_bins = [0, 1, 3, 5, 7, 20]
@@ -443,9 +440,8 @@ elif page == "Visualizations":
     )
     st.plotly_chart(fig_act, use_container_width=True)
 
+    # ➤ Gráfico: Idade vs Tempo de Tela vs Ansiedade
     # =============================
-# ➤ Linha: Tempo de Tela vs Idade (média ansiedade)
-# =============================
     age_bins = [10, 20, 30, 40, 50, 60, 70]
     age_labels = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69']
     df['Age Group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, right=False)
@@ -466,11 +462,9 @@ elif page == "Visualizations":
         title='Nível Médio de Ansiedade por Idade e Tempo de Tela'
     )
     st.plotly_chart(fig_screen, use_container_width=True)
+
+    # ➤ Gráfico: Idade vs Atividade Física vs Ansiedade
     # =============================
-    # ➤ Linha: Atividade Física vs Idade (média ansiedade)
-    # =============================
-    activity_bins = [0, 1, 3, 5, 7, 20]
-    activity_labels = ['0-1h', '1-3h', '3-5h', '5-7h', '7+h']
     df['Physical Activity Group'] = pd.cut(df['Physical Activity (hrs/week)'], bins=activity_bins, labels=activity_labels, right=False)
 
     df_activity = df.groupby(['Age Group', 'Physical Activity Group'])['Anxiety Level (1-10)'].mean().reset_index()
@@ -487,7 +481,6 @@ elif page == "Visualizations":
     )
     st.plotly_chart(fig_activity, use_container_width=True)
 
-    # =============================
     # ➤ Heatmap: Cafeína x Fumar
     # =============================
     df['Caffeine_bin'] = pd.cut(df['Caffeine Intake (mg/day)'], bins=30)
