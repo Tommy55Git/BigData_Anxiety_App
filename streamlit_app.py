@@ -742,11 +742,9 @@ elif page == "Visualizations":
         )
         
         st.plotly_chart(fig_interativo, use_container_width=True)
-
-
         
         # --- Gráfico Adicional: Média de Ansiedade por Tipo de Dieta ---
-
+        
         # Identificar colunas de dieta
         diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
         
@@ -799,7 +797,6 @@ elif page == "Visualizations":
         
         st.plotly_chart(fig_diet, use_container_width=True)
         
-
 
 
 
