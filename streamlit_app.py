@@ -438,7 +438,7 @@ elif page == "Visualizations":
         # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta ---
 
         diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
-
+        
         df_diet = df_clusters
         df_diet = df_diet.withColumn(
             "Diet Type",
