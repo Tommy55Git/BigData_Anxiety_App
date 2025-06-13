@@ -503,57 +503,41 @@ elif page == "Visualizations":
 
 
         # --- Gráfico 4: Média Ansiedade por Cafeína e Fumar ---
-
-        df_caffeine = df_clusters.select("Anxiety Level (1-10)", "Caffeine Intake (mg/day)", "Smoking_Yes")
-
-        # Bucketizar cafeína em 3 categorias
-        caffeine_splits = [-float("inf"), df_caffeine.agg({'Caffeine Intake (mg/day)': 'approx_percentile'}).collect()[0][0],  # aproximadamente 33% quantil
-                        df_caffeine.agg({'Caffeine Intake (mg/day)': 'approx_percentile'}).collect()[1][0],  # aproximadamente 66% quantil
-                        float("inf")]
-        # Como approx_percentile não é trivial usar aqui, para simplificar vamos fixar bins:
-        caffeine_splits = [-float("inf"), 50, 150, float("inf")]  # Exemplo: Baixo <50, Médio 50-150, Alto >150
-
-        bucketizer_caf = bucketizer(splits=caffeine_splits, inputCol="Caffeine Intake (mg/day)", outputCol="CaffeineCat")
-        df_caffeine = bucketizer_caf.transform(df_caffeine)
-
-        # Mapear índice para label
-        caf_labels = {0.0: "Baixo", 1.0: "Médio", 2.0: "Alto"}
-
-        # Criar coluna Smoking Status
-        df_caffeine = df_caffeine.withColumn("Smoking Status", when(col("Smoking_Yes") == 1, "Fuma").otherwise("Não Fuma"))
-
-        # Agrupar e calcular média ansiedade
-        df_grouped = df_caffeine.groupBy("Smoking Status", "CaffeineCat") \
-                            .agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety"))
-
-        dados = df_grouped.collect()
-        # Organizar dados para plotly
-        grouped_dict = {}
-        for row in dados:
-            smoking = row['Smoking Status']
-            caffeine_cat = caf_labels.get(row['CaffeineCat'], "Unknown")
-            media = row['Avg Anxiety']
-            grouped_dict.setdefault(smoking, []).append((caffeine_cat, media))
-
-        # Para plotly bar, criar listas para cada categoria
+        
+        # Copiar os dados relevantes do DataFrame principal
+        df_caffeine = df_clusters[["Anxiety Level (1-10)", "Caffeine Intake (mg/day)", "Smoking_Yes"]].copy()
+        
+        # Categorizar cafeína manualmente: Baixo < 50, Médio 50-150, Alto > 150
+        bins = [-float("inf"), 50, 150, float("inf")]
+        labels_caf = ["Baixo", "Médio", "Alto"]
+        df_caffeine["CaffeineCat"] = pd.cut(df_caffeine["Caffeine Intake (mg/day)"], bins=bins, labels=labels_caf)
+        
+        # Mapear status de fumo
+        df_caffeine["Smoking Status"] = df_caffeine["Smoking_Yes"].map({1: "Fuma", 0: "Não Fuma"})
+        
+        # Calcular média de ansiedade por combinação de fumo e cafeína
+        agg_df = df_caffeine.groupby(["Smoking Status", "CaffeineCat"])["Anxiety Level (1-10)"].mean().reset_index()
+        
+        # Organizar dados para o gráfico
         caffeine_cats_sorted = ["Baixo", "Médio", "Alto"]
-        bar_data = []
-        for smoking_status, values in grouped_dict.items():
-            # Criar lista de médias ordenadas por caffeine_cats_sorted
-            vals_sorted = []
+        bar_data = {}
+        for status in agg_df["Smoking Status"].unique():
+            subset = agg_df[agg_df["Smoking Status"] == status]
+            medias = []
             for cat in caffeine_cats_sorted:
-                v = next((m for (c, m) in values if c == cat), None)
-                vals_sorted.append(v)
-            bar_data.append((smoking_status, vals_sorted))
-
+                media = subset[subset["CaffeineCat"] == cat]["Anxiety Level (1-10)"].values
+                medias.append(media[0] if len(media) > 0 else None)
+            bar_data[status] = medias
+        
+        # Criar gráfico
         fig_caffeine = go.Figure()
-        for smoking_status, medias in bar_data:
+        for status, medias in bar_data.items():
             fig_caffeine.add_trace(go.Bar(
-                name=smoking_status,
+                name=status,
                 x=caffeine_cats_sorted,
                 y=medias
             ))
-
+        
         fig_caffeine.update_layout(
             barmode='group',
             title='Média de Ansiedade por Consumo de Cafeína e Fumar',
@@ -561,6 +545,7 @@ elif page == "Visualizations":
             yaxis_title='Nível Médio de Ansiedade'
         )
         st.plotly_chart(fig_caffeine, use_container_width=True)
+
 
 
         # --- Gráfico 5: Nível de Ansiedade por Work/Exercise Ratio e Sono/Estresse (com dropdown) ---
