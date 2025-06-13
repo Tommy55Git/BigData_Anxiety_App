@@ -395,190 +395,306 @@ elif page == "Visualizations":
             st.subheader(" Estilo de Vida")
 
             # Converter Spark DataFrame para Pandas
-        pdf = df_clusters.toPandas()
-
-    # Identificar o nível de exercício baseado nas colunas dummy (0/1)
-    exercise_cols = ['Exercise Level_Low', 'Exercise Level_Moderate', 'Exercise Level_High']
-    pdf['Exercise Level'] = pdf[exercise_cols].idxmax(axis=1)
-    pdf['Exercise Level'] = pdf['Exercise Level'].str.replace('Exercise Level_', '', regex=False)
-
-    plt.figure(figsize=(4, 2))
-    sns.kdeplot(data=pdf, x='Anxiety Level (1-10)', hue='Exercise Level', fill=True, common_norm=False, alpha=0.5)
-    plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
-    plt.xlabel('Nível de Ansiedade (1-10)')
-    plt.ylabel('Densidade')
-    plt.grid(True)
-    st.pyplot(plt.gcf())
-    plt.clf()
-
-    # --- Parte 2: Média de Ansiedade por Tipo de Dieta (usando PySpark) ---
-    diet_columns = [c for c in df_inner.columns if c.startswith("Diet Type_")]
-    df = df_clusters  # Spark DataFrame
-
-    # Inicializar coluna "Diet Type" como null
-    df = df.withColumn("Diet Type", when(col(diet_columns[0]) == 1, diet_columns[0].replace("Diet Type_", "")))
-
-    # Preencher a coluna "Diet Type" com o nome correto da dieta para os outros dummies
-    for c in diet_columns[1:]:
-        diet_name = c.replace("Diet Type_", "")
-        df = df.withColumn(
-            "Diet Type",
-            when((col(c) == 1) & (col("Diet Type").isNull()), diet_name).otherwise(col("Diet Type"))
+            df_exercise = df_clusters.withColumn(
+            "Exercise Level",
+            when(col("Exercise Level_Low") == 1, "Low")
+            .when(col("Exercise Level_Moderate") == 1, "Moderate")
+            .when(col("Exercise Level_High") == 1, "High")
+            .otherwise("Unknown")
         )
 
-    # Agrupar para calcular a média de ansiedade por tipo de dieta
-    df_grouped = df.groupBy("Diet Type").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety"))
-    pdf_grouped = df_grouped.toPandas()
+        exercise_levels = ["Low", "Moderate", "High"]
+        ansiedade_por_nivel = {}
 
-    # Plot com plotly
-    fig_diet = px.line(pdf_grouped, x="Diet Type", y="Avg Anxiety", markers=True,
-                      title="Média do Nível de Ansiedade por Tipo de Dieta",
-                      labels={"Avg Anxiety": "Ansiedade Média", "Diet Type": "Tipo de Dieta"})
-    st.plotly_chart(fig_diet, use_container_width=True)
+        for nivel in exercise_levels:
+            valores = df_exercise.filter(col("Exercise Level") == nivel) \
+                                .select("Anxiety Level (1-10)") \
+                                .rdd.flatMap(lambda x: x).collect()
+            ansiedade_por_nivel[nivel] = valores
 
-    # --- Parte 3: Distribuição Ansiedade por Consumo de Álcool (bins Baixo, Médio, Alto) ---
-    pdf_alcohol = df_inner.select("Anxiety Level (1-10)", "Alcohol Consumption (drinks/week)").toPandas()
-    pdf_alcohol = pdf_alcohol[pdf_alcohol['Alcohol Consumption (drinks/week)'] <= 19]
-    pdf_alcohol['Alcohol Category'] = pd.cut(pdf_alcohol['Alcohol Consumption (drinks/week)'], bins=3, labels=['Baixo', 'Médio', 'Alto'])
+        plt.figure(figsize=(4, 2))
+        for nivel, valores in ansiedade_por_nivel.items():
+            if len(valores) < 10:
+                continue
+            hist, bin_edges = np.histogram(valores, bins=30, density=True)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            plt.plot(bin_centers, hist, label=nivel, alpha=0.7)
+        plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
+        plt.xlabel('Nível de Ansiedade (1-10)')
+        plt.ylabel('Densidade aproximada')
+        plt.legend()
+        plt.grid(True)
+        st.pyplot(plt.gcf())
+        plt.clf()
 
-    def kde_area(data, group_col, group_val, value_col='Anxiety Level (1-10)'):
-        subset = data[data[group_col] == group_val][value_col]
-        if len(subset) < 10:
-            return pd.DataFrame()
-        kde = gaussian_kde(subset)
-        x = np.linspace(subset.min(), subset.max(), 100)
-        y = kde(x)
-        return pd.DataFrame({value_col: x, 'density': y, group_col: group_val})
 
-    dfs = []
-    for cat in pdf_alcohol['Alcohol Category'].cat.categories:
-        df_kde = kde_area(pdf_alcohol, 'Alcohol Category', cat)
-        if not df_kde.empty:
-            dfs.append(df_kde)
-    df_kde = pd.concat(dfs)
+        # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta ---
 
-    fig_alcohol = px.area(df_kde, x='Anxiety Level (1-10)', y='density', color='Alcohol Category',
-                         labels={'density': 'Densidade', 'Anxiety Level (1-10)': 'Nível de Ansiedade', 'Alcohol Category': 'Consumo de Álcool'},
-                         title='Distribuição do Nível de Ansiedade por Consumo de Álcool (bins: Baixo, Médio, Alto)')
-    fig_alcohol.update_traces(opacity=0.5)
-    st.plotly_chart(fig_alcohol, use_container_width=True)
+        diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
 
-    # --- Parte 4: Média Ansiedade por Cafeína e Fumar ---
-    pdf_caffeine = df_inner.select("Anxiety Level (1-10)", "Caffeine Intake (mg/day)", "Smoking_Yes").toPandas()
-    pdf_caffeine['Caffeine Category'] = pd.cut(pdf_caffeine['Caffeine Intake (mg/day)'], bins=3, labels=['Baixo', 'Médio', 'Alto'])
-    pdf_caffeine['Smoking Status'] = pdf_caffeine['Smoking_Yes'].map({0: 'Não Fuma', 1: 'Fuma'})
+        df_diet = df_clusters
+        df_diet = df_diet.withColumn(
+            "Diet Type",
+            when(col(diet_columns[0]) == 1, diet_columns[0].replace("Diet Type_", ""))
+        )
+        for c in diet_columns[1:]:
+            diet_name = c.replace("Diet Type_", "")
+            df_diet = df_diet.withColumn(
+                "Diet Type",
+                when((col(c) == 1) & (col("Diet Type").isNull()), diet_name).otherwise(col("Diet Type"))
+            )
 
-    grouped = pdf_caffeine.groupby(['Smoking Status', 'Caffeine Category'])['Anxiety Level (1-10)'].mean().reset_index()
-    grouped.rename(columns={'Anxiety Level (1-10)': 'Média de Ansiedade'}, inplace=True)
+        df_grouped = df_diet.groupBy("Diet Type").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety"))
+        dados = df_grouped.collect()
+        diet_types = [row['Diet Type'] for row in dados]
+        avg_anxieties = [row['Avg Anxiety'] for row in dados]
 
-    fig_caffeine = px.bar(grouped,
-                         x='Caffeine Category',
-                         y='Média de Ansiedade',
-                         color='Smoking Status',
-                         barmode='group',
-                         labels={'Caffeine Category': 'Categoria de Cafeína'},
-                         title='Média de Ansiedade por Consumo de Cafeína e Fumar')
-    fig_caffeine.update_layout(yaxis_title='Nível Médio de Ansiedade', xaxis_title='Cafeína')
-    st.plotly_chart(fig_caffeine, use_container_width=True)
+        fig_diet = px.line(
+            x=diet_types,
+            y=avg_anxieties,
+            markers=True,
+            title="Média do Nível de Ansiedade por Tipo de Dieta",
+            labels={"x": "Tipo de Dieta", "y": "Ansiedade Média"}
+        )
+        st.plotly_chart(fig_diet, use_container_width=True)
 
-    # --- Parte 5: Nível de Ansiedade por Work/Exercise Ratio e Sono/Estresse (com dropdown) ---
-    pdf_activity = df_inner.select("Work Hours per Week", "Physical Activity (hrs/week)",
-                                 "Sleep Hours", "Stress Level (1-10)", "Anxiety Level (1-10)").toPandas()
-    pdf_activity['Physical Activity Adjusted'] = pdf_activity['Physical Activity (hrs/week)'].replace(0, 0.1)
-    pdf_activity['Work/Exercise Ratio'] = pdf_activity['Work Hours per Week'] / pdf_activity['Physical Activity Adjusted']
-    pdf_activity['Sleep/Stress Ratio'] = pdf_activity['Sleep Hours'] / (pdf_activity['Stress Level (1-10)'] + 1e-5)
 
-    pdf_activity['Work/Exercise'] = pd.qcut(pdf_activity['Work/Exercise Ratio'], q=3, labels=["Baixo", "Médio", "Alto"])
-    pdf_activity['Sono/Estresse'] = pd.qcut(pdf_activity['Sleep/Stress Ratio'], q=3, labels=["Baixo", "Médio", "Alto"])
+        # --- Gráfico 3: Distribuição Ansiedade por Consumo de Álcool (bins Baixo, Médio, Alto) ---
 
-    dados = {
-        'Work/Exercício': pdf_activity.groupby('Work/Exercício')['Anxiety Level (1-10)'].mean().reset_index(),
-        'Sono/Estresse': pdf_activity.groupby('Sono/Estresse')['Anxiety Level (1-10)'].mean().reset_index()
-    }
+        splits = [-float("inf"), 6.33, 12.66, 19.0]
+        bucketizer = bucketizer(splits=splits, inputCol="Alcohol Consumption (drinks/week)", outputCol="AlcoholBin") # type: ignore
+        df_alcohol = df_clusters.filter(col("Alcohol Consumption (drinks/week)") <= 19) \
+                                .select("Anxiety Level (1-10)", "Alcohol Consumption (drinks/week)")
+        df_alcohol = bucketizer.transform(df_alcohol)
 
-    fig_ratio = px.bar(dados['Work/Exercício'], x='Work/Exercício', y='Anxiety Level (1-10)',
-                      title='Nível de Ansiedade por Work/Exercise Ratio', color_discrete_sequence=['teal'])
+        labels = {0.0: "Baixo", 1.0: "Médio", 2.0: "Alto"}
 
-    fig_ratio.update_layout(
-        updatemenus=[dict(
-            buttons=[
-                dict(label="Work/Exercício",
-                     method="update",
-                     args=[{"x": [dados['Work/Exercício']['Work/Exercício']],
-                            "y": [dados['Work/Exercício']["Anxiety Level (1-10)"]]},
-                           {"title": "Nível de Ansiedade por Work/Exercise Ratio"}]),
-                dict(label="Sono/Estresse",
-                     method="update",
-                     args=[{"x": [dados['Sono/Estresse']['Sono/Estresse']],
-                            "y": [dados['Sono/Estresse']["Anxiety Level (1-10)"]]},
-                           {"title": "Nível de Ansiedade por Sleep/Stress Ratio"}])
-            ],
-            direction="down",
-            x=0.5,
-            xanchor="center",
-            y=1.1,
-            yanchor="top"
-        )]
-    )
-    fig_ratio.update_layout(yaxis_title="Ansiedade Média", xaxis_title=None)
-    st.plotly_chart(fig_ratio, use_container_width=True)
+        dados_kde = []
+        for i in range(3):
+            anx_values = df_alcohol.filter(col("AlcoholBin") == i).select("Anxiety Level (1-10)").rdd.flatMap(lambda x: x).collect()
+            if len(anx_values) < 10:
+                continue
+            hist, bin_edges = np.histogram(anx_values, bins=30, density=True)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            dados_kde.append({
+                'label': labels[i],
+                'x': bin_centers,
+                'y': hist
+            })
 
-    # --- Parte 6: Gráfico Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
-    pdf_interativo = df_inner.select("Anxiety Level (1-10)", "Recent Event", "Screen Time (hrs/day)",
-                                    "Therapy_Yes", "Social Interaction Level (1-10)").toPandas()
+        fig_alcohol = go.Figure()
+        for d in dados_kde:
+            fig_alcohol.add_trace(go.Scatter(
+                x=d['x'], y=d['y'], fill='tozeroy', mode='lines', name=d['label'], opacity=0.5
+            ))
+        fig_alcohol.update_layout(
+            title='Distribuição do Nível de Ansiedade por Consumo de Álcool (bins: Baixo, Médio, Alto)',
+            xaxis_title='Nível de Ansiedade',
+            yaxis_title='Densidade'
+        )
+        st.plotly_chart(fig_alcohol, use_container_width=True)
 
-    def avg_anxiety_by_col(df, col, val_map=None):
-        grp = df.groupby(col)['Anxiety Level (1-10)'].mean().reset_index()
-        if val_map:
-            grp[col] = grp[col].map(val_map)
-        return grp
 
-    event_map = {0: "Nenhum", 1: "Sim"}
-    therapy_map = {0: "Não", 1: "Sim"}
+        # --- Gráfico 4: Média Ansiedade por Cafeína e Fumar ---
 
-    dados_interativo = {
-        'Evento Recente': avg_anxiety_by_col(pdf_interativo, "Recent Event", event_map),
-        'Tempo de Tela': avg_anxiety_by_col(pdf_interativo, "Screen Time (hrs/day)"),
-        'Terapia': avg_anxiety_by_col(pdf_interativo, "Therapy_Yes", therapy_map),
-        'Interação Social': pdf_interativo.groupby("Social Interaction Level (1-10)")['Anxiety Level (1-10)'].mean().reset_index()
-    }
+        df_caffeine = df_clusters.select("Anxiety Level (1-10)", "Caffeine Intake (mg/day)", "Smoking_Yes")
 
-    fig_interativo = go.Figure()
+        # Bucketizar cafeína em 3 categorias
+        caffeine_splits = [-float("inf"), df_caffeine.agg({'Caffeine Intake (mg/day)': 'approx_percentile'}).collect()[0][0],  # aproximadamente 33% quantil
+                        df_caffeine.agg({'Caffeine Intake (mg/day)': 'approx_percentile'}).collect()[1][0],  # aproximadamente 66% quantil
+                        float("inf")]
+        # Como approx_percentile não é trivial usar aqui, para simplificar vamos fixar bins:
+        caffeine_splits = [-float("inf"), 50, 150, float("inf")]  # Exemplo: Baixo <50, Médio 50-150, Alto >150
 
-    for i, (key, df_plot) in enumerate(dados_interativo.items()):
-        visible = (i == 0)
-        fig_interativo.add_trace(go.Bar(
-            x=df_plot.iloc[:, 0],
-            y=df_plot['Anxiety Level (1-10)'],
-            name=key,
-            visible=visible
-        ))
+        bucketizer_caf = bucketizer(splits=caffeine_splits, inputCol="Caffeine Intake (mg/day)", outputCol="CaffeineCat")
+        df_caffeine = bucketizer_caf.transform(df_caffeine)
 
-    buttons = []
-    for i, key in enumerate(dados_interativo.keys()):
-        visibility = [False] * len(dados_interativo)
-        visibility[i] = True
-        buttons.append(dict(label=key,
-                            method='update',
-                            args=[{'visible': visibility},
-                                  {'title': f'Média de Ansiedade por {key}'}]))
+        # Mapear índice para label
+        caf_labels = {0.0: "Baixo", 1.0: "Médio", 2.0: "Alto"}
 
-    fig_interativo.update_layout(
-        updatemenus=[dict(
-            active=0,
-            buttons=buttons,
-            x=0.5,
-            xanchor='center',
-            y=1.15,
-            yanchor='top',
-            direction='down'
-        )],
-        title='Média de Ansiedade por Variáveis de Estilo de Vida',
-        yaxis_title='Ansiedade Média'
-    )
+        # Criar coluna Smoking Status
+        df_caffeine = df_caffeine.withColumn("Smoking Status", when(col("Smoking_Yes") == 1, "Fuma").otherwise("Não Fuma"))
 
-    st.plotly_chart(fig_interativo, use_container_width=True)
-            
+        # Agrupar e calcular média ansiedade
+        df_grouped = df_caffeine.groupBy("Smoking Status", "CaffeineCat") \
+                            .agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety"))
+
+        dados = df_grouped.collect()
+        # Organizar dados para plotly
+        grouped_dict = {}
+        for row in dados:
+            smoking = row['Smoking Status']
+            caffeine_cat = caf_labels.get(row['CaffeineCat'], "Unknown")
+            media = row['Avg Anxiety']
+            grouped_dict.setdefault(smoking, []).append((caffeine_cat, media))
+
+        # Para plotly bar, criar listas para cada categoria
+        caffeine_cats_sorted = ["Baixo", "Médio", "Alto"]
+        bar_data = []
+        for smoking_status, values in grouped_dict.items():
+            # Criar lista de médias ordenadas por caffeine_cats_sorted
+            vals_sorted = []
+            for cat in caffeine_cats_sorted:
+                v = next((m for (c, m) in values if c == cat), None)
+                vals_sorted.append(v)
+            bar_data.append((smoking_status, vals_sorted))
+
+        fig_caffeine = go.Figure()
+        for smoking_status, medias in bar_data:
+            fig_caffeine.add_trace(go.Bar(
+                name=smoking_status,
+                x=caffeine_cats_sorted,
+                y=medias
+            ))
+
+        fig_caffeine.update_layout(
+            barmode='group',
+            title='Média de Ansiedade por Consumo de Cafeína e Fumar',
+            xaxis_title='Categoria de Cafeína',
+            yaxis_title='Nível Médio de Ansiedade'
+        )
+        st.plotly_chart(fig_caffeine, use_container_width=True)
+
+
+        # --- Gráfico 5: Nível de Ansiedade por Work/Exercise Ratio e Sono/Estresse (com dropdown) ---
+
+        df_activity = df_clusters.select("Work Hours per Week", "Physical Activity (hrs/week)",
+                                        "Sleep Hours", "Stress Level (1-10)", "Anxiety Level (1-10)")
+
+        # Ajustar Physical Activity para evitar divisão por zero
+        df_activity = df_activity.withColumn(
+            "Physical Activity Adjusted",
+            when(col("Physical Activity (hrs/week)") == 0, 0.1).otherwise(col("Physical Activity (hrs/week)"))
+        )
+
+        df_activity = df_activity.withColumn(
+            "Work/Exercise Ratio",
+            col("Work Hours per Week") / col("Physical Activity Adjusted")
+        ).withColumn(
+            "Sleep/Stress Ratio",
+            col("Sleep Hours") / (col("Stress Level (1-10)") + 1e-5)
+        )
+
+        # Usar approxQuantile para pegar quantis para bucketizer
+        q1_wex, q2_wex = df_activity.approxQuantile("Work/Exercise Ratio", [1/3, 2/3], 0.01)
+        q1_ses, q2_ses = df_activity.approxQuantile("Sleep/Stress Ratio", [1/3, 2/3], 0.01)
+
+        splits_wex = [-float("inf"), q1_wex, q2_wex, float("inf")]
+        splits_ses = [-float("inf"), q1_ses, q2_ses, float("inf")]
+
+        bucketizer_wex = bucketizer(splits=splits_wex, inputCol="Work/Exercise Ratio", outputCol="WorkExBucket")
+        bucketizer_ses = bucketizer(splits=splits_ses, inputCol="Sleep/Stress Ratio", outputCol="SleepStressBucket")
+
+        df_activity = bucketizer_wex.transform(df_activity)
+        df_activity = bucketizer_ses.transform(df_activity)
+
+        labels = {0.0: "Baixo", 1.0: "Médio", 2.0: "Alto"}
+
+        # Agrupar médias para cada bucket
+        df_wex = df_activity.groupBy("WorkExBucket").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety")).collect()
+        df_ses = df_activity.groupBy("SleepStressBucket").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety")).collect()
+
+        dados = {
+            "Work/Exercício": [(labels[row["WorkExBucket"]], row["Avg Anxiety"]) for row in df_wex],
+            "Sono/Estresse": [(labels[row["SleepStressBucket"]], row["Avg Anxiety"]) for row in df_ses]
+        }
+
+        fig_ratio = go.Figure()
+
+        # Inicialmente mostra Work/Exercise
+        x_vals = [x for x, _ in dados["Work/Exercício"]]
+        y_vals = [y for _, y in dados["Work/Exercício"]]
+
+        fig_ratio.add_trace(go.Bar(x=x_vals, y=y_vals, marker_color='teal'))
+
+        buttons = [
+            dict(
+                label="Work/Exercício",
+                method="update",
+                args=[{"x": [x_vals], "y": [y_vals]}, {"title": "Nível de Ansiedade por Work/Exercise Ratio"}]
+            ),
+            dict(
+                label="Sono/Estresse",
+                method="update",
+                args=[
+                    {"x": [[x for x, _ in dados["Sono/Estresse"]]], "y": [[y for _, y in dados["Sono/Estresse"]]]},
+                    {"title": "Nível de Ansiedade por Sleep/Stress Ratio"}
+                ]
+            )
+        ]
+
+        fig_ratio.update_layout(
+            updatemenus=[dict(
+                buttons=buttons,
+                direction="down",
+                x=0.5,
+                xanchor="center",
+                y=1.1,
+                yanchor="top"
+            )],
+            yaxis_title="Ansiedade Média",
+            title="Nível de Ansiedade por Work/Exercise Ratio"
+        )
+
+        st.plotly_chart(fig_ratio, use_container_width=True)
+
+
+        # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
+
+        df_interativo = df_clusters.select("Anxiety Level (1-10)", "Recent Event", "Screen Time (hrs/day)",
+                                        "Therapy_Yes", "Social Interaction Level (1-10)")
+
+        def avg_anxiety_by_col(df, col_name, val_map=None):
+            grouped = df.groupBy(col_name).agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety")).collect()
+            x_vals, y_vals = [], []
+            for row in grouped:
+                key = row[col_name]
+                if val_map:
+                    key = val_map.get(key, key)
+                x_vals.append(key)
+                y_vals.append(row["Avg Anxiety"])
+            return x_vals, y_vals
+
+        event_map = {0: "Nenhum", 1: "Sim"}
+        therapy_map = {0: "Não", 1: "Sim"}
+
+        dados_interativo = {
+            "Evento Recente": avg_anxiety_by_col(df_interativo, "Recent Event", event_map),
+            "Tempo de Tela": avg_anxiety_by_col(df_interativo, "Screen Time (hrs/day)"),
+            "Terapia": avg_anxiety_by_col(df_interativo, "Therapy_Yes", therapy_map),
+            "Interação Social": avg_anxiety_by_col(df_interativo, "Social Interaction Level (1-10)")
+        }
+
+        fig_interativo = go.Figure()
+
+        # Inicialmente mostrar "Evento Recente"
+        fig_interativo.add_trace(go.Bar(x=dados_interativo["Evento Recente"][0], y=dados_interativo["Evento Recente"][1]))
+
+        buttons = []
+        for nome, (xv, yv) in dados_interativo.items():
+            buttons.append(
+                dict(
+                    label=nome,
+                    method="update",
+                    args=[{"x": [xv], "y": [yv]}, {"title": f"Nível Médio de Ansiedade por {nome}"}]
+                )
+            )
+
+        fig_interativo.update_layout(
+            updatemenus=[dict(
+                buttons=buttons,
+                direction="down",
+                x=0.5,
+                xanchor="center",
+                y=1.1,
+                yanchor="top"
+            )],
+            yaxis_title="Ansiedade Média",
+            title="Nível Médio de Ansiedade (Interativo)"
+        )
+
+        st.plotly_chart(fig_interativo, use_container_width=True)
+                    
         
         
         
