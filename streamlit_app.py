@@ -378,7 +378,7 @@ elif page == "Visualizations":
        
 
 
-
+# --- Estilo de Vida ---
     with tab3:
      st.subheader("Estilo de Vida e Ansiedade")
 
@@ -399,75 +399,77 @@ elif page == "Visualizations":
 
     df_filt = df[df['País'].isin(paises) & df['Tipo de Dieta'].isin(dietas)]
 
-    # === FUNÇÃO PARA GRÁFICO DE BARRAS + LINHA LOESS ===
-    def grafico_barras_loess(x_col, titulo, rotulo_x, bins=20):
-        # Filtra dados não nulos
-        data = df_filt[[x_col, 'Anxiety Level (1-10)']].dropna().copy()
+    # Novas variáveis
+    min_activity = 0.1
+    df_filt['Physical Activity Adjusted'] = df_filt['Physical Activity (hrs/week)'].apply(lambda x: max(x, min_activity))
+    df_filt['Work_Exercise_Ratio'] = df_filt['Work Hours per Week'] / df_filt['Physical Activity Adjusted']
+    df_filt['Sleep_Stress_Ratio'] = df_filt['Sleep Hours'] / (df_filt['Stress Level (1-10)'] + 1e-5)
 
-        if data.empty:
-            st.warning(f"Sem dados suficientes para '{titulo}'.")
-            return
+    # === INSIGHTS ===
+    st.markdown("### 🧠 Resumo Rápido")
+    def gerar_insight(coluna, nome_exibicao):
+        media_geral = df[coluna].mean()
+        media_filt = df_filt[coluna].mean()
+        diff = media_filt - media_geral
+        sentido = "acima" if diff > 0 else "abaixo"
+        st.markdown(f"- A média de **{nome_exibicao}** no grupo filtrado é **{media_filt:.2f}**, que está **{abs(diff):.2f} pontos {sentido}** da média geral (**{media_geral:.2f}**).")
 
-        # Cria bins
-        data['bin'] = pd.cut(data[x_col], bins=bins)
+    gerar_insight("Anxiety Level (1-10)", "Ansiedade")
+    gerar_insight("Sleep Hours", "Horas de Sono")
+    gerar_insight("Screen Time per Day (Hours)", "Tempo de Tela")
+    gerar_insight("Physical Activity (hrs/week)", "Atividade Física")
+    gerar_insight("Work Hours per Week", "Horas de Trabalho")
 
-        # Calcula média ansiedade por bin
-        media_bin = data.groupby('bin')['Anxiety Level (1-10)'].mean().reset_index()
-        media_bin['x_mid'] = media_bin['bin'].apply(lambda x: x.mid)
+    # === GRÁFICOS COM TENDÊNCIA ===
+    st.markdown("### 📊 Análises Visuais")
 
-        # Remove bins sem valor médio
-        media_bin = media_bin.dropna(subset=['x_mid'])
-
-        if len(media_bin) < 5:
-            st.warning(f"Poucos dados para '{titulo}' para exibir o gráfico.")
-            return
-
-        # Aplica LOESS para suavizar a linha
-        lowess = sm.nonparametric.lowess
-        suavizado = lowess(media_bin['Anxiety Level (1-10)'], media_bin['x_mid'], frac=0.3)
-
-        fig = go.Figure()
-        # Barras da média por bin
-        fig.add_trace(go.Bar(
-            x=media_bin['x_mid'],
-            y=media_bin['Anxiety Level (1-10)'],
-            name='Média por Bin',
-            marker_color='skyblue',
-            width=(media_bin['x_mid'].max() - media_bin['x_mid'].min()) / bins * 0.9
-        ))
-
-        # Linha suavizada LOESS
-        fig.add_trace(go.Scatter(
-            x=suavizado[:, 0],
-            y=suavizado[:, 1],
-            mode='lines',
-            name='Tendência Suavizada (LOESS)',
-            line=dict(color='red', width=3)
-        ))
-
-        fig.update_layout(
+    def grafico_scatter(x, y, titulo, rotulo_x):
+        fig = px.scatter(
+            df_filt,
+            x=x,
+            y=y,
+            trendline="ols",
+            color="Nível de Exercício",
             title=titulo,
-            xaxis_title=rotulo_x,
-            yaxis_title='Nível Médio de Ansiedade',
-            template='plotly_white',
-            bargap=0.2,
-            legend=dict(y=0.95, x=0.05)
+            labels={x: rotulo_x, y: "Nível de Ansiedade"}
         )
-
         st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("### 📊 Análises Visuais")
-    grafico_barras_loess("Physical Activity (hrs/week)", "Atividade Física vs Ansiedade", "Atividade Física (h/semana)")
-    grafico_barras_loess("Sleep Hours", "Horas de Sono vs Ansiedade", "Horas de Sono")
-    grafico_barras_loess("Screen Time per Day (Hours)", "Tempo de Tela vs Ansiedade", "Horas de Tela por Dia")
-    grafico_barras_loess("Work Hours per Week", "Horas de Trabalho vs Ansiedade", "Horas de Trabalho por Semana")
-    grafico_barras_loess("Social Interaction Score", "Interações Sociais vs Ansiedade", "Score de Interação Social")
-    grafico_barras_loess("Therapy Sessions (per month)", "Sessões de Terapia vs Ansiedade", "Sessões de Terapia por Mês")
+    # Originais
+    grafico_scatter("Physical Activity (hrs/week)", "Anxiety Level (1-10)", "Atividade Física vs Ansiedade", "Atividade Física (h/semana)")
+    grafico_scatter("Sleep Hours", "Anxiety Level (1-10)", "Horas de Sono vs Ansiedade", "Horas de Sono")
+    grafico_scatter("Screen Time per Day (Hours)", "Anxiety Level (1-10)", "Tempo de Tela vs Ansiedade", "Horas de Tela por Dia")
+    grafico_scatter("Work Hours per Week", "Anxiety Level (1-10)", "Horas de Trabalho vs Ansiedade", "Horas de Trabalho por Semana")
+    grafico_scatter("Social Interaction Score", "Anxiety Level (1-10)", "Interações Sociais vs Ansiedade", "Score de Interação Social")
+    grafico_scatter("Therapy Sessions (per month)", "Anxiety Level (1-10)", "Sessões de Terapia vs Ansiedade", "Sessões de Terapia (mês)")
+
+    # Variáveis derivadas
+    grafico_scatter("Physical Activity Adjusted", "Anxiety Level (1-10)", "Atividade Física Ajustada vs Ansiedade", "Atividade Física Ajustada")
+    grafico_scatter("Work_Exercise_Ratio", "Anxiety Level (1-10)", "Relação Trabalho / Exercício vs Ansiedade", "Work/Exercise Ratio")
+    grafico_scatter("Sleep_Stress_Ratio", "Análise Sono/Estresse vs Ansiedade", "Sleep/Stress Ratio", "Sleep/Stress Ratio")
+
+    # === DISTRIBUIÇÃO NORMAL DAS VARIÁVEIS ===
+    st.markdown("### 📈 Distribuições das Variáveis Derivadas")
+
+    def plot_distribuicao(col, titulo):
+        fig = px.histogram(
+            df_filt,
+            x=col,
+            nbins=40,
+            marginal="violin",
+            histnorm="probability density",
+            title=titulo
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    plot_distribuicao("Physical Activity Adjusted", "Distribuição: Atividade Física Ajustada")
+    plot_distribuicao("Work_Exercise_Ratio", "Distribuição: Work/Exercise Ratio")
+    plot_distribuicao("Sleep_Stress_Ratio", "Distribuição: Sleep/Stress Ratio")
 
     # === HEATMAP DE CAFEÍNA E CIGARRO ===
     st.markdown("### ☕ Cafeína e Tabagismo vs Ansiedade")
-    df_filt['Caffeine_bin'] = pd.cut(df_filt['Caffeine Intake (mg/day)'], bins=30)
-    heatmap_data = df_filt.groupby(['Caffeine_bin', 'Smoking_Yes'])['Anxiety Level (1-10)'].mean().reset_index()
+    df['Caffeine_bin'] = pd.cut(df['Caffeine Intake (mg/day)'], bins=30)
+    heatmap_data = df.groupby(['Caffeine_bin', 'Smoking_Yes'])['Anxiety Level (1-10)'].mean().reset_index()
     heatmap_data['Caffeine_mid'] = heatmap_data['Caffeine_bin'].apply(lambda x: x.mid)
     heatmap_data['Smoking_Status'] = heatmap_data['Smoking_Yes'].map({0: 'Não Fuma', 1: 'Fuma'})
 
@@ -481,6 +483,9 @@ elif page == "Visualizations":
         labels={"Caffeine_mid": "Cafeína (mg/dia)", "Smoking_Status": "Tabagismo"}
     )
     st.plotly_chart(fig_heat, use_container_width=True)
+
+
+
 
 
 
