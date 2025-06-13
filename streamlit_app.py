@@ -645,42 +645,92 @@ elif page == "Visualizations":
         
         st.plotly_chart(fig_ratio, use_container_width=True)
 
-        # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (eixos invertidos) ---
-        st.subheader("Densidade de Ansiedade por Categoria de Sono")
+        
+        # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (interativo, não invertido) ---
+        st.subheader("Distribuição de Ansiedade por Categoria de Sono (interativo)")
+        
         sim_data = df_clusters.copy()
-
+        
         if "Anxiety Level (1-10)" in sim_data.columns and "Sleep Hours" in sim_data.columns:
             sim_data.rename(columns={"Anxiety Level (1-10)": "Ansiedade"}, inplace=True)
-
+        
+            # Classificar categorias de sono
             sim_data['Sleep Category'] = pd.cut(
                 sim_data['Sleep Hours'],
                 bins=[0, 5.5, 7.5, 10],
                 labels=['Pouco Sono', 'Sono Ideal', 'Muito Sono']
             )
-
+        
             sim_data_clean = sim_data.dropna(subset=['Sleep Category', 'Ansiedade'])
-
+        
             if not sim_data_clean.empty:
-                fig_sono, ax_sono = plt.subplots(figsize=(8, 5))
-                for cat in sim_data_clean['Sleep Category'].unique():
-                    subset = sim_data_clean[sim_data_clean['Sleep Category'] == cat]
-                    sns.kdeplot(
-                        y=subset['Ansiedade'],
-                        label=str(cat),
-                        fill=True,
-                        alpha=0.4,
-                        ax=ax_sono
+                import plotly.graph_objects as go
+                import numpy as np
+        
+                # Preparar densidades por categoria
+                categorias = sim_data_clean['Sleep Category'].unique()
+                dados_kde = {}
+        
+                for cat in categorias:
+                    anx_vals = sim_data_clean[sim_data_clean['Sleep Category'] == cat]['Ansiedade'].dropna().tolist()
+                    if len(anx_vals) < 10:
+                        continue
+                    hist, bin_edges = np.histogram(anx_vals, bins=30, density=True)
+                    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+                    dados_kde[str(cat)] = (bin_centers, hist)
+        
+                fig_sono = go.Figure()
+        
+                if dados_kde:
+                    # Exibir primeira curva por padrão
+                    nome_inicial = list(dados_kde.keys())[0]
+                    x, y = dados_kde[nome_inicial]
+                    fig_sono.add_trace(go.Scatter(x=x, y=y, fill='tozeroy', mode='lines', name=nome_inicial))
+        
+                    # Botões para dropdown
+                    buttons = []
+                    for nome, (x_vals, y_vals) in dados_kde.items():
+                        buttons.append(
+                            dict(
+                                label=nome,
+                                method="update",
+                                args=[
+                                    {"x": [x_vals], "y": [y_vals]},
+                                    {"layout": {"title": f"Densidade de Ansiedade - {nome}"}}
+                                ]
+                            )
+                        )
+        
+                    fig_sono.update_layout(
+                        updatemenus=[dict(
+                            buttons=buttons,
+                            direction="down",
+                            x=0.5,
+                            xanchor="center",
+                            y=1.15,
+                            yanchor="top"
+                        )],
+                        title=f"Densidade de Ansiedade - {nome_inicial}",
+                        xaxis_title="Nível de Ansiedade (1-10)",
+                        yaxis_title="Densidade Estimada",
+                        showlegend=False
                     )
-
-                ax_sono.set_title("Densidade de Ansiedade por Categoria de Sono (eixos invertidos)")
-                ax_sono.set_xlabel("Densidade")
-                ax_sono.set_ylabel("Ansiedade")
-                ax_sono.legend(title="Sono")
-                st.pyplot(fig_sono)
+        
+                else:
+                    fig_sono.add_trace(go.Scatter(x=[], y=[]))
+                    fig_sono.update_layout(
+                        title="Nenhum dado disponível para as categorias de sono",
+                        xaxis_title="Nível de Ansiedade",
+                        yaxis_title="Densidade"
+                    )
+        
+                st.plotly_chart(fig_sono, use_container_width=True)
+        
             else:
                 st.info("Dados insuficientes para o gráfico de sono.")
         else:
             st.warning("Colunas necessárias ausentes para gerar o gráfico de sono.")
+        
 
 
          # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
