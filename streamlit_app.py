@@ -1,18 +1,14 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
 import statsmodels.api as sm
 import scipy.stats as stats
-
-import plotly.graph_objects as go
 from scipy.stats import gaussian_kde
-import seaborn as sns
-import matplotlib.pyplot as plt
 from pyspark.sql.functions import coalesce, when, col, avg
 
 # Page config
@@ -28,24 +24,21 @@ def load_data_from_mongo():
         uri = "mongodb+srv://teste:T08m10b033@projeto-bigdata.ydeu01v.mongodb.net/?retryWrites=true&w=majority"
         client = MongoClient(uri)
         db = client['Projeto_BD']
-        
-        # Load data from collections
+
         anxiety_data = list(db['anxiety'].find())
         mental_data = list(db['mental_health'].find())
         df_inner_data = list(db['df_inner'].find())
-        cluster_data = list(db['modelação/clusters'].find())  # <- NEW COLLECTION
-        
-        # Convert to DataFrames
+        cluster_data = list(db['modelação/clusters'].find())
+
         df_anxiety = pd.DataFrame(anxiety_data)
         df_mental = pd.DataFrame(mental_data)
         df_inner = pd.DataFrame(df_inner_data)
-        df_clusters = pd.DataFrame(cluster_data)  # <- NEW DF
-        
-        # Remove MongoDB _id column if exists
+        df_clusters = pd.DataFrame(cluster_data)
+
         for df in [df_anxiety, df_mental, df_inner, df_clusters]:
             if '_id' in df.columns:
                 df.drop('_id', axis=1, inplace=True)
-        
+
         return df_anxiety, df_mental, df_inner, df_clusters
     except Exception as e:
         st.error(f"Error loading data: {e}")
@@ -54,12 +47,9 @@ def load_data_from_mongo():
 # Load data
 df_anxiety, df_mental, df_inner, df_clusters = load_data_from_mongo()
 
-# Sidebar for navigation
+# Sidebar navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.selectbox(
-    "Choose a page", 
-    ["Data Overview", "Visualizations", "Analysis",  "Regression Model"]
-)
+page = st.sidebar.selectbox("Choose a page", ["Data Overview", "Visualizations", "Analysis", "Regression Model"])
 
 
 # Page 1: Data Overview
