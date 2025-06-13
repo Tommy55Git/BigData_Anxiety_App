@@ -395,13 +395,19 @@ elif page == "Visualizations":
             st.subheader(" Estilo de Vida")
 
             # Converter Spark DataFrame para Pandas
-            df_exercise = df_clusters.withColumn(
-            "Exercise Level",
-            when(col("Exercise Level_Low") == 1, "Low")
-            .when(col("Exercise Level_Moderate") == 1, "Moderate")
-            .when(col("Exercise Level_High") == 1, "High")
-            .otherwise("Unknown")
-        )
+            def get_exercise_level(row):
+                if row.get("Exercise Level_Low", 0) == 1:
+                    return "Low"
+                elif row.get("Exercise Level_Moderate", 0) == 1:
+                    return "Moderate"
+                elif row.get("Exercise Level_High", 0) == 1:
+                    return "High"
+                else:
+                    return "Unknown"
+            
+            df_exercise = df_clusters.copy()
+            df_exercise["Exercise Level"] = df_exercise.apply(get_exercise_level, axis=1)
+
 
         exercise_levels = ["Low", "Moderate", "High"]
         ansiedade_por_nivel = {}
