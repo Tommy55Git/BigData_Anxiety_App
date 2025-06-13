@@ -619,9 +619,8 @@ elif page == "Visualizations":
         st.plotly_chart(fig_ratio, use_container_width=True)
 
 
-         # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
+        # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
         
-        # Lista de colunas desejadas
         cols_desejadas = [
             "Anxiety Level (1-10)",
             "Recent Event",
@@ -630,46 +629,60 @@ elif page == "Visualizations":
             "Social Interaction Level (1-10)"
         ]
         
-        # Filtrar apenas as colunas existentes
+        # Verificar colunas existentes
         cols_existentes = [col for col in cols_desejadas if col in df_clusters.columns]
         df_interativo = df_clusters[cols_existentes].copy()
         
-        # Função para calcular a média de ansiedade por coluna
         def avg_anxiety_by_col(df, col_name, val_map=None):
             if col_name not in df.columns:
                 return [], []
             grouped = df.groupby(col_name)["Anxiety Level (1-10)"].mean().reset_index()
+            grouped = grouped.dropna()
             x_vals, y_vals = [], []
             for _, row in grouped.iterrows():
                 key = row[col_name]
                 if val_map:
                     key = val_map.get(key, key)
-                x_vals.append(key)
-                y_vals.append(row["Anxiety Level (1-10)"])
+                x_vals.append(str(key))  # garantir que x seja string
+                y_vals.append(round(row["Anxiety Level (1-10)"], 2))  # arredondar para melhor visual
             return x_vals, y_vals
         
         event_map = {0: "Nenhum", 1: "Sim"}
         therapy_map = {0: "Não", 1: "Sim"}
         
-        # Construir dados interativos apenas com colunas presentes
         dados_interativo = {}
         if "Recent Event" in df_interativo.columns:
-            dados_interativo["Evento Recente"] = avg_anxiety_by_col(df_interativo, "Recent Event", event_map)
+            xv, yv = avg_anxiety_by_col(df_interativo, "Recent Event", event_map)
+            if xv and yv:
+                dados_interativo["Evento Recente"] = (xv, yv)
+        
         if "Screen Time (hrs/day)" in df_interativo.columns:
-            dados_interativo["Tempo de Tela"] = avg_anxiety_by_col(df_interativo, "Screen Time (hrs/day)")
+            xv, yv = avg_anxiety_by_col(df_interativo, "Screen Time (hrs/day)")
+            if xv and yv:
+                dados_interativo["Tempo de Tela"] = (xv, yv)
+        
         if "Therapy_Yes" in df_interativo.columns:
-            dados_interativo["Terapia"] = avg_anxiety_by_col(df_interativo, "Therapy_Yes", therapy_map)
+            xv, yv = avg_anxiety_by_col(df_interativo, "Therapy_Yes", therapy_map)
+            if xv and yv:
+                dados_interativo["Terapia"] = (xv, yv)
+        
         if "Social Interaction Level (1-10)" in df_interativo.columns:
-            dados_interativo["Interação Social"] = avg_anxiety_by_col(df_interativo, "Social Interaction Level (1-10)")
+            xv, yv = avg_anxiety_by_col(df_interativo, "Social Interaction Level (1-10)")
+            if xv and yv:
+                dados_interativo["Interação Social"] = (xv, yv)
         
         fig_interativo = go.Figure()
         
-        # Adicionar primeiro gráfico disponível
-        for nome, (xv, yv) in dados_interativo.items():
+        # Adiciona o primeiro gráfico válido (se houver)
+        if dados_interativo:
+            nome_inicial = list(dados_interativo.keys())[0]
+            xv, yv = dados_interativo[nome_inicial]
             fig_interativo.add_trace(go.Bar(x=xv, y=yv))
-            break  # só adiciona o primeiro por padrão
+        else:
+            st.warning("Nenhum dado disponível para exibir o gráfico interativo.")
+            st.stop()
         
-        # Criar dropdown
+        # Criar botões para dropdown
         buttons = []
         for nome, (xv, yv) in dados_interativo.items():
             buttons.append(
@@ -690,10 +703,11 @@ elif page == "Visualizations":
                 yanchor="top"
             )],
             yaxis_title="Ansiedade Média",
-            title="Nível Médio de Ansiedade (Interativo)"
+            title=f"Nível Médio de Ansiedade por {nome_inicial}"
         )
         
         st.plotly_chart(fig_interativo, use_container_width=True)
+
 
         
         
