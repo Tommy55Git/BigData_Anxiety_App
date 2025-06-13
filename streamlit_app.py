@@ -401,7 +401,7 @@ elif page == "Visualizations":
             pdf['Exercise Level'] = pdf[['Exercise Level_Low', 'Exercise Level_Moderate', 'Exercise Level_High']].idxmax(axis=1)
             pdf['Exercise Level'] = pdf['Exercise Level'].str.replace('Exercise Level_', '')
 
-            plt.figure(figsize=(6, 3))
+            plt.figure(figsize=(4, 2))
             sns.kdeplot(data=pdf, x='Anxiety Level (1-10)', hue='Exercise Level', fill=True, common_norm=False, alpha=0.5)
             plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
             plt.xlabel('Nível de Ansiedade (1-10)')
@@ -412,7 +412,7 @@ elif page == "Visualizations":
 
             # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta (Plotly) ---
             diet_columns = [c for c in df_inner.columns if c.startswith("Diet Type_")]
-            df = df_inner
+            df = df_clusters
             # Criar coluna Diet Type
             from pyspark.sql.functions import coalesce
             # Inicializa coluna com Null
