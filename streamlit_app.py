@@ -440,8 +440,7 @@ elif page == "Visualizations":
 
 
 
-        import plotly.express as px
-        import plotly.graph_objects as go
+         import plotly.graph_objects as go
         
         # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta ---
         
@@ -463,30 +462,34 @@ elif page == "Visualizations":
         df_grouped = df_diet.groupby("Tipo de Dieta")["Anxiety Level (1-10)"].mean().reset_index()
         df_grouped = df_grouped.sort_values("Anxiety Level (1-10)", ascending=False)
         
-        # Criar gráfico com estilo moderno
+        # Criar gráfico com visual moderno e interativo
         fig_diet = go.Figure()
         
         fig_diet.add_trace(go.Scatter(
             x=df_grouped["Tipo de Dieta"],
             y=df_grouped["Anxiety Level (1-10)"],
             mode='lines+markers+text',
-            line=dict(color='mediumturquoise', width=3),
-            marker=dict(size=10, symbol="circle", color='indianred'),
+            line=dict(color='royalblue', width=3),
+            marker=dict(size=12, symbol="circle", color='crimson'),
             text=[f'{v:.2f}' for v in df_grouped["Anxiety Level (1-10)"]],
             textposition='top center',
             name='Ansiedade Média'
         ))
         
-        # Layout com melhorias visuais
+        # Layout com design aprimorado
         fig_diet.update_layout(
-            title="📊 Média do Nível de Ansiedade por Tipo de Dieta",
-            title_font_size=20,
+            title=dict(
+                text="Média do Nível de Ansiedade por Tipo de Dieta",
+                x=0.5,
+                font=dict(size=18, color='white', family='Arial')
+            ),
             xaxis_title="Tipo de Dieta",
             yaxis_title="Ansiedade Média",
             xaxis=dict(tickangle=45),
+            template="plotly_white",
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
+            font=dict(color='white', family='Arial'),
             hovermode="x unified",
             margin=dict(l=40, r=40, t=60, b=100)
         )
