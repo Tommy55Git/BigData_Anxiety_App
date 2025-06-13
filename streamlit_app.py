@@ -394,7 +394,7 @@ elif page == "Visualizations":
             st.subheader(" Estilo de Vida")
 
             # Converter Spark DataFrame para Pandas
-            pdf = df_clusters.toPandas()
+            pdf = df_clusters.copy()
 
             # --- Gráfico 1: KDE Nível de Ansiedade por Nível de Exercício (seaborn) ---
             pdf['Exercise Level'] = pdf[['Exercise Level_Low', 'Exercise Level_Moderate', 'Exercise Level_High']].idxmax(axis=1)
