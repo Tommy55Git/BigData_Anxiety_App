@@ -379,75 +379,79 @@ elif page == "Visualizations":
 
         # --- Estilo de Vida ---
     with tab3:
-     st.subheader("Variáveis de Estilo de Vida")
+     st.subheader("Estilo de Vida e Ansiedade")
 
-    # Trabalhar em cópia para segurança
     df = df_inner.copy()
 
-    # Criar grupos para filtros
-    df['Age Group'] = pd.cut(df['Age'], bins=[10, 20, 30, 40, 50, 60, 70, 80], labels=['10–19', '20–29', '30–39', '40–49', '50–59', '60–69', '70+'], right=False)
-    df['Screen Time Group'] = pd.cut(df['Screen Time per Day (Hours)'], bins=[0, 2, 4, 6, 8, 24], labels=['0–2h', '2–4h', '4–6h', '6–8h', '8h+'], right=False)
-    df['Activity Group'] = pd.cut(df['Physical Activity (hrs/week)'], bins=[0, 1, 3, 5, 7, 20], labels=['0–1h', '1–3h', '3–5h', '5–7h', '7h+'], right=False)
-    df['Work Group'] = pd.cut(df['Work Hours per Week'], bins=[0, 10, 20, 30, 40, 50, 60, 80], labels=['0–9h', '10–19h', '20–29h', '30–39h', '40–49h', '50–59h', '60h+'], right=False)
+    # Variáveis categóricas
+    df['Tipo de Dieta'] = df[[col for col in df.columns if col.startswith('Diet Type_')]].idxmax(axis=1).str.replace('Diet Type_', '')
+    df['Nível de Exercício'] = df[[col for col in df.columns if col.startswith('Exercise Level_')]].idxmax(axis=1).str.replace('Exercise Level_', '')
+    df['País'] = df[[col for col in df.columns if col.startswith('Country_')]].idxmax(axis=1).str.replace('Country_', '')
 
-    # Filtro do usuário
-    filter_type = st.selectbox("Filtrar por:", options=["Nenhum", "Faixa Etária", "Tempo de Tela", "Atividade Física", "Horas de Trabalho"])
+    # === FILTROS ===
+    st.markdown("### 🔍 Filtros de Segmentação")
+    col1, col2 = st.columns(2)
+    with col1:
+        paises = st.multiselect("País:", sorted(df['País'].unique()), default=df['País'].unique())
+    with col2:
+        dietas = st.multiselect("Tipo de Dieta:", sorted(df['Tipo de Dieta'].unique()), default=df['Tipo de Dieta'].unique())
 
-    if filter_type == "Faixa Etária":
-        options = sorted(df['Age Group'].dropna().unique())
-        selected = st.selectbox("Escolha a faixa etária:", options=options)
-        filtered_df = df[df['Age Group'] == selected]
-    elif filter_type == "Tempo de Tela":
-        options = sorted(df['Screen Time Group'].dropna().unique())
-        selected = st.selectbox("Escolha o tempo de tela diário:", options=options)
-        filtered_df = df[df['Screen Time Group'] == selected]
-    elif filter_type == "Atividade Física":
-        options = sorted(df['Activity Group'].dropna().unique())
-        selected = st.selectbox("Escolha a atividade física semanal:", options=options)
-        filtered_df = df[df['Activity Group'] == selected]
-    elif filter_type == "Horas de Trabalho":
-        options = sorted(df['Work Group'].dropna().unique())
-        selected = st.selectbox("Escolha a carga horária semanal:", options=options)
-        filtered_df = df[df['Work Group'] == selected]
-    else:
-        filtered_df = df
+    df_filt = df[df['País'].isin(paises) & df['Tipo de Dieta'].isin(dietas)]
 
-    # Gráficos com base no filtro
-    st.write("Distribuição de nível de ansiedade por variáveis de estilo de vida:")
-    for col in [
-        'Sleep Duration (hours/day)', 'Exercise Frequency (days/week)',
-        'Social Media Usage (hours/day)', 'Physical Activity (hrs/week)',
-        'Work Hours per Week', 'Screen Time per Day (Hours)',
-        'Age Group', 'Screen Time Group', 'Activity Group', 'Work Group'
-    ]:
-        if col in filtered_df.columns:
-            fig = px.histogram(
-                filtered_df,
-                x=col,
-                color='Anxiety Level (1-10)',
-                title=f"{col} vs Nível de Ansiedade",
-                barmode='group'
-            )
-            st.plotly_chart(fig, use_container_width=True)
+    # === FUNÇÃO DE INSIGHT RÁPIDO ===
+    def gerar_insight(coluna, nome_exibicao):
+        media_geral = df[coluna].mean()
+        media_filt = df_filt[coluna].mean()
+        diff = media_filt - media_geral
+        sentido = "acima" if diff > 0 else "abaixo"
+        st.markdown(f"- A média de **{nome_exibicao}** no grupo filtrado é **{media_filt:.2f}**, que está **{abs(diff):.2f} pontos {sentido}** da média geral (**{media_geral:.2f}**).")
 
-    # Heatmap fora dos filtros
-    st.markdown("### Consumo de Cafeína e Cigarros vs Ansiedade (Sem Filtros)")
+    st.markdown("### 🧠 Resumo Rápido")
+    gerar_insight("Anxiety Level (1-10)", "Ansiedade")
+    gerar_insight("Sleep Hours", "Horas de Sono")
+    gerar_insight("Screen Time per Day (Hours)", "Tempo de Tela")
+    gerar_insight("Physical Activity (hrs/week)", "Atividade Física")
+    gerar_insight("Work Hours per Week", "Horas de Trabalho")
 
-    if 'Caffeine Intake (mg/day)' in df.columns and 'Smoking_Yes' in df.columns:
-        df['Caffeine_bin'] = pd.cut(df['Caffeine Intake (mg/day)'], bins=30)
-        heatmap_data = df.groupby(['Caffeine_bin', 'Smoking_Yes'])['Anxiety Level (1-10)'].mean().reset_index()
-        heatmap_data['Caffeine_mid'] = heatmap_data['Caffeine_bin'].apply(lambda x: x.mid)
-        heatmap_data['Smoking_Status'] = heatmap_data['Smoking_Yes'].map({0: 'Não Fuma', 1: 'Fuma'})
-
-        fig_heat = px.density_heatmap(
-            heatmap_data,
-            x='Caffeine_mid',
-            y='Smoking_Status',
-            z='Anxiety Level (1-10)',
-            color_continuous_scale='Reds',
-            title='Consumo de Cafeína e Cigarros x Ansiedade'
+    # === GRÁFICOS COM TENDÊNCIA ===
+    def grafico_scatter(x, y, titulo, rotulo_x):
+        fig = px.scatter(
+            df_filt,
+            x=x,
+            y=y,
+            color="Nível de Exercício",
+            trendline="ols",
+            title=titulo,
+            labels={x: rotulo_x, y: "Nível de Ansiedade"}
         )
-        st.plotly_chart(fig_heat, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("### 📊 Análises Visuais")
+
+    grafico_scatter("Physical Activity (hrs/week)", "Anxiety Level (1-10)", "Atividade Física vs Ansiedade", "Atividade Física (h/semana)")
+    grafico_scatter("Sleep Hours", "Anxiety Level (1-10)", "Horas de Sono vs Ansiedade", "Horas de Sono")
+    grafico_scatter("Screen Time per Day (Hours)", "Anxiety Level (1-10)", "Tempo de Tela vs Ansiedade", "Horas de Tela por Dia")
+    grafico_scatter("Work Hours per Week", "Anxiety Level (1-10)", "Horas de Trabalho vs Ansiedade", "Horas de Trabalho por Semana")
+    grafico_scatter("Social Interaction Score", "Anxiety Level (1-10)", "Interações Sociais vs Ansiedade", "Score de Interação Social")
+    grafico_scatter("Therapy Sessions (per month)", "Anxiety Level (1-10)", "Sessões de Terapia vs Ansiedade", "Sessões de Terapia (mês)")
+
+    # === HEATMAP DE CAFEÍNA E CIGARRO ===
+    st.markdown("### ☕ Cafeína e Tabagismo vs Ansiedade")
+    df['Caffeine_bin'] = pd.cut(df['Caffeine Intake (mg/day)'], bins=30)
+    heatmap_data = df.groupby(['Caffeine_bin', 'Smoking_Yes'])['Anxiety Level (1-10)'].mean().reset_index()
+    heatmap_data['Caffeine_mid'] = heatmap_data['Caffeine_bin'].apply(lambda x: x.mid)
+    heatmap_data['Smoking_Status'] = heatmap_data['Smoking_Yes'].map({0: 'Não Fuma', 1: 'Fuma'})
+
+    fig_heat = px.density_heatmap(
+        heatmap_data,
+        x='Caffeine_mid',
+        y='Smoking_Status',
+        z='Anxiety Level (1-10)',
+        color_continuous_scale='Reds',
+        title='Cafeína e Tabagismo x Nível de Ansiedade',
+        labels={"Caffeine_mid": "Cafeína (mg/dia)", "Smoking_Status": "Tabagismo"}
+    )
+    st.plotly_chart(fig_heat, use_container_width=True)
 
 
 
