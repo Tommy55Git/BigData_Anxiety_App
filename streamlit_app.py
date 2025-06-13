@@ -8,6 +8,18 @@ import plotly.graph_objects as go
 import numpy as np
 import statsmodels.api as sm
 import scipy.stats as stats
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
+from scipy.cluster.hierarchy import linkage
+import plotly.graph_objects as go
+import plotly.figure_factory as ff
+import plotly.express as px
 # Page config
 st.set_page_config(page_title="Mental Health Data Analysis", layout="wide")
 
@@ -486,30 +498,159 @@ elif page == "Analysis":
     
     else:
         st.warning("No data available for analysis")
+        
+        
+        
+        
 
-# Page 4: Cluster Analysis
 elif page == "Cluster Analysis":
-    st.header("Cluster Analysis")
-    
-    if not df_clusters.empty:
-        st.write("### Clustered Dataset")
+    st.header("🔍 Cluster Analysis")
+
+    if df_clusters.empty:
+        st.warning("Dados de cluster não encontrados.")
+    else:
+        st.write("### 📋 Visualização do DataFrame Clusterizado")
         st.dataframe(df_clusters.head())
 
-        if {'PCA1', 'PCA2', 'Cluster'}.issubset(df_clusters.columns):
-            fig = px.scatter(
-                df_clusters, x='PCA1', y='PCA2', color='Cluster',
-                title="Clusters (2D PCA)", labels={'Cluster': 'Grupo'}
+        # Tabs de Análise
+        tabs = st.tabs([
+            "📌 PCA + Variância", 
+            "🔵 PCA + KMeans", 
+            "🌿 Cluster Hierárquico", 
+            "🔎 DBSCAN", 
+            "📉 Avaliações"
+        ])
+
+        # As features para análise - ajusta conforme colunas presentes em df_clusters
+        features = [
+            'Therapy Sessions (per month)', 'Caffeine Intake (mg/day)',
+            'Stress Level (1-10)', 'Heart Rate (bpm)',
+            'Physical Activity (hrs/week)', 'Sleep_Stress_Ratio',
+            'Work_Exercise_Ratio', 'Anxiety Level (1-10)'
+        ]
+
+        # Filtra colunas existentes em df_clusters
+        features = [f for f in features if f in df_clusters.columns]
+
+        X = df_clusters[features].copy()
+
+        # Escalando
+        X_scaled = StandardScaler().fit_transform(X)
+
+        # -------------------- PCA Variância --------------------
+        with tabs[0]:
+            st.subheader("📌 PCA - Variância Explicada")
+
+            pca = PCA()
+            pca.fit(X_scaled)
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                y=np.cumsum(pca.explained_variance_ratio_),
+                mode='lines+markers',
+                name='Variância Explicada'
+            ))
+            fig.add_hline(y=0.90, line_dash="dash", line_color="red", annotation_text="90% da variância")
+            fig.update_layout(
+                title='Variância Explicada Acumulada pela PCA',
+                xaxis_title='Componentes Principais',
+                yaxis_title='Variância Explicada Acumulada',
+                template='simple_white'
             )
             st.plotly_chart(fig)
 
-        if 'Anxiety Level (1-10)' in df_clusters.columns and 'Cluster' in df_clusters.columns:
-            fig2 = px.box(
-                df_clusters, x='Cluster', y='Anxiety Level (1-10)',
-                title="Distribuição de Níveis de Ansiedade por Cluster"
+        # -------------------- KMeans + PCA --------------------
+        with tabs[1]:
+            st.subheader("🔵 PCA + Clusters KMeans")
+
+            n_clusters = 3
+            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+            clusters = kmeans.fit_predict(X_scaled)
+
+            df_clustered = df_clusters.copy()
+            df_clustered['Cluster_ID'] = clusters + 1
+
+            pca_2d = PCA(n_components=2)
+            pcs = pca_2d.fit_transform(X_scaled)
+            pca_df = pd.DataFrame(pcs, columns=['PC1', 'PC2'])
+            pca_df['Cluster_ID'] = df_clustered['Cluster_ID']
+
+            fig = px.scatter(
+                pca_df, x='PC1', y='PC2', color=pca_df['Cluster_ID'].astype(str),
+                title='Clusters KMeans nos 2 Primeiros Componentes (PCA)',
+                labels={'color': 'Cluster'}
             )
-            st.plotly_chart(fig2)
-    else:
-        st.warning("Cluster data not found.")
+            st.plotly_chart(fig)
+
+        # -------------------- Cluster Hierárquico --------------------
+        with tabs[2]:
+            st.subheader("🌿 Cluster Hierárquico com Dendrograma")
+
+            linked = linkage(X_scaled, method='ward')
+            fig = ff.create_dendrogram(X_scaled, orientation='top', labels=[str(i) for i in df_clusters.index])
+            fig.update_layout(width=1000, height=500, title='Dendrograma Hierárquico')
+            st.plotly_chart(fig)
+
+        # -------------------- DBSCAN --------------------
+        with tabs[3]:
+            st.subheader("🔎 Clusters com DBSCAN")
+
+            dbscan = DBSCAN(eps=2, min_samples=5)
+            clusters_db = dbscan.fit_predict(X_scaled)
+
+            df_db = df_clusters.copy()
+            df_db['Cluster_ID'] = clusters_db
+
+            pcs_db = PCA(n_components=2).fit_transform(X_scaled)
+            db_df = pd.DataFrame(pcs_db, columns=['PC1', 'PC2'])
+            db_df['Cluster_ID'] = clusters_db
+
+            fig = px.scatter(
+                db_df, x='PC1', y='PC2', color=db_df['Cluster_ID'].astype(str),
+                title='Clusters DBSCAN nos 2 PCs (Pontos com ruído = -1)',
+                labels={'color': 'Cluster'}
+            )
+            st.plotly_chart(fig)
+
+        # -------------------- Avaliação --------------------
+        with tabs[4]:
+            st.subheader("📉 Métricas de Avaliação dos Clusters")
+
+            # Avaliação KMeans
+            sil_k = silhouette_score(X_scaled, clusters)
+            ch_k = calinski_harabasz_score(X_scaled, clusters)
+            db_k = davies_bouldin_score(X_scaled, clusters)
+
+            st.markdown("**🔵 KMeans**")
+            st.markdown(f"- Silhouette Score: `{sil_k:.4f}`")
+            st.markdown(f"- Calinski-Harabasz Index: `{ch_k:.4f}`")
+            st.markdown(f"- Davies-Bouldin Index: `{db_k:.4f}`")
+
+            # Avaliação DBSCAN (removendo ruído)
+            clusters_db = np.array(clusters_db)
+            mask = clusters_db != -1
+            clusters_masked = clusters_db[mask]
+            X_masked = X_scaled[mask]
+
+            if len(set(clusters_masked)) > 1:
+                sil_d = silhouette_score(X_masked, clusters_masked)
+                ch_d = calinski_harabasz_score(X_masked, clusters_masked)
+                db_d = davies_bouldin_score(X_masked, clusters_masked)
+
+                st.markdown("**🔎 DBSCAN (sem ruído)**")
+                st.markdown(f"- Silhouette Score: `{sil_d:.4f}`")
+                st.markdown(f"- Calinski-Harabasz Index: `{ch_d:.4f}`")
+                st.markdown(f"- Davies-Bouldin Index: `{db_d:.4f}`")
+            else:
+                st.warning("DBSCAN não formou clusters válidos para avaliação.")
+
+
+
+        
+        
+        
+        
+        
 
 # Nova página de Modelos de Regressão
 elif page == "Regression Model":
