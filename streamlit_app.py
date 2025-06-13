@@ -735,43 +735,43 @@ elif page == "Visualizations":
         
         st.plotly_chart(fig_interativo, use_container_width=True)
 
-            # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (eixos invertidos) ---
-            st.subheader("Densidade de Ansiedade por Categoria de Sono")
-            sim_data = df_clusters.copy()
-    
-            if "Anxiety Level (1-10)" in sim_data.columns and "Sleep Hours" in sim_data.columns:
-                sim_data.rename(columns={"Anxiety Level (1-10)": "Ansiedade"}, inplace=True)
-    
-                sim_data['Sleep Category'] = pd.cut(
-                    sim_data['Sleep Hours'],
-                    bins=[0, 5.5, 7.5, 10],
-                    labels=['Pouco Sono', 'Sono Ideal', 'Muito Sono']
-                )
-    
-                sim_data_clean = sim_data.dropna(subset=['Sleep Category', 'Ansiedade'])
-    
-                if not sim_data_clean.empty:
-                    fig_sono, ax_sono = plt.subplots(figsize=(8, 5))
-                    for cat in sim_data_clean['Sleep Category'].unique():
-                        subset = sim_data_clean[sim_data_clean['Sleep Category'] == cat]
-                        sns.kdeplot(
-                            y=subset['Ansiedade'],
-                            label=str(cat),
-                            fill=True,
-                            alpha=0.4,
-                            ax=ax_sono
-                        )
-    
-                    ax_sono.set_title("Densidade de Ansiedade por Categoria de Sono (eixos invertidos)")
-                    ax_sono.set_xlabel("Densidade")
-                    ax_sono.set_ylabel("Ansiedade")
-                    ax_sono.legend(title="Sono")
-                    st.pyplot(fig_sono)
-                else:
-                    st.info("Dados insuficientes para o gráfico de sono.")
+        # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (eixos invertidos) ---
+        st.subheader("Densidade de Ansiedade por Categoria de Sono")
+        sim_data = df_clusters.copy()
+
+        if "Anxiety Level (1-10)" in sim_data.columns and "Sleep Hours" in sim_data.columns:
+            sim_data.rename(columns={"Anxiety Level (1-10)": "Ansiedade"}, inplace=True)
+
+            sim_data['Sleep Category'] = pd.cut(
+                sim_data['Sleep Hours'],
+                bins=[0, 5.5, 7.5, 10],
+                labels=['Pouco Sono', 'Sono Ideal', 'Muito Sono']
+            )
+
+            sim_data_clean = sim_data.dropna(subset=['Sleep Category', 'Ansiedade'])
+
+            if not sim_data_clean.empty:
+                fig_sono, ax_sono = plt.subplots(figsize=(8, 5))
+                for cat in sim_data_clean['Sleep Category'].unique():
+                    subset = sim_data_clean[sim_data_clean['Sleep Category'] == cat]
+                    sns.kdeplot(
+                        y=subset['Ansiedade'],
+                        label=str(cat),
+                        fill=True,
+                        alpha=0.4,
+                        ax=ax_sono
+                    )
+
+                ax_sono.set_title("Densidade de Ansiedade por Categoria de Sono (eixos invertidos)")
+                ax_sono.set_xlabel("Densidade")
+                ax_sono.set_ylabel("Ansiedade")
+                ax_sono.legend(title="Sono")
+                st.pyplot(fig_sono)
             else:
-                st.warning("Colunas necessárias ausentes para gerar o gráfico de sono.")
-    
+                st.info("Dados insuficientes para o gráfico de sono.")
+        else:
+            st.warning("Colunas necessárias ausentes para gerar o gráfico de sono.")
+
 
 
         
