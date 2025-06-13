@@ -857,10 +857,6 @@ elif page == "Regression Model":
 
 
 
-# Footer
-st.sidebar.markdown("---")
-st.sidebar.info("Mental Health Data Dashboard - Built with Streamlit")
-
 
 
 # Footer
