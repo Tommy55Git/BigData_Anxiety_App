@@ -683,8 +683,7 @@ elif page == "Visualizations":
             st.warning("Colunas necessárias ausentes para gerar o gráfico de sono.")
 
 
-
-        # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
+         # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
         
         cols_desejadas = [
             "Anxiety Level (1-10)",
@@ -716,36 +715,40 @@ elif page == "Visualizations":
         therapy_map = {0: "Não", 1: "Sim"}
         
         dados_interativo = {}
+        
+        # Coletar dados por variável
         if "Recent Event" in df_interativo.columns:
             xv, yv = avg_anxiety_by_col(df_interativo, "Recent Event", event_map)
-            if xv and yv:
+            if len(xv) > 0 and len(yv) > 0:
                 dados_interativo["Evento Recente"] = (xv, yv)
         
         if "Screen Time (hrs/day)" in df_interativo.columns:
             xv, yv = avg_anxiety_by_col(df_interativo, "Screen Time (hrs/day)")
-            if xv and yv:
+            if len(xv) > 0 and len(yv) > 0:
                 dados_interativo["Tempo de Tela"] = (xv, yv)
         
         if "Therapy_Yes" in df_interativo.columns:
             xv, yv = avg_anxiety_by_col(df_interativo, "Therapy_Yes", therapy_map)
-            if xv and yv:
+            if len(xv) > 0 and len(yv) > 0:
                 dados_interativo["Terapia"] = (xv, yv)
         
         if "Social Interaction Level (1-10)" in df_interativo.columns:
             xv, yv = avg_anxiety_by_col(df_interativo, "Social Interaction Level (1-10)")
-            if xv and yv:
+            if len(xv) > 0 and len(yv) > 0:
                 dados_interativo["Interação Social"] = (xv, yv)
         
         fig_interativo = go.Figure()
         
-        # Adiciona o primeiro gráfico válido (se houver)
         if dados_interativo:
+            # Adiciona o primeiro gráfico com dados
             nome_inicial = list(dados_interativo.keys())[0]
             xv, yv = dados_interativo[nome_inicial]
             fig_interativo.add_trace(go.Bar(x=xv, y=yv))
+            title_inicial = f"Nível Médio de Ansiedade por {nome_inicial}"
         else:
-            st.warning("Nenhum dado disponível para exibir o gráfico interativo.")
-            st.stop()
+            # Criar gráfico vazio com aviso visual
+            fig_interativo.add_trace(go.Bar(x=[], y=[]))
+            title_inicial = "Nenhum dado disponível para variáveis selecionadas"
         
         # Criar botões para dropdown
         buttons = []
@@ -754,10 +757,14 @@ elif page == "Visualizations":
                 dict(
                     label=nome,
                     method="update",
-                    args=[{"x": [xv], "y": [yv]}, {"title": f"Nível Médio de Ansiedade por {nome}"}]
+                    args=[
+                        {"x": [xv], "y": [yv]},
+                        {"layout": {"title": f"Nível Médio de Ansiedade por {nome}"}}
+                    ]
                 )
             )
         
+        # Layout do gráfico
         fig_interativo.update_layout(
             updatemenus=[dict(
                 buttons=buttons,
@@ -766,12 +773,13 @@ elif page == "Visualizations":
                 xanchor="center",
                 y=1.1,
                 yanchor="top"
-            )],
+            )] if buttons else [],
             yaxis_title="Ansiedade Média",
-            title=f"Nível Médio de Ansiedade por {nome_inicial}"
+            title=title_inicial
         )
         
         st.plotly_chart(fig_interativo, use_container_width=True)
+
 
 
 
