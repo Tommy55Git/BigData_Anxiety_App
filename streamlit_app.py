@@ -390,48 +390,48 @@ elif page == "Visualizations":
         
         
         
+                
+        with tab3:
+            st.subheader("Estilo de Vida")
         
-with tab3:
-    st.subheader("Estilo de Vida")
-
-    # Criar coluna com nível de exercício (versão pandas)
-    def get_exercise_level(row):
-        if row.get("Exercise Level_Low", 0) == 1:
-            return "Low"
-        elif row.get("Exercise Level_Moderate", 0) == 1:
-            return "Moderate"
-        elif row.get("Exercise Level_High", 0) == 1:
-            return "High"
-        else:
-            return "Unknown"
-
-    df_exercise = df_clusters.copy()
-    df_exercise["Exercise Level"] = df_exercise.apply(get_exercise_level, axis=1)
-
-    # Criar dicionário com listas de ansiedade por nível de exercício
-    exercise_levels = ["Low", "Moderate", "High"]
-    ansiedade_por_nivel = {}
-
-    for nivel in exercise_levels:
-        valores = df_exercise[df_exercise["Exercise Level"] == nivel]["Anxiety Level (1-10)"].dropna().tolist()
-        ansiedade_por_nivel[nivel] = valores
-
-    # Gerar gráfico
-    plt.figure(figsize=(6, 4))
-    for nivel, valores in ansiedade_por_nivel.items():
-        if len(valores) < 10:
-            continue
-        hist, bin_edges = np.histogram(valores, bins=30, density=True)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-        plt.plot(bin_centers, hist, label=nivel, alpha=0.7)
-
-    plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
-    plt.xlabel('Nível de Ansiedade (1-10)')
-    plt.ylabel('Densidade Aproximada')
-    plt.legend()
-    plt.grid(True)
-    st.pyplot(plt.gcf())
-    plt.clf()
+            # Criar coluna com nível de exercício (versão pandas)
+            def get_exercise_level(row):
+                if row.get("Exercise Level_Low", 0) == 1:
+                    return "Low"
+                elif row.get("Exercise Level_Moderate", 0) == 1:
+                    return "Moderate"
+                elif row.get("Exercise Level_High", 0) == 1:
+                    return "High"
+                else:
+                    return "Unknown"
+        
+            df_exercise = df_clusters.copy()
+            df_exercise["Exercise Level"] = df_exercise.apply(get_exercise_level, axis=1)
+        
+            # Criar dicionário com listas de ansiedade por nível de exercício
+            exercise_levels = ["Low", "Moderate", "High"]
+            ansiedade_por_nivel = {}
+        
+            for nivel in exercise_levels:
+                valores = df_exercise[df_exercise["Exercise Level"] == nivel]["Anxiety Level (1-10)"].dropna().tolist()
+                ansiedade_por_nivel[nivel] = valores
+        
+            # Gerar gráfico
+            plt.figure(figsize=(6, 4))
+            for nivel, valores in ansiedade_por_nivel.items():
+                if len(valores) < 10:
+                    continue
+                hist, bin_edges = np.histogram(valores, bins=30, density=True)
+                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+                plt.plot(bin_centers, hist, label=nivel, alpha=0.7)
+        
+            plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
+            plt.xlabel('Nível de Ansiedade (1-10)')
+            plt.ylabel('Densidade Aproximada')
+            plt.legend()
+            plt.grid(True)
+            st.pyplot(plt.gcf())
+            plt.clf()
 
 
 
