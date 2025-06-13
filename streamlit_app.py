@@ -13,7 +13,8 @@ import plotly.graph_objects as go
 from scipy.stats import gaussian_kde
 import seaborn as sns
 import matplotlib.pyplot as plt
-from pyspark.sql.functions import when, col, avg
+from pyspark.sql.functions import coalesce, when, col, avg
+
 # Page config
 st.set_page_config(page_title="Mental Health Data Analysis", layout="wide")
 
@@ -400,7 +401,7 @@ elif page == "Visualizations":
             pdf['Exercise Level'] = pdf[['Exercise Level_Low', 'Exercise Level_Moderate', 'Exercise Level_High']].idxmax(axis=1)
             pdf['Exercise Level'] = pdf['Exercise Level'].str.replace('Exercise Level_', '')
 
-            plt.figure(figsize=(8, 4))
+            plt.figure(figsize=(6, 3))
             sns.kdeplot(data=pdf, x='Anxiety Level (1-10)', hue='Exercise Level', fill=True, common_norm=False, alpha=0.5)
             plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
             plt.xlabel('Nível de Ansiedade (1-10)')
