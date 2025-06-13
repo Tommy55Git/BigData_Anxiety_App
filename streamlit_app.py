@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 from pymongo import MongoClient
 import plotly.express as px
 import plotly.graph_objects as go
-
+import numpy as np
+import statsmodels.api as sm
+import scipy.stats as stats
 # Page config
 st.set_page_config(page_title="Mental Health Data Analysis", layout="wide")
 
@@ -398,13 +400,21 @@ elif page == "Visualizations":
 
     df_filt = df[df['País'].isin(paises) & df['Tipo de Dieta'].isin(dietas)]
 
-    # === FUNÇÃO DE INSIGHT RÁPIDO ===
+    # === FUNÇÃO DE INSIGHT RÁPIDO COM IC 95% ===
+    import scipy.stats as stats
+
     def gerar_insight(coluna, nome_exibicao):
         media_geral = df[coluna].mean()
         media_filt = df_filt[coluna].mean()
+        n = df_filt[coluna].count()
+        std_err = df_filt[coluna].std() / np.sqrt(n) if n > 0 else 0
+        ic95 = stats.t.interval(0.95, n-1, loc=media_filt, scale=std_err) if n > 1 else (np.nan, np.nan)
         diff = media_filt - media_geral
         sentido = "acima" if diff > 0 else "abaixo"
-        st.markdown(f"- A média de **{nome_exibicao}** no grupo filtrado é **{media_filt:.2f}**, que está **{abs(diff):.2f} pontos {sentido}** da média geral (**{media_geral:.2f}**).")
+        st.markdown(
+            f"- A média de **{nome_exibicao}** no grupo filtrado é **{media_filt:.2f}** "
+            f"(IC 95%: [{ic95[0]:.2f}, {ic95[1]:.2f}]), que está **{abs(diff):.2f} pontos {sentido}** da média geral (**{media_geral:.2f}**)."
+        )
 
     st.markdown("### 🧠 Resumo Rápido")
     gerar_insight("Anxiety Level (1-10)", "Ansiedade")
@@ -413,27 +423,59 @@ elif page == "Visualizations":
     gerar_insight("Physical Activity (hrs/week)", "Atividade Física")
     gerar_insight("Work Hours per Week", "Horas de Trabalho")
 
-    # === GRÁFICOS COM TENDÊNCIA ===
-    def grafico_scatter(x, y, titulo, rotulo_x):
-        fig = px.scatter(
-            df_filt,
-            x=x,
-            y=y,
-            color="Nível de Exercício",
-            trendline="ols",
+    # === FUNÇÃO PARA GRÁFICO DE LINHA COM MÉDIA + LOESS ===
+    def grafico_linha_loess(x_col, titulo, rotulo_x):
+        # Agrupar em bins
+        bins = 30
+        df_filt_filtered = df_filt[[x_col, 'Anxiety Level (1-10)']].dropna()
+        df_filt_filtered['bin'] = pd.cut(df_filt_filtered[x_col], bins=bins)
+
+        # Média por bin
+        media_bin = df_filt_filtered.groupby('bin')['Anxiety Level (1-10)'].mean().reset_index()
+        media_bin[x_col+'_mid'] = media_bin['bin'].apply(lambda x: x.mid)
+
+        # Remover NaN
+        media_bin = media_bin.dropna()
+
+        if len(media_bin) < 5:
+            st.warning(f"Poucos dados para '{titulo}' para exibir o gráfico.")
+            return
+
+        # Aplicar LOESS
+        lowess = sm.nonparametric.lowess
+        suavizado = lowess(media_bin['Anxiety Level (1-10)'], media_bin[x_col+'_mid'], frac=0.3)
+
+        fig = go.Figure()
+        # Pontos médios
+        fig.add_trace(go.Scatter(
+            x=media_bin[x_col+'_mid'],
+            y=media_bin['Anxiety Level (1-10)'],
+            mode='markers',
+            name='Média por Bin'
+        ))
+        # Linha suavizada
+        fig.add_trace(go.Scatter(
+            x=suavizado[:, 0],
+            y=suavizado[:, 1],
+            mode='lines',
+            name='Tendência Suavizada (LOESS)'
+        ))
+        fig.update_layout(
             title=titulo,
-            labels={x: rotulo_x, y: "Nível de Ansiedade"}
+            xaxis_title=rotulo_x,
+            yaxis_title='Nível Médio de Ansiedade',
+            template='plotly_white'
         )
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("### 📊 Análises Visuais")
 
-    grafico_scatter("Physical Activity (hrs/week)", "Anxiety Level (1-10)", "Atividade Física vs Ansiedade", "Atividade Física (h/semana)")
-    grafico_scatter("Sleep Hours", "Anxiety Level (1-10)", "Horas de Sono vs Ansiedade", "Horas de Sono")
-    grafico_scatter("Screen Time per Day (Hours)", "Anxiety Level (1-10)", "Tempo de Tela vs Ansiedade", "Horas de Tela por Dia")
-    grafico_scatter("Work Hours per Week", "Anxiety Level (1-10)", "Horas de Trabalho vs Ansiedade", "Horas de Trabalho por Semana")
-    grafico_scatter("Social Interaction Score", "Anxiety Level (1-10)", "Interações Sociais vs Ansiedade", "Score de Interação Social")
-    grafico_scatter("Therapy Sessions (per month)", "Anxiety Level (1-10)", "Sessões de Terapia vs Ansiedade", "Sessões de Terapia (mês)")
+    grafico_linha_loess("Physical Activity (hrs/week)", "Atividade Física vs Ansiedade", "Atividade Física (h/semana)")
+    grafico_linha_loess("Sleep Hours", "Horas de Sono vs Ansiedade", "Horas de Sono")
+    grafico_linha_loess("Screen Time per Day (Hours)", "Tempo de Tela vs Ansiedade", "Horas de Tela por Dia")
+    grafico_linha_loess("Work Hours per Week", "Horas de Trabalho vs Ansiedade", "Horas de Trabalho por Semana")
+    grafico_linha_loess("Social Interaction Score", "Interações Sociais vs Ansiedade", "Score de Interação Social")
+    grafico_linha_loess("Therapy Sessions (per month)", "Sessões de Terapia vs Ansiedade", "Sessões de Terapia por Mês")
 
     # === HEATMAP DE CAFEÍNA E CIGARRO ===
     st.markdown("### ☕ Cafeína e Tabagismo vs Ansiedade")
