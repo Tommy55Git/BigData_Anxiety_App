@@ -619,37 +619,45 @@ elif page == "Visualizations":
         st.plotly_chart(fig_ratio, use_container_width=True)
 
 
-        # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
-
-        df_interativo = df_clusters.select("Anxiety Level (1-10)", "Recent Event", "Screen Time (hrs/day)",
-                                        "Therapy_Yes", "Social Interaction Level (1-10)")
-
+         # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
+        
+        df_interativo = df_clusters[[
+            "Anxiety Level (1-10)",
+            "Recent Event",
+            "Screen Time (hrs/day)",
+            "Therapy_Yes",
+            "Social Interaction Level (1-10)"
+        ]].copy()
+        
         def avg_anxiety_by_col(df, col_name, val_map=None):
-            grouped = df.groupBy(col_name).agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety")).collect()
+            grouped = df.groupby(col_name)["Anxiety Level (1-10)"].mean().reset_index()
             x_vals, y_vals = [], []
-            for row in grouped:
+            for _, row in grouped.iterrows():
                 key = row[col_name]
                 if val_map:
                     key = val_map.get(key, key)
                 x_vals.append(key)
-                y_vals.append(row["Avg Anxiety"])
+                y_vals.append(row["Anxiety Level (1-10)"])
             return x_vals, y_vals
-
+        
         event_map = {0: "Nenhum", 1: "Sim"}
         therapy_map = {0: "Não", 1: "Sim"}
-
+        
         dados_interativo = {
             "Evento Recente": avg_anxiety_by_col(df_interativo, "Recent Event", event_map),
             "Tempo de Tela": avg_anxiety_by_col(df_interativo, "Screen Time (hrs/day)"),
             "Terapia": avg_anxiety_by_col(df_interativo, "Therapy_Yes", therapy_map),
             "Interação Social": avg_anxiety_by_col(df_interativo, "Social Interaction Level (1-10)")
         }
-
+        
         fig_interativo = go.Figure()
-
+        
         # Inicialmente mostrar "Evento Recente"
-        fig_interativo.add_trace(go.Bar(x=dados_interativo["Evento Recente"][0], y=dados_interativo["Evento Recente"][1]))
-
+        fig_interativo.add_trace(go.Bar(
+            x=dados_interativo["Evento Recente"][0],
+            y=dados_interativo["Evento Recente"][1]
+        ))
+        
         buttons = []
         for nome, (xv, yv) in dados_interativo.items():
             buttons.append(
@@ -659,7 +667,7 @@ elif page == "Visualizations":
                     args=[{"x": [xv], "y": [yv]}, {"title": f"Nível Médio de Ansiedade por {nome}"}]
                 )
             )
-
+        
         fig_interativo.update_layout(
             updatemenus=[dict(
                 buttons=buttons,
@@ -672,9 +680,8 @@ elif page == "Visualizations":
             yaxis_title="Ansiedade Média",
             title="Nível Médio de Ansiedade (Interativo)"
         )
-
+        
         st.plotly_chart(fig_interativo, use_container_width=True)
-                    
         
         
         
