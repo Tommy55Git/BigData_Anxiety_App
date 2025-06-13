@@ -743,27 +743,23 @@ elif page == "Visualizations":
         
         st.plotly_chart(fig_interativo, use_container_width=True)
         
+        
         # --- Gráfico Adicional: Média de Ansiedade por Tipo de Dieta ---
         
-        # Identificar colunas de dieta
         diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
         
-        # Função para extrair tipo de dieta
         def get_diet_type(row):
             for col in diet_columns:
                 if row.get(col, 0) == 1:
                     return col.replace("Diet Type_", "")
             return "Desconhecida"
         
-        # Aplicar mapeamento
         df_diet = df_clusters.copy()
         df_diet["Tipo de Dieta"] = df_diet.apply(get_diet_type, axis=1)
         
-        # Agrupar dados
         df_grouped = df_diet.groupby("Tipo de Dieta")["Anxiety Level (1-10)"].mean().reset_index()
         df_grouped = df_grouped.sort_values("Anxiety Level (1-10)", ascending=False)
         
-        # Criar gráfico com visual moderno e interativo
         fig_diet = go.Figure()
         
         fig_diet.add_trace(go.Scatter(
@@ -777,7 +773,6 @@ elif page == "Visualizations":
             name='Ansiedade Média'
         ))
         
-        # Layout com design aprimorado
         fig_diet.update_layout(
             title=dict(
                 text="Média do Nível de Ansiedade por Tipo de Dieta",
