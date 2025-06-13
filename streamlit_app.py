@@ -437,19 +437,18 @@ elif page == "Visualizations":
 
         # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta ---
 
+        # Criar coluna 'Diet Type' em pandas
         diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
         
-        df_diet = df_clusters
-        df_diet = df_diet.withColumn(
-            "Diet Type",
-            when(col(diet_columns[0]) == 1, diet_columns[0].replace("Diet Type_", ""))
-        )
-        for c in diet_columns[1:]:
-            diet_name = c.replace("Diet Type_", "")
-            df_diet = df_diet.withColumn(
-                "Diet Type",
-                when((col(c) == 1) & (col("Diet Type").isNull()), diet_name).otherwise(col("Diet Type"))
-            )
+        def get_diet_type(row):
+            for col in diet_columns:
+                if row.get(col, 0) == 1:
+                    return col.replace("Diet Type_", "")
+            return "Unknown"
+        
+        df_diet = df_clusters.copy()
+        df_diet["Diet Type"] = df_diet.apply(get_diet_type, axis=1)
+
 
         df_grouped = df_diet.groupBy("Diet Type").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety"))
         dados = df_grouped.collect()
