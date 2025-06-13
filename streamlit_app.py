@@ -391,69 +391,6 @@ elif page == "Visualizations":
 
 
 
-    with tab3:
-     st.subheader("📊 Razões de Estilo de Vida e Nível de Ansiedade")
-
-    df = df_clusters.copy()
-
-    # Calcular as razões
-    df['Work_Exercise_Ratio'] = df['Work Hours per Week'] / (df['Physical Activity (hrs/week)'] + 1e-5)
-    df['Sleep_Stress_Ratio'] = df['Sleep Hours'] / (df['Stress Level (1-10)'] + 1e-5)
-
-    # === GRÁFICO: Razão Sono/Estresse vs Ansiedade ===
-    grouped_sleep = df.groupby('Anxiety Level (1-10)')['Sleep_Stress_Ratio'].mean().reset_index()
-
-    fig_sleep = go.Figure()
-    fig_sleep.add_trace(go.Bar(
-        x=grouped_sleep['Anxiety Level (1-10)'],
-        y=grouped_sleep['Sleep_Stress_Ratio'],
-        name='Razão Sono/Estresse',
-        marker_color='skyblue'
-    ))
-    fig_sleep.add_trace(go.Scatter(
-        x=grouped_sleep['Anxiety Level (1-10)'],
-        y=grouped_sleep['Sleep_Stress_Ratio'],
-        mode='lines+markers',
-        name='Tendência',
-        line=dict(color='red')
-    ))
-    fig_sleep.update_layout(
-        title='Razão Sono/Estresse por Nível de Ansiedade',
-        xaxis_title='Nível de Ansiedade (1-10)',
-        yaxis_title='Média da Razão Sono / Estresse',
-        template='simple_white',
-        legend=dict(x=0.8, y=1.1)
-    )
-    st.plotly_chart(fig_sleep, use_container_width=True)
-
-    # === GRÁFICO: Razão Trabalho/Exercício vs Ansiedade ===
-    grouped_work = df.groupby('Anxiety Level (1-10)')['Work_Exercise_Ratio'].mean().reset_index()
-
-    fig_work = go.Figure()
-    fig_work.add_trace(go.Bar(
-        x=grouped_work['Anxiety Level (1-10)'],
-        y=grouped_work['Work_Exercise_Ratio'],
-        name='Razão Trabalho/Exercício',
-        marker_color='lightcoral'
-    ))
-    fig_work.add_trace(go.Scatter(
-        x=grouped_work['Anxiety Level (1-10)'],
-        y=grouped_work['Work_Exercise_Ratio'],
-        mode='lines+markers',
-        name='Tendência',
-        line=dict(color='darkred')
-    ))
-    fig_work.update_layout(
-        title='Razão Trabalho/Exercício por Nível de Ansiedade',
-        xaxis_title='Nível de Ansiedade (1-10)',
-        yaxis_title='Horas Trabalhadas / Hora de Exercício (média)',
-        template='simple_white',
-        legend=dict(x=0.8, y=1.1)
-    )
-    st.plotly_chart(fig_work, use_container_width=True)
-
-
-
 
         
         
