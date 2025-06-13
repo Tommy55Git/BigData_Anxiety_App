@@ -437,7 +437,7 @@ elif page == "Visualizations":
 
         # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta ---
 
-        # Criar coluna 'Diet Type' em pandas
+
         diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
         
         def get_diet_type(row):
@@ -448,13 +448,11 @@ elif page == "Visualizations":
         
         df_diet = df_clusters.copy()
         df_diet["Diet Type"] = df_diet.apply(get_diet_type, axis=1)
-
-
-        df_grouped = df_diet.groupBy("Diet Type").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety"))
-        dados = df_grouped.collect()
-        diet_types = [row['Diet Type'] for row in dados]
-        avg_anxieties = [row['Avg Anxiety'] for row in dados]
-
+        
+        df_grouped = df_diet.groupby("Diet Type")["Anxiety Level (1-10)"].mean().reset_index()
+        diet_types = df_grouped["Diet Type"].tolist()
+        avg_anxieties = df_grouped["Anxiety Level (1-10)"].tolist()
+        
         fig_diet = px.line(
             x=diet_types,
             y=avg_anxieties,
@@ -463,6 +461,7 @@ elif page == "Visualizations":
             labels={"x": "Tipo de Dieta", "y": "Ansiedade Média"}
         )
         st.plotly_chart(fig_diet, use_container_width=True)
+
 
 
         # --- Gráfico 3: Distribuição Ansiedade por Consumo de Álcool (bins Baixo, Médio, Alto) ---
