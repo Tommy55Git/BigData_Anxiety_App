@@ -455,50 +455,6 @@ elif page == "Visualizations":
 
 
 
-
-
-
-# Page 3: Analysis
-elif page == "Analysis":
-    st.header("Data Analysis & Insights")
-    
-    if not df_inner.empty:
-        st.subheader("Key Statistics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("Total Records", len(df_inner))
-        
-        with col2:
-            if 'Anxiety Level (1-10)' in df_inner.columns:
-                avg_anxiety = df_inner['Anxiety Level (1-10)'].mean()
-                st.metric("Average Anxiety Level", f"{avg_anxiety:.2f}")
-        
-        with col3:
-            if 'Mental Health Condition_Anxiety' in df_inner.columns:
-                anxiety_rate = df_inner['Mental Health Condition_Anxiety'].mean() * 100
-                st.metric("Anxiety Condition Rate", f"{anxiety_rate:.1f}%")
-        
-        st.subheader("Data Insights")
-        if 'Anxiety Level (1-10)' in df_inner.columns:
-            st.write("**Anxiety Level Statistics:**")
-            st.write(df_inner['Anxiety Level (1-10)'].describe())
-        
-        st.subheader("Dataset Information")
-        st.write("**Available Columns:**")
-        st.write(list(df_inner.columns))
-        
-        st.subheader("Data Quality")
-        missing_data = df_inner.isnull().sum()
-        if missing_data.sum() > 0:
-            st.write("**Missing Values:**")
-            st.write(missing_data[missing_data > 0])
-        else:
-            st.write("✅ No missing values found!")
-    
-    else:
-        st.warning("No data available for analysis")
-        
         
         
         
