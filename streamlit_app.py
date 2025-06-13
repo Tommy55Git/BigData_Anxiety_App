@@ -549,85 +549,73 @@ elif page == "Visualizations":
 
 
         # --- Gráfico 5: Nível de Ansiedade por Work/Exercise Ratio e Sono/Estresse (com dropdown) ---
-
-        df_activity = df_clusters.select("Work Hours per Week", "Physical Activity (hrs/week)",
-                                        "Sleep Hours", "Stress Level (1-10)", "Anxiety Level (1-10)")
-
-        # Ajustar Physical Activity para evitar divisão por zero
-        df_activity = df_activity.withColumn(
-            "Physical Activity Adjusted",
-            when(col("Physical Activity (hrs/week)") == 0, 0.1).otherwise(col("Physical Activity (hrs/week)"))
-        )
-
-        df_activity = df_activity.withColumn(
-            "Work/Exercise Ratio",
-            col("Work Hours per Week") / col("Physical Activity Adjusted")
-        ).withColumn(
-            "Sleep/Stress Ratio",
-            col("Sleep Hours") / (col("Stress Level (1-10)") + 1e-5)
-        )
-
-        # Usar approxQuantile para pegar quantis para bucketizer
-        q1_wex, q2_wex = df_activity.approxQuantile("Work/Exercise Ratio", [1/3, 2/3], 0.01)
-        q1_ses, q2_ses = df_activity.approxQuantile("Sleep/Stress Ratio", [1/3, 2/3], 0.01)
-
-        splits_wex = [-float("inf"), q1_wex, q2_wex, float("inf")]
-        splits_ses = [-float("inf"), q1_ses, q2_ses, float("inf")]
-
-        bucketizer_wex = bucketizer(splits=splits_wex, inputCol="Work/Exercise Ratio", outputCol="WorkExBucket")
-        bucketizer_ses = bucketizer(splits=splits_ses, inputCol="Sleep/Stress Ratio", outputCol="SleepStressBucket")
-
-        df_activity = bucketizer_wex.transform(df_activity)
-        df_activity = bucketizer_ses.transform(df_activity)
-
-        labels = {0.0: "Baixo", 1.0: "Médio", 2.0: "Alto"}
-
-        # Agrupar médias para cada bucket
-        df_wex = df_activity.groupBy("WorkExBucket").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety")).collect()
-        df_ses = df_activity.groupBy("SleepStressBucket").agg(avg(col("Anxiety Level (1-10)")).alias("Avg Anxiety")).collect()
-
-        dados = {
-            "Work/Exercício": [(labels[row["WorkExBucket"]], row["Avg Anxiety"]) for row in df_wex],
-            "Sono/Estresse": [(labels[row["SleepStressBucket"]], row["Avg Anxiety"]) for row in df_ses]
-        }
-
+        
+        # Selecionar colunas relevantes
+        df_activity = df_clusters[[
+            "Work Hours per Week",
+            "Physical Activity (hrs/week)",
+            "Sleep Hours",
+            "Stress Level (1-10)",
+            "Anxiety Level (1-10)"
+        ]].copy()
+        
+        # Evitar divisão por zero na atividade física
+        df_activity["Physical Activity Adjusted"] = df_activity["Physical Activity (hrs/week)"].replace(0, 0.1)
+        
+        # Calcular as proporções
+        df_activity["Work/Exercise Ratio"] = df_activity["Work Hours per Week"] / df_activity["Physical Activity Adjusted"]
+        df_activity["Sleep/Stress Ratio"] = df_activity["Sleep Hours"] / (df_activity["Stress Level (1-10)"] + 1e-5)
+        
+        # Calcular tercis (quantis 33% e 66%)
+        q1_wex = df_activity["Work/Exercise Ratio"].quantile(1/3)
+        q2_wex = df_activity["Work/Exercise Ratio"].quantile(2/3)
+        q1_ses = df_activity["Sleep/Stress Ratio"].quantile(1/3)
+        q2_ses = df_activity["Sleep/Stress Ratio"].quantile(2/3)
+        
+        # Categorizar
+        labels = ["Baixo", "Médio", "Alto"]
+        df_activity["WorkExBucket"] = pd.cut(df_activity["Work/Exercise Ratio"],
+                                              bins=[-float("inf"), q1_wex, q2_wex, float("inf")],
+                                              labels=labels)
+        df_activity["SleepStressBucket"] = pd.cut(df_activity["Sleep/Stress Ratio"],
+                                                   bins=[-float("inf"), q1_ses, q2_ses, float("inf")],
+                                                   labels=labels)
+        
+        # Calcular médias
+        wex_avg = df_activity.groupby("WorkExBucket")["Anxiety Level (1-10)"].mean().reindex(labels)
+        ses_avg = df_activity.groupby("SleepStressBucket")["Anxiety Level (1-10)"].mean().reindex(labels)
+        
+        # Organizar para gráfico
+        x_vals = labels
+        y_vals_wex = wex_avg.tolist()
+        y_vals_ses = ses_avg.tolist()
+        
         fig_ratio = go.Figure()
-
-        # Inicialmente mostra Work/Exercise
-        x_vals = [x for x, _ in dados["Work/Exercício"]]
-        y_vals = [y for _, y in dados["Work/Exercício"]]
-
-        fig_ratio.add_trace(go.Bar(x=x_vals, y=y_vals, marker_color='teal'))
-
-        buttons = [
-            dict(
-                label="Work/Exercício",
-                method="update",
-                args=[{"x": [x_vals], "y": [y_vals]}, {"title": "Nível de Ansiedade por Work/Exercise Ratio"}]
-            ),
-            dict(
-                label="Sono/Estresse",
-                method="update",
-                args=[
-                    {"x": [[x for x, _ in dados["Sono/Estresse"]]], "y": [[y for _, y in dados["Sono/Estresse"]]]},
-                    {"title": "Nível de Ansiedade por Sleep/Stress Ratio"}
-                ]
-            )
-        ]
-
+        fig_ratio.add_trace(go.Bar(x=x_vals, y=y_vals_wex, name="Work/Exercício", marker_color='teal'))
         fig_ratio.update_layout(
             updatemenus=[dict(
-                buttons=buttons,
+                buttons=[
+                    dict(
+                        label="Work/Exercício",
+                        method="update",
+                        args=[{"y": [y_vals_wex]}, {"title": "Nível de Ansiedade por Work/Exercise Ratio"}]
+                    ),
+                    dict(
+                        label="Sono/Estresse",
+                        method="update",
+                        args=[{"y": [y_vals_ses]}, {"title": "Nível de Ansiedade por Sleep/Stress Ratio"}]
+                    )
+                ],
                 direction="down",
                 x=0.5,
                 xanchor="center",
                 y=1.1,
                 yanchor="top"
             )],
-            yaxis_title="Ansiedade Média",
-            title="Nível de Ansiedade por Work/Exercise Ratio"
+            title="Nível de Ansiedade por Work/Exercise Ratio",
+            yaxis_title="Ansiedade Média"
         )
-
+        
         st.plotly_chart(fig_ratio, use_container_width=True)
 
 
