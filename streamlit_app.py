@@ -164,7 +164,7 @@ elif page == "Visualizations":
 
 
     if not df_inner.empty:
-        tab1, tab2, tab3 = st.tabs(["📊 Sociodemográficos", "🧠 Psicológicos"])
+        tab1, tab2 = st.tabs(["📊 Sociodemográficos", "🧠 Psicológicos"])
 
         # --- Sociodemográficos ---
         with tab1:
