@@ -736,6 +736,39 @@ elif page == "Visualizations":
         st.plotly_chart(fig_interativo, use_container_width=True)
 
 
+      # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (eixos invertidos) ---
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        # Classificar categorias de sono
+        sim_data['Sleep Category'] = pd.cut(
+            sim_data['Sleep Hours'],
+            bins=[0, 5.5, 7.5, 10],
+            labels=['Pouco Sono', 'Sono Ideal', 'Muito Sono']
+        )
+
+        # Filtrar dados válidos
+        sim_data_clean = sim_data.dropna(subset=['Sleep Category', 'Ansiedade'])
+
+        # Plotar manualmente por grupo no eixo Y (inversão)
+        plt.figure(figsize=(8, 5))
+        for cat in sim_data_clean['Sleep Category'].unique():
+            subset = sim_data_clean[sim_data_clean['Sleep Category'] == cat]
+            sns.kdeplot(
+                y=subset['Ansiedade'],
+                label=str(cat),
+                fill=True,
+                alpha=0.4
+            )
+
+        plt.title("Densidade de Ansiedade por Categoria de Sono (eixos invertidos)")
+        plt.xlabel("Densidade")
+        plt.ylabel("Ansiedade")
+        plt.legend(title="Sono")
+        plt.tight_layout()
+        st.pyplot(plt.gcf())  # usar com Streamlit
+
+
         
         
         
