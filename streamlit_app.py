@@ -435,32 +435,59 @@ elif page == "Visualizations":
 
 
 
+        import plotly.express as px
+        import plotly.graph_objects as go
+        
         # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta ---
-
-
+        
+        # Identificar colunas de dieta
         diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
         
+        # Função para extrair tipo de dieta
         def get_diet_type(row):
             for col in diet_columns:
                 if row.get(col, 0) == 1:
                     return col.replace("Diet Type_", "")
-            return "Unknown"
+            return "Desconhecida"
         
+        # Aplicar mapeamento
         df_diet = df_clusters.copy()
-        df_diet["Diet Type"] = df_diet.apply(get_diet_type, axis=1)
+        df_diet["Tipo de Dieta"] = df_diet.apply(get_diet_type, axis=1)
         
-        df_grouped = df_diet.groupby("Diet Type")["Anxiety Level (1-10)"].mean().reset_index()
-        diet_types = df_grouped["Diet Type"].tolist()
-        avg_anxieties = df_grouped["Anxiety Level (1-10)"].tolist()
+        # Agrupar dados
+        df_grouped = df_diet.groupby("Tipo de Dieta")["Anxiety Level (1-10)"].mean().reset_index()
+        df_grouped = df_grouped.sort_values("Anxiety Level (1-10)", ascending=False)
         
-        fig_diet = px.line(
-            x=diet_types,
-            y=avg_anxieties,
-            markers=True,
-            title="Média do Nível de Ansiedade por Tipo de Dieta",
-            labels={"x": "Tipo de Dieta", "y": "Ansiedade Média"}
+        # Criar gráfico com estilo moderno
+        fig_diet = go.Figure()
+        
+        fig_diet.add_trace(go.Scatter(
+            x=df_grouped["Tipo de Dieta"],
+            y=df_grouped["Anxiety Level (1-10)"],
+            mode='lines+markers+text',
+            line=dict(color='mediumturquoise', width=3),
+            marker=dict(size=10, symbol="circle", color='indianred'),
+            text=[f'{v:.2f}' for v in df_grouped["Anxiety Level (1-10)"]],
+            textposition='top center',
+            name='Ansiedade Média'
+        ))
+        
+        # Layout com melhorias visuais
+        fig_diet.update_layout(
+            title="📊 Média do Nível de Ansiedade por Tipo de Dieta",
+            title_font_size=20,
+            xaxis_title="Tipo de Dieta",
+            yaxis_title="Ansiedade Média",
+            xaxis=dict(tickangle=45),
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white'),
+            hovermode="x unified",
+            margin=dict(l=40, r=40, t=60, b=100)
         )
+        
         st.plotly_chart(fig_diet, use_container_width=True)
+
 
 
 
