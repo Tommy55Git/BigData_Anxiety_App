@@ -249,6 +249,10 @@ elif page == "Visualizations":
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
+       
+       
+       
+       
         with tab2:
          st.subheader("Variáveis Psicológicas")
 
@@ -379,11 +383,18 @@ elif page == "Visualizations":
             st.plotly_chart(fig3, use_container_width=True)
 
    
+        
+        
+        
+        
+        
+        
+        
         with tab3:
             st.subheader(" Estilo de Vida")
 
             # Converter Spark DataFrame para Pandas
-            pdf = df_inner.toPandas()
+            pdf = df_clusters.toPandas()
 
             # --- Gráfico 1: KDE Nível de Ansiedade por Nível de Exercício (seaborn) ---
             pdf['Exercise Level'] = pdf[['Exercise Level_Low', 'Exercise Level_Moderate', 'Exercise Level_High']].idxmax(axis=1)
