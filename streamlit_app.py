@@ -737,7 +737,6 @@ elif page == "Visualizations":
 
 
         # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (eixos invertidos) ---
-
         import matplotlib.pyplot as plt
         import seaborn as sns
 
