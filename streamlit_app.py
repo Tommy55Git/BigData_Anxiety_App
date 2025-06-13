@@ -736,9 +736,14 @@ elif page == "Visualizations":
         st.plotly_chart(fig_interativo, use_container_width=True)
 
 
-      # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (eixos invertidos) ---
+        # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (eixos invertidos) ---
+
         import matplotlib.pyplot as plt
         import seaborn as sns
+
+        # Garantir compatibilidade de dados
+        sim_data = df_clusters.copy()
+        sim_data.rename(columns={"Anxiety Level (1-10)": "Ansiedade"}, inplace=True)
 
         # Classificar categorias de sono
         sim_data['Sleep Category'] = pd.cut(
@@ -750,23 +755,25 @@ elif page == "Visualizations":
         # Filtrar dados válidos
         sim_data_clean = sim_data.dropna(subset=['Sleep Category', 'Ansiedade'])
 
-        # Plotar manualmente por grupo no eixo Y (inversão)
-        plt.figure(figsize=(8, 5))
-        for cat in sim_data_clean['Sleep Category'].unique():
-            subset = sim_data_clean[sim_data_clean['Sleep Category'] == cat]
-            sns.kdeplot(
-                y=subset['Ansiedade'],
-                label=str(cat),
-                fill=True,
-                alpha=0.4
-            )
+        if not sim_data_clean.empty:
+            fig_sono, ax_sono = plt.subplots(figsize=(8, 5))
+            for cat in sim_data_clean['Sleep Category'].unique():
+                subset = sim_data_clean[sim_data_clean['Sleep Category'] == cat]
+                sns.kdeplot(
+                    y=subset['Ansiedade'],
+                    label=str(cat),
+                    fill=True,
+                    alpha=0.4,
+                    ax=ax_sono
+                )
 
-        plt.title("Densidade de Ansiedade por Categoria de Sono (eixos invertidos)")
-        plt.xlabel("Densidade")
-        plt.ylabel("Ansiedade")
-        plt.legend(title="Sono")
-        plt.tight_layout()
-        st.pyplot(plt.gcf())  # usar com Streamlit
+            ax_sono.set_title("Densidade de Ansiedade por Categoria de Sono (eixos invertidos)")
+            ax_sono.set_xlabel("Densidade")
+            ax_sono.set_ylabel("Ansiedade")
+            ax_sono.legend(title="Sono")
+            st.pyplot(fig_sono)
+        else:
+            st.info("Dados insuficientes para o gráfico de sono.")
 
 
         
