@@ -391,47 +391,52 @@ elif page == "Visualizations":
         
         
                 
+        import plotly.graph_objects as go
+        import pandas as pd
+        import numpy as np
+        import streamlit as st
+        
         with tab3:
-            st.subheader("Estilo de Vida")
+            st.subheader("Estilo de Vida e Ansiedade")
         
-            # Criar coluna com nível de exercício (versão pandas)
-            def get_exercise_level(row):
+            # Função para identificar nível de exercício com base nas colunas dummy
+            def identificar_nivel_exercicio(row):
                 if row.get("Exercise Level_Low", 0) == 1:
-                    return "Low"
+                    return "Baixo"
                 elif row.get("Exercise Level_Moderate", 0) == 1:
-                    return "Moderate"
+                    return "Moderado"
                 elif row.get("Exercise Level_High", 0) == 1:
-                    return "High"
+                    return "Alto"
                 else:
-                    return "Unknown"
+                    return "Desconhecido"
         
-            df_exercise = df_clusters.copy()
-            df_exercise["Exercise Level"] = df_exercise.apply(get_exercise_level, axis=1)
+            # Aplicar função e filtrar dados válidos
+            df_exercicio = df_clusters.copy()
+            df_exercicio["Nível de Exercício"] = df_exercicio.apply(identificar_nivel_exercicio, axis=1)
+            df_exercicio = df_exercicio[df_exercicio["Nível de Exercício"] != "Desconhecido"]
         
-            # Criar dicionário com listas de ansiedade por nível de exercício
-            exercise_levels = ["Low", "Moderate", "High"]
-            ansiedade_por_nivel = {}
+            # Agrupar dados de ansiedade por nível de exercício
+            niveis = ["Baixo", "Moderado", "Alto"]
+            fig = go.Figure()
         
-            for nivel in exercise_levels:
-                valores = df_exercise[df_exercise["Exercise Level"] == nivel]["Anxiety Level (1-10)"].dropna().tolist()
-                ansiedade_por_nivel[nivel] = valores
-        
-            # Gerar gráfico
-            plt.figure(figsize=(6, 4))
-            for nivel, valores in ansiedade_por_nivel.items():
-                if len(valores) < 10:
+            for nivel in niveis:
+                dados = df_exercicio[df_exercicio["Nível de Exercício"] == nivel]["Anxiety Level (1-10)"].dropna()
+                if len(dados) < 10:
                     continue
-                hist, bin_edges = np.histogram(valores, bins=30, density=True)
-                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-                plt.plot(bin_centers, hist, label=nivel, alpha=0.7)
+                hist = np.histogram(dados, bins=10, density=True)
+                bin_centros = (hist[1][:-1] + hist[1][1:]) / 2
+                fig.add_trace(go.Scatter(x=bin_centros, y=hist[0], mode='lines', name=f'{nivel}'))
         
-            plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
-            plt.xlabel('Nível de Ansiedade (1-10)')
-            plt.ylabel('Densidade Aproximada')
-            plt.legend()
-            plt.grid(True)
-            st.pyplot(plt.gcf())
-            plt.clf()
+            fig.update_layout(
+                title="Distribuição do Nível de Ansiedade por Nível de Exercício",
+                xaxis_title="Nível de Ansiedade (1-10)",
+                yaxis_title="Densidade Estimada",
+                legend_title="Nível de Exercício",
+                template="plotly_white"
+            )
+        
+            st.plotly_chart(fig, use_container_width=True)
+
 
 
 
