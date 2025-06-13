@@ -379,7 +379,6 @@ elif page == "Visualizations":
 
 
 
-        # --- Estilo de Vida ---
     with tab3:
      st.subheader("Estilo de Vida e Ansiedade")
 
@@ -400,87 +399,75 @@ elif page == "Visualizations":
 
     df_filt = df[df['País'].isin(paises) & df['Tipo de Dieta'].isin(dietas)]
 
-    # === FUNÇÃO DE INSIGHT RÁPIDO COM IC 95% ===
-    import scipy.stats as stats
+    # === FUNÇÃO PARA GRÁFICO DE BARRAS + LINHA LOESS ===
+    def grafico_barras_loess(x_col, titulo, rotulo_x, bins=20):
+        # Filtra dados não nulos
+        data = df_filt[[x_col, 'Anxiety Level (1-10)']].dropna().copy()
 
-    def gerar_insight(coluna, nome_exibicao):
-        media_geral = df[coluna].mean()
-        media_filt = df_filt[coluna].mean()
-        n = df_filt[coluna].count()
-        std_err = df_filt[coluna].std() / np.sqrt(n) if n > 0 else 0
-        ic95 = stats.t.interval(0.95, n-1, loc=media_filt, scale=std_err) if n > 1 else (np.nan, np.nan)
-        diff = media_filt - media_geral
-        sentido = "acima" if diff > 0 else "abaixo"
-        st.markdown(
-            f"- A média de **{nome_exibicao}** no grupo filtrado é **{media_filt:.2f}** "
-            f"(IC 95%: [{ic95[0]:.2f}, {ic95[1]:.2f}]), que está **{abs(diff):.2f} pontos {sentido}** da média geral (**{media_geral:.2f}**)."
-        )
+        if data.empty:
+            st.warning(f"Sem dados suficientes para '{titulo}'.")
+            return
 
-    st.markdown("### 🧠 Resumo Rápido")
-    gerar_insight("Anxiety Level (1-10)", "Ansiedade")
-    gerar_insight("Sleep Hours", "Horas de Sono")
-    gerar_insight("Screen Time per Day (Hours)", "Tempo de Tela")
-    gerar_insight("Physical Activity (hrs/week)", "Atividade Física")
-    gerar_insight("Work Hours per Week", "Horas de Trabalho")
+        # Cria bins
+        data['bin'] = pd.cut(data[x_col], bins=bins)
 
-    # === FUNÇÃO PARA GRÁFICO DE LINHA COM MÉDIA + LOESS ===
-    def grafico_linha_loess(x_col, titulo, rotulo_x):
-        # Agrupar em bins
-        bins = 30
-        df_filt_filtered = df_filt[[x_col, 'Anxiety Level (1-10)']].dropna()
-        df_filt_filtered['bin'] = pd.cut(df_filt_filtered[x_col], bins=bins)
+        # Calcula média ansiedade por bin
+        media_bin = data.groupby('bin')['Anxiety Level (1-10)'].mean().reset_index()
+        media_bin['x_mid'] = media_bin['bin'].apply(lambda x: x.mid)
 
-        # Média por bin
-        media_bin = df_filt_filtered.groupby('bin')['Anxiety Level (1-10)'].mean().reset_index()
-        media_bin[x_col+'_mid'] = media_bin['bin'].apply(lambda x: x.mid)
-
-        # Remover NaN
-        media_bin = media_bin.dropna()
+        # Remove bins sem valor médio
+        media_bin = media_bin.dropna(subset=['x_mid'])
 
         if len(media_bin) < 5:
             st.warning(f"Poucos dados para '{titulo}' para exibir o gráfico.")
             return
 
-        # Aplicar LOESS
+        # Aplica LOESS para suavizar a linha
         lowess = sm.nonparametric.lowess
-        suavizado = lowess(media_bin['Anxiety Level (1-10)'], media_bin[x_col+'_mid'], frac=0.3)
+        suavizado = lowess(media_bin['Anxiety Level (1-10)'], media_bin['x_mid'], frac=0.3)
 
         fig = go.Figure()
-        # Pontos médios
-        fig.add_trace(go.Scatter(
-            x=media_bin[x_col+'_mid'],
+        # Barras da média por bin
+        fig.add_trace(go.Bar(
+            x=media_bin['x_mid'],
             y=media_bin['Anxiety Level (1-10)'],
-            mode='markers',
-            name='Média por Bin'
+            name='Média por Bin',
+            marker_color='skyblue',
+            width=(media_bin['x_mid'].max() - media_bin['x_mid'].min()) / bins * 0.9
         ))
-        # Linha suavizada
+
+        # Linha suavizada LOESS
         fig.add_trace(go.Scatter(
             x=suavizado[:, 0],
             y=suavizado[:, 1],
             mode='lines',
-            name='Tendência Suavizada (LOESS)'
+            name='Tendência Suavizada (LOESS)',
+            line=dict(color='red', width=3)
         ))
+
         fig.update_layout(
             title=titulo,
             xaxis_title=rotulo_x,
             yaxis_title='Nível Médio de Ansiedade',
-            template='plotly_white'
+            template='plotly_white',
+            bargap=0.2,
+            legend=dict(y=0.95, x=0.05)
         )
+
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("### 📊 Análises Visuais")
-
-    grafico_linha_loess("Physical Activity (hrs/week)", "Atividade Física vs Ansiedade", "Atividade Física (h/semana)")
-    grafico_linha_loess("Sleep Hours", "Horas de Sono vs Ansiedade", "Horas de Sono")
-    grafico_linha_loess("Screen Time per Day (Hours)", "Tempo de Tela vs Ansiedade", "Horas de Tela por Dia")
-    grafico_linha_loess("Work Hours per Week", "Horas de Trabalho vs Ansiedade", "Horas de Trabalho por Semana")
-    grafico_linha_loess("Social Interaction Score", "Interações Sociais vs Ansiedade", "Score de Interação Social")
-    grafico_linha_loess("Therapy Sessions (per month)", "Sessões de Terapia vs Ansiedade", "Sessões de Terapia por Mês")
+    grafico_barras_loess("Physical Activity (hrs/week)", "Atividade Física vs Ansiedade", "Atividade Física (h/semana)")
+    grafico_barras_loess("Sleep Hours", "Horas de Sono vs Ansiedade", "Horas de Sono")
+    grafico_barras_loess("Screen Time per Day (Hours)", "Tempo de Tela vs Ansiedade", "Horas de Tela por Dia")
+    grafico_barras_loess("Work Hours per Week", "Horas de Trabalho vs Ansiedade", "Horas de Trabalho por Semana")
+    grafico_barras_loess("Social Interaction Score", "Interações Sociais vs Ansiedade", "Score de Interação Social")
+    grafico_barras_loess("Therapy Sessions (per month)", "Sessões de Terapia vs Ansiedade", "Sessões de Terapia por Mês")
 
     # === HEATMAP DE CAFEÍNA E CIGARRO ===
     st.markdown("### ☕ Cafeína e Tabagismo vs Ansiedade")
-    df['Caffeine_bin'] = pd.cut(df['Caffeine Intake (mg/day)'], bins=30)
-    heatmap_data = df.groupby(['Caffeine_bin', 'Smoking_Yes'])['Anxiety Level (1-10)'].mean().reset_index()
+    df_filt['Caffeine_bin'] = pd.cut(df_filt['Caffeine Intake (mg/day)'], bins=30)
+    heatmap_data = df_filt.groupby(['Caffeine_bin', 'Smoking_Yes'])['Anxiety Level (1-10)'].mean().reset_index()
     heatmap_data['Caffeine_mid'] = heatmap_data['Caffeine_bin'].apply(lambda x: x.mid)
     heatmap_data['Smoking_Status'] = heatmap_data['Smoking_Yes'].map({0: 'Não Fuma', 1: 'Fuma'})
 
@@ -494,8 +481,6 @@ elif page == "Visualizations":
         labels={"Caffeine_mid": "Cafeína (mg/dia)", "Smoking_Status": "Tabagismo"}
     )
     st.plotly_chart(fig_heat, use_container_width=True)
-
-
 
 
 
