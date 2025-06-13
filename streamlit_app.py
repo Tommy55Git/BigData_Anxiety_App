@@ -621,15 +621,23 @@ elif page == "Visualizations":
 
          # --- Gráfico 6: Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
         
-        df_interativo = df_clusters[[
+        # Lista de colunas desejadas
+        cols_desejadas = [
             "Anxiety Level (1-10)",
             "Recent Event",
             "Screen Time (hrs/day)",
             "Therapy_Yes",
             "Social Interaction Level (1-10)"
-        ]].copy()
+        ]
         
+        # Filtrar apenas as colunas existentes
+        cols_existentes = [col for col in cols_desejadas if col in df_clusters.columns]
+        df_interativo = df_clusters[cols_existentes].copy()
+        
+        # Função para calcular a média de ansiedade por coluna
         def avg_anxiety_by_col(df, col_name, val_map=None):
+            if col_name not in df.columns:
+                return [], []
             grouped = df.groupby(col_name)["Anxiety Level (1-10)"].mean().reset_index()
             x_vals, y_vals = [], []
             for _, row in grouped.iterrows():
@@ -643,21 +651,25 @@ elif page == "Visualizations":
         event_map = {0: "Nenhum", 1: "Sim"}
         therapy_map = {0: "Não", 1: "Sim"}
         
-        dados_interativo = {
-            "Evento Recente": avg_anxiety_by_col(df_interativo, "Recent Event", event_map),
-            "Tempo de Tela": avg_anxiety_by_col(df_interativo, "Screen Time (hrs/day)"),
-            "Terapia": avg_anxiety_by_col(df_interativo, "Therapy_Yes", therapy_map),
-            "Interação Social": avg_anxiety_by_col(df_interativo, "Social Interaction Level (1-10)")
-        }
+        # Construir dados interativos apenas com colunas presentes
+        dados_interativo = {}
+        if "Recent Event" in df_interativo.columns:
+            dados_interativo["Evento Recente"] = avg_anxiety_by_col(df_interativo, "Recent Event", event_map)
+        if "Screen Time (hrs/day)" in df_interativo.columns:
+            dados_interativo["Tempo de Tela"] = avg_anxiety_by_col(df_interativo, "Screen Time (hrs/day)")
+        if "Therapy_Yes" in df_interativo.columns:
+            dados_interativo["Terapia"] = avg_anxiety_by_col(df_interativo, "Therapy_Yes", therapy_map)
+        if "Social Interaction Level (1-10)" in df_interativo.columns:
+            dados_interativo["Interação Social"] = avg_anxiety_by_col(df_interativo, "Social Interaction Level (1-10)")
         
         fig_interativo = go.Figure()
         
-        # Inicialmente mostrar "Evento Recente"
-        fig_interativo.add_trace(go.Bar(
-            x=dados_interativo["Evento Recente"][0],
-            y=dados_interativo["Evento Recente"][1]
-        ))
+        # Adicionar primeiro gráfico disponível
+        for nome, (xv, yv) in dados_interativo.items():
+            fig_interativo.add_trace(go.Bar(x=xv, y=yv))
+            break  # só adiciona o primeiro por padrão
         
+        # Criar dropdown
         buttons = []
         for nome, (xv, yv) in dados_interativo.items():
             buttons.append(
@@ -682,6 +694,7 @@ elif page == "Visualizations":
         )
         
         st.plotly_chart(fig_interativo, use_container_width=True)
+
         
         
         
