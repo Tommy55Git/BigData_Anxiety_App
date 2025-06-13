@@ -397,241 +397,144 @@ elif page == "Visualizations":
         
 
 elif page == "Cluster Analysis":
-    st.header("🔍 Análise de Clusters")
+    st.header("🔍 Cluster Analysis")
 
-    # 1. Verificação inicial do DataFrame
-    if df_clusters is None or df_clusters.empty:
-        st.warning("Dados de cluster não encontrados ou o DataFrame está vazio. Certifique-se de que os dados foram carregados e processados corretamente.")
-        # Opcional: st.stop() para parar a execução da página aqui se os dados forem essenciais
+    # Verifica se df_clusters existe e é um DataFrame não vazio
+    if 'df_clusters' not in locals() or df_clusters is None or df_clusters.empty:
+        st.warning("⚠️ Dados de cluster não encontrados ou DataFrame vazio.")
     else:
-        st.write("### 📋 Visualização do DataFrame Clusterizado (Primeiras Linhas)")
+        st.write("### 📋 Visualização do DataFrame Clusterizado")
         st.dataframe(df_clusters.head())
-        st.info(f"DataFrame carregado com **{df_clusters.shape[0]}** linhas e **{df_clusters.shape[1]}** colunas.")
 
-        # As features para análise - ajusta conforme colunas presentes em df_clusters
-        # Certifique-se de que estas são colunas numéricas adequadas para clustering
-        initial_features = [
+        # Tabs de Análise
+        tabs = st.tabs([
+            "📌 PCA + Variância", 
+            "🔵 PCA + KMeans", 
+            "🌿 Cluster Hierárquico", 
+            "🔎 DBSCAN", 
+            "📉 Avaliações"
+        ])
+
+        # Seleciona features válidas presentes no DataFrame
+        default_features = [
             'Therapy Sessions (per month)', 'Caffeine Intake (mg/day)',
             'Stress Level (1-10)', 'Heart Rate (bpm)',
             'Physical Activity (hrs/week)', 'Sleep_Stress_Ratio',
             'Work_Exercise_Ratio', 'Anxiety Level (1-10)'
         ]
-
-        # Filtra colunas que realmente existem em df_clusters
-        features = [f for f in initial_features if f in df_clusters.columns]
+        features = [f for f in default_features if f in df_clusters.columns]
 
         if not features:
-            st.error("Nenhuma das features esperadas para clustering foi encontrada no DataFrame. Por favor, verifique os nomes das colunas e se o DataFrame foi preparado corretamente na etapa anterior.")
-            st.stop() # Parar a execução se não houver features para analisar
-
-        # Cria uma cópia do subconjunto de features
-        X = df_clusters[features].copy()
-
-        # 2. Tratamento de Valores Nulos (NaNs)
-        st.write("### Limpeza de Dados para Clustering")
-        nan_count = X.isnull().sum().sum()
-        if nan_count > 0:
-            st.warning(f"Foram encontrados **{nan_count}** valores nulos nas features selecionadas para clustering. A imputação pela média será aplicada.")
-            # Imputar NaNs com a média da coluna.
-            # Alternativas: X = X.dropna() para remover linhas com NaN, ou usar a mediana.
-            X = X.fillna(X.mean())
-            st.info("Valores nulos imputados com a média de suas respetivas colunas.")
+            st.error("❌ Nenhuma feature válida encontrada no DataFrame.")
         else:
-            st.success("Não foram encontrados valores nulos nas features selecionadas para clustering.")
-
-        # 3. Escalonamento dos dados
-        st.write("### Escalonamento dos Dados")
-        try:
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-            st.success("Dados escalonados com sucesso para análise de clusters.")
-        except Exception as e:
-            st.error(f"Erro ao escalar os dados. Certifique-se de que todas as features são numéricas e não contêm valores inválidos: `{e}`")
-            st.stop() # Para a execução aqui se a escalagem falhar
-
-        # Tabs de Análise
-        tabs = st.tabs([
-            "📌 PCA + Variância",
-            "🔵 PCA + KMeans",
-            "🌿 Cluster Hierárquico",
-            "🔎 DBSCAN",
-            "📉 Avaliações"
-        ])
-
-        # -------------------- PCA Variância --------------------
-        with tabs[0]:
-            st.subheader("📌 PCA - Variância Explicada")
-            st.info("Analisando a variância explicada por cada componente principal para determinar a dimensionalidade dos dados.")
             try:
-                pca = PCA()
-                pca.fit(X_scaled)
+                X = df_clusters[features].copy()
+                X_scaled = StandardScaler().fit_transform(X)
 
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(
-                    y=np.cumsum(pca.explained_variance_ratio_),
-                    mode='lines+markers',
-                    name='Variância Explicada Acumulada'
-                ))
-                fig.add_hline(y=0.90, line_dash="dash", line_color="red", annotation_text="90% da variância")
-                fig.update_layout(
-                    title='Variância Explicada Acumulada pela PCA',
-                    xaxis_title='Número de Componentes Principais',
-                    yaxis_title='Variância Explicada Acumulada',
-                    template='simple_white',
-                    height=500
-                )
-                st.plotly_chart(fig)
-            except Exception as e:
-                st.error(f"Erro ao gerar o gráfico de Variância Explicada da PCA: `{e}`")
+                # ----- 📌 PCA Variância -----
+                with tabs[0]:
+                    st.subheader("📌 PCA - Variância Explicada")
+                    pca = PCA()
+                    pca.fit(X_scaled)
 
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
+                        y=np.cumsum(pca.explained_variance_ratio_),
+                        mode='lines+markers',
+                        name='Variância Explicada'
+                    ))
+                    fig.add_hline(y=0.90, line_dash="dash", line_color="red", annotation_text="90% da variância")
+                    fig.update_layout(
+                        title='Variância Explicada Acumulada pela PCA',
+                        xaxis_title='Componentes Principais',
+                        yaxis_title='Variância Explicada Acumulada',
+                        template='simple_white'
+                    )
+                    st.plotly_chart(fig)
 
-        # -------------------- KMeans + PCA --------------------
-        with tabs[1]:
-            st.subheader("🔵 PCA + Clusters KMeans")
-            st.info("Aplicando o algoritmo KMeans e visualizando os clusters nos dois primeiros componentes principais (PCA).")
+                # ----- 🔵 PCA + KMeans -----
+                with tabs[1]:
+                    st.subheader("🔵 PCA + Clusters KMeans")
+                    kmeans = KMeans(n_clusters=3, random_state=42)
+                    clusters = kmeans.fit_predict(X_scaled)
 
-            n_clusters = st.slider("Selecione o número de clusters para KMeans", min_value=2, max_value=7, value=3)
+                    df_clustered = df_clusters.copy()
+                    df_clustered['Cluster_ID'] = clusters + 1
 
-            try:
-                # n_init='auto' é importante para versões recentes do scikit-learn
-                kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
-                clusters = kmeans.fit_predict(X_scaled)
+                    pca_2d = PCA(n_components=2)
+                    pcs = pca_2d.fit_transform(X_scaled)
+                    pca_df = pd.DataFrame(pcs, columns=['PC1', 'PC2'])
+                    pca_df['Cluster_ID'] = df_clustered['Cluster_ID']
 
-                df_clustered = df_clusters.copy()
-                df_clustered['Cluster_ID_KMeans'] = clusters + 1 # +1 para começar a contagem dos clusters de 1
+                    fig = px.scatter(
+                        pca_df, x='PC1', y='PC2', color=pca_df['Cluster_ID'].astype(str),
+                        title='Clusters KMeans nos 2 Primeiros Componentes (PCA)',
+                        labels={'color': 'Cluster'}
+                    )
+                    st.plotly_chart(fig)
 
-                pca_2d = PCA(n_components=2)
-                pcs = pca_2d.fit_transform(X_scaled)
-                pca_df = pd.DataFrame(pcs, columns=['PC1', 'PC2'])
-                pca_df['Cluster_ID'] = df_clustered['Cluster_ID_KMeans'] # Usar o ID do KMeans
-
-                fig = px.scatter(
-                    pca_df, x='PC1', y='PC2', color=pca_df['Cluster_ID'].astype(str),
-                    title=f'Clusters KMeans nos 2 Primeiros Componentes (PCA) - {n_clusters} Clusters',
-                    labels={'color': 'Cluster'},
-                    hover_name=df_clustered.index # Opcional: para ver o índice do ponto ao passar o mouse
-                )
-                st.plotly_chart(fig)
-
-                st.write("#### Sumário dos Clusters KMeans")
-                # Exibir a média das features por cluster
-                st.dataframe(df_clustered.groupby('Cluster_ID_KMeans')[features].mean())
-
-            except Exception as e:
-                st.error(f"Erro ao aplicar KMeans ou gerar o gráfico de clusters: `{e}`")
-
-
-        # -------------------- Cluster Hierárquico --------------------
-        with tabs[2]:
-            st.subheader("🌿 Cluster Hierárquico com Dendrograma")
-            st.info("Gerando um dendrograma para visualizar a estrutura hierárquica dos clusters. Note: pode ser denso para muitos pontos.")
-
-            try:
-                # Limite o número de amostras para o dendrograma se o dataset for muito grande
-                if X_scaled.shape[0] > 5000: # Ajuste este valor se necessário
-                    st.warning("O dendrograma pode ser muito denso para visualizar com muitos pontos. Usando uma amostra aleatória de 5000 pontos.")
-                    sample_indices = np.random.choice(X_scaled.shape[0], 5000, replace=False)
-                    X_sampled = X_scaled[sample_indices]
-                    labels_sampled = [str(i) for i in df_clusters.index[sample_indices]] # Usar índices originais
-                    linked = linkage(X_sampled, method='ward')
-                    fig = ff.create_dendrogram(X_sampled, orientation='top', labels=labels_sampled)
-                else:
+                # ----- 🌿 Cluster Hierárquico -----
+                with tabs[2]:
+                    st.subheader("🌿 Cluster Hierárquico com Dendrograma")
                     linked = linkage(X_scaled, method='ward')
                     fig = ff.create_dendrogram(X_scaled, orientation='top', labels=[str(i) for i in df_clusters.index])
+                    fig.update_layout(width=1000, height=500, title='Dendrograma Hierárquico')
+                    st.plotly_chart(fig)
 
-                fig.update_layout(width=1000, height=500, title='Dendrograma Hierárquico')
-                st.plotly_chart(fig)
+                # ----- 🔎 DBSCAN -----
+                with tabs[3]:
+                    st.subheader("🔎 Clusters com DBSCAN")
+                    dbscan = DBSCAN(eps=2, min_samples=5)
+                    clusters_db = dbscan.fit_predict(X_scaled)
 
-            except Exception as e:
-                st.error(f"Erro ao gerar o Dendrograma Hierárquico: `{e}`. Isso pode ocorrer com muitos pontos ou dados inválidos.")
+                    df_db = df_clusters.copy()
+                    df_db['Cluster_ID'] = clusters_db
 
+                    pcs_db = PCA(n_components=2).fit_transform(X_scaled)
+                    db_df = pd.DataFrame(pcs_db, columns=['PC1', 'PC2'])
+                    db_df['Cluster_ID'] = clusters_db
 
-        # -------------------- DBSCAN --------------------
-        with tabs[3]:
-            st.subheader("🔎 Clusters com DBSCAN")
-            st.info("Aplicando DBSCAN, um algoritmo de clustering baseado em densidade que identifica pontos de ruído (outliers).")
+                    fig = px.scatter(
+                        db_df, x='PC1', y='PC2', color=db_df['Cluster_ID'].astype(str),
+                        title='Clusters DBSCAN nos 2 PCs (Pontos com ruído = -1)',
+                        labels={'color': 'Cluster'}
+                    )
+                    st.plotly_chart(fig)
 
-            col1, col2 = st.columns(2)
-            with col1:
-                eps_val = st.slider("eps (Raio da vizinhança)", min_value=0.1, max_value=5.0, value=2.0, step=0.1)
-            with col2:
-                min_samples_val = st.slider("min_samples (Min. de pontos na vizinhança)", min_value=2, max_value=20, value=5, step=1)
+                # ----- 📉 Avaliação -----
+                with tabs[4]:
+                    st.subheader("📉 Métricas de Avaliação dos Clusters")
 
-            try:
-                dbscan = DBSCAN(eps=eps_val, min_samples=min_samples_val)
-                clusters_db = dbscan.fit_predict(X_scaled)
-
-                df_db = df_clusters.copy()
-                df_db['Cluster_ID_DBSCAN'] = clusters_db # -1 representa ruído
-
-                pcs_db = PCA(n_components=2).fit_transform(X_scaled)
-                db_df = pd.DataFrame(pcs_db, columns=['PC1', 'PC2'])
-                db_df['Cluster_ID'] = clusters_db # Usar o ID do DBSCAN
-
-                fig = px.scatter(
-                    db_df, x='PC1', y='PC2', color=db_df['Cluster_ID'].astype(str),
-                    title='Clusters DBSCAN nos 2 PCs (Pontos com ruído = -1)',
-                    labels={'color': 'Cluster'},
-                    hover_name=df_db.index # Opcional
-                )
-                st.plotly_chart(fig)
-
-                st.write("#### Sumário dos Clusters DBSCAN")
-                if -1 in clusters_db:
-                    st.write("Nota: O Cluster **-1** representa pontos de ruído (outliers) não atribuídos a nenhum cluster.")
-                st.dataframe(df_db.groupby('Cluster_ID_DBSCAN')[features].mean())
-
-            except Exception as e:
-                st.error(f"Erro ao aplicar DBSCAN ou gerar o gráfico de clusters: `{e}`. Tente ajustar 'eps' e 'min_samples'.")
-
-
-        # -------------------- Avaliação --------------------
-        with tabs[4]:
-            st.subheader("📉 Métricas de Avaliação dos Clusters")
-            st.info("Avaliando a qualidade dos clusters usando métricas comuns como Silhouette, Calinski-Harabasz e Davies-Bouldin.")
-
-            # Avaliação KMeans
-            st.markdown("---")
-            st.markdown("### **🔵 Avaliação do KMeans**")
-            try:
-                # Verifique se há mais de um cluster para avaliar o Silhouette Score
-                # E se não há apenas um cluster ou todos os pontos no mesmo cluster
-                if len(set(clusters)) > 1 and len(set(clusters)) < X_scaled.shape[0]: # Não avaliar se todos os pontos são 1 cluster
+                    # Avaliação KMeans
                     sil_k = silhouette_score(X_scaled, clusters)
                     ch_k = calinski_harabasz_score(X_scaled, clusters)
                     db_k = davies_bouldin_score(X_scaled, clusters)
 
-                    st.markdown(f"- **Silhouette Score**: `{sil_k:.4f}` (Maior é melhor, intervalo: -1 a 1)")
-                    st.markdown(f"- **Calinski-Harabasz Index**: `{ch_k:.4f}` (Maior é melhor)")
-                    st.markdown(f"- **Davies-Bouldin Index**: `{db_k:.4f}` (Menor é melhor)")
-                else:
-                    st.warning(f"KMeans formou apenas {len(set(clusters))} cluster(s) ou não há clusters válidos para avaliação. Ajuste o número de clusters.")
+                    st.markdown("**🔵 KMeans**")
+                    st.markdown(f"- Silhouette Score: `{sil_k:.4f}`")
+                    st.markdown(f"- Calinski-Harabasz Index: `{ch_k:.4f}`")
+                    st.markdown(f"- Davies-Bouldin Index: `{db_k:.4f}`")
+
+                    # Avaliação DBSCAN (sem ruído)
+                    clusters_db = np.array(clusters_db)
+                    mask = clusters_db != -1
+                    clusters_masked = clusters_db[mask]
+                    X_masked = X_scaled[mask]
+
+                    if len(set(clusters_masked)) > 1:
+                        sil_d = silhouette_score(X_masked, clusters_masked)
+                        ch_d = calinski_harabasz_score(X_masked, clusters_masked)
+                        db_d = davies_bouldin_score(X_masked, clusters_masked)
+
+                        st.markdown("**🔎 DBSCAN (sem ruído)**")
+                        st.markdown(f"- Silhouette Score: `{sil_d:.4f}`")
+                        st.markdown(f"- Calinski-Harabasz Index: `{ch_d:.4f}`")
+                        st.markdown(f"- Davies-Bouldin Index: `{db_d:.4f}`")
+                    else:
+                        st.warning("DBSCAN não formou clusters válidos para avaliação.")
+
             except Exception as e:
-                st.error(f"Erro ao calcular métricas para KMeans: `{e}`. Verifique a dimensionalidade e a formação dos clusters.")
-
-            # Avaliação DBSCAN (removendo ruído)
-            st.markdown("---")
-            st.markdown("### **🔎 Avaliação do DBSCAN (sem ruído)**")
-            try:
-                clusters_db_arr = np.array(clusters_db)
-                mask = clusters_db_arr != -1 # Máscara para remover pontos de ruído
-                clusters_masked = clusters_db_arr[mask]
-                X_masked = X_scaled[mask]
-
-                # Verifique se ainda há clusters válidos (mais de 1) após remover o ruído
-                # E se não há apenas um cluster ou todos os pontos no mesmo cluster após mascarar
-                if len(set(clusters_masked)) > 1 and len(set(clusters_masked)) < X_masked.shape[0]:
-                    sil_d = silhouette_score(X_masked, clusters_masked)
-                    ch_d = calinski_harabasz_score(X_masked, clusters_masked)
-                    db_d = davies_bouldin_score(X_masked, clusters_masked)
-
-                    st.markdown(f"- **Silhouette Score**: `{sil_d:.4f}` (Maior é melhor, intervalo: -1 a 1)")
-                    st.markdown(f"- **Calinski-Harabasz Index**: `{ch_d:.4f}` (Maior é melhor)")
-                    st.markdown(f"- **Davies-Bouldin Index**: `{db_d:.4f}` (Menor é melhor)")
-                else:
-                    st.warning("DBSCAN não formou clusters válidos (mais de um, sem ruído) para avaliação, ou todos os pontos são ruído, ou formou um único cluster.")
-            except Exception as e:
-                st.error(f"Erro ao calcular métricas para DBSCAN: `{e}`. Verifique os parâmetros do DBSCAN e a distribuição dos dados.")
+                st.error(f"❌ Erro durante a análise de clusters: {e}")
 
 
         
