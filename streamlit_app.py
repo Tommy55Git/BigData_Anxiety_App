@@ -734,7 +734,6 @@ elif page == "Visualizations":
                 )
                 
                 st.plotly_chart(fig_interativo, use_container_width=True)
-
         
 
         
