@@ -58,7 +58,7 @@ df_anxiety, df_mental, df_inner, df_clusters = load_data_from_mongo()
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox(
     "Choose a page", 
-    ["Data Overview", "Visualizations", "Analysis",  "Regression Model"]
+    ["Data Overview", "Visualizations", "Analysis", "Classification Model", "Regression Model"]
 )
 
 
