@@ -13,7 +13,6 @@ import plotly.graph_objects as go
 from scipy.stats import gaussian_kde
 import seaborn as sns
 import matplotlib.pyplot as plt
-
 from pyspark.sql.functions import coalesce, when, col, avg
 
 # Page config
@@ -392,56 +391,52 @@ elif page == "Visualizations":
         
         
                 
-        import plotly.graph_objects as go
-        import pandas as pd
-        import numpy as np
-        import streamlit as st
-        
         with tab3:
-            st.subheader("Estilo de Vida e Ansiedade")
+            st.subheader("Estilo de Vida")
         
-            # Função para identificar nível de exercício com base nas colunas dummy
-            def identificar_nivel_exercicio(row):
+            # Criar coluna com nível de exercício (versão pandas)
+            def get_exercise_level(row):
                 if row.get("Exercise Level_Low", 0) == 1:
-                    return "Baixo"
+                    return "Low"
                 elif row.get("Exercise Level_Moderate", 0) == 1:
-                    return "Moderado"
+                    return "Moderate"
                 elif row.get("Exercise Level_High", 0) == 1:
-                    return "Alto"
+                    return "High"
                 else:
-                    return "Desconhecido"
+                    return "Unknown"
         
-            # Aplicar função e filtrar dados válidos
-            df_exercicio = df_clusters.copy()
-            df_exercicio["Nível de Exercício"] = df_exercicio.apply(identificar_nivel_exercicio, axis=1)
-            df_exercicio = df_exercicio[df_exercicio["Nível de Exercício"] != "Desconhecido"]
+            df_exercise = df_clusters.copy()
+            df_exercise["Exercise Level"] = df_exercise.apply(get_exercise_level, axis=1)
         
-            # Agrupar dados de ansiedade por nível de exercício
-            niveis = ["Baixo", "Moderado", "Alto"]
-            fig = go.Figure()
+            # Criar dicionário com listas de ansiedade por nível de exercício
+            exercise_levels = ["Low", "Moderate", "High"]
+            ansiedade_por_nivel = {}
         
-            for nivel in niveis:
-                dados = df_exercicio[df_exercicio["Nível de Exercício"] == nivel]["Anxiety Level (1-10)"].dropna()
-                if len(dados) < 10:
+            for nivel in exercise_levels:
+                valores = df_exercise[df_exercise["Exercise Level"] == nivel]["Anxiety Level (1-10)"].dropna().tolist()
+                ansiedade_por_nivel[nivel] = valores
+        
+            # Gerar gráfico
+            plt.figure(figsize=(6, 4))
+            for nivel, valores in ansiedade_por_nivel.items():
+                if len(valores) < 10:
                     continue
-                hist = np.histogram(dados, bins=10, density=True)
-                bin_centros = (hist[1][:-1] + hist[1][1:]) / 2
-                fig.add_trace(go.Scatter(x=bin_centros, y=hist[0], mode='lines', name=f'{nivel}'))
+                hist, bin_edges = np.histogram(valores, bins=30, density=True)
+                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+                plt.plot(bin_centers, hist, label=nivel, alpha=0.7)
         
-            fig.update_layout(
-                title="Distribuição do Nível de Ansiedade por Nível de Exercício",
-                xaxis_title="Nível de Ansiedade (1-10)",
-                yaxis_title="Densidade Estimada",
-                legend_title="Nível de Exercício",
-                template="plotly_white"
-            )
-        
-            st.plotly_chart(fig, use_container_width=True)
+            plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
+            plt.xlabel('Nível de Ansiedade (1-10)')
+            plt.ylabel('Densidade Aproximada')
+            plt.legend()
+            plt.grid(True)
+            st.pyplot(plt.gcf())
+            plt.clf()
 
 
 
-
-         import plotly.graph_objects as go
+        import plotly.express as px
+        import plotly.graph_objects as go
         
         # --- Gráfico 2: Média de Ansiedade por Tipo de Dieta ---
         
@@ -463,34 +458,30 @@ elif page == "Visualizations":
         df_grouped = df_diet.groupby("Tipo de Dieta")["Anxiety Level (1-10)"].mean().reset_index()
         df_grouped = df_grouped.sort_values("Anxiety Level (1-10)", ascending=False)
         
-        # Criar gráfico com visual moderno e interativo
+        # Criar gráfico com estilo moderno
         fig_diet = go.Figure()
         
         fig_diet.add_trace(go.Scatter(
             x=df_grouped["Tipo de Dieta"],
             y=df_grouped["Anxiety Level (1-10)"],
             mode='lines+markers+text',
-            line=dict(color='royalblue', width=3),
-            marker=dict(size=12, symbol="circle", color='crimson'),
+            line=dict(color='mediumturquoise', width=3),
+            marker=dict(size=10, symbol="circle", color='indianred'),
             text=[f'{v:.2f}' for v in df_grouped["Anxiety Level (1-10)"]],
             textposition='top center',
             name='Ansiedade Média'
         ))
         
-        # Layout com design aprimorado
+        # Layout com melhorias visuais
         fig_diet.update_layout(
-            title=dict(
-                text="Média do Nível de Ansiedade por Tipo de Dieta",
-                x=0.5,
-                font=dict(size=18, color='white', family='Arial')
-            ),
+            title="📊 Média do Nível de Ansiedade por Tipo de Dieta",
+            title_font_size=20,
             xaxis_title="Tipo de Dieta",
             yaxis_title="Ansiedade Média",
             xaxis=dict(tickangle=45),
-            template="plotly_white",
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Arial'),
+            font=dict(color='white'),
             hovermode="x unified",
             margin=dict(l=40, r=40, t=60, b=100)
         )
@@ -743,60 +734,12 @@ elif page == "Visualizations":
         )
         
         st.plotly_chart(fig_interativo, use_container_width=True)
-        
-        
-        # --- Gráfico Adicional: Média de Ansiedade por Tipo de Dieta ---
-        
-        diet_columns = [c for c in df_clusters.columns if c.startswith("Diet Type_")]
-        
-        def get_diet_type(row):
-            for col in diet_columns:
-                if row.get(col, 0) == 1:
-                    return col.replace("Diet Type_", "")
-            return "Desconhecida"
-        
-        df_diet = df_clusters.copy()
-        df_diet["Tipo de Dieta"] = df_diet.apply(get_diet_type, axis=1)
-        
-        df_grouped = df_diet.groupby("Tipo de Dieta")["Anxiety Level (1-10)"].mean().reset_index()
-        df_grouped = df_grouped.sort_values("Anxiety Level (1-10)", ascending=False)
-        
-        fig_diet = go.Figure()
-        
-        fig_diet.add_trace(go.Scatter(
-            x=df_grouped["Tipo de Dieta"],
-            y=df_grouped["Anxiety Level (1-10)"],
-            mode='lines+markers+text',
-            line=dict(color='royalblue', width=3),
-            marker=dict(size=12, symbol="circle", color='crimson'),
-            text=[f'{v:.2f}' for v in df_grouped["Anxiety Level (1-10)"]],
-            textposition='top center',
-            name='Ansiedade Média'
-        ))
-        
-        fig_diet.update_layout(
-            title=dict(
-                text="Média do Nível de Ansiedade por Tipo de Dieta",
-                x=0.5,
-                font=dict(size=18, color='white', family='Arial')
-            ),
-            xaxis_title="Tipo de Dieta",
-            yaxis_title="Ansiedade Média",
-            xaxis=dict(tickangle=45),
-            template="plotly_white",
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Arial'),
-            hovermode="x unified",
-            margin=dict(l=40, r=40, t=60, b=100)
-        )
-        
-        st.plotly_chart(fig_diet, use_container_width=True)
-        
 
 
-
-
+        
+        
+        
+        
 
 # Nova página de Modelos de Regressão
 elif page == "Regression Model":
@@ -911,6 +854,12 @@ elif page == "Regression Model":
 
     else:
         st.warning("Dados insuficientes para regressão.")
+
+
+
+# Footer
+st.sidebar.markdown("---")
+st.sidebar.info("Mental Health Data Dashboard - Built with Streamlit")
 
 
 
