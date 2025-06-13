@@ -466,26 +466,28 @@ elif page == "Visualizations":
 
         # --- Gráfico 3: Distribuição Ansiedade por Consumo de Álcool (bins Baixo, Médio, Alto) ---
 
-        splits = [-float("inf"), 6.33, 12.66, 19.0]
-        bucketizer = bucketizer(splits=splits, inputCol="Alcohol Consumption (drinks/week)", outputCol="AlcoholBin") # type: ignore
-        df_alcohol = df_clusters.filter(col("Alcohol Consumption (drinks/week)") <= 19) \
-                                .select("Anxiety Level (1-10)", "Alcohol Consumption (drinks/week)")
-        df_alcohol = bucketizer.transform(df_alcohol)
-
-        labels = {0.0: "Baixo", 1.0: "Médio", 2.0: "Alto"}
-
+        # Filtrar e categorizar os dados de álcool
+        df_alcohol = df_clusters.copy()
+        df_alcohol = df_alcohol[df_alcohol["Alcohol Consumption (drinks/week)"] <= 19]
+        
+        bins = [-float("inf"), 6.33, 12.66, float("inf")]
+        labels = ["Baixo", "Médio", "Alto"]
+        df_alcohol["AlcoholBin"] = pd.cut(df_alcohol["Alcohol Consumption (drinks/week)"], bins=bins, labels=labels)
+        
+        # Preparar dados para o gráfico
         dados_kde = []
-        for i in range(3):
-            anx_values = df_alcohol.filter(col("AlcoholBin") == i).select("Anxiety Level (1-10)").rdd.flatMap(lambda x: x).collect()
+        for label in labels:
+            anx_values = df_alcohol[df_alcohol["AlcoholBin"] == label]["Anxiety Level (1-10)"].dropna().tolist()
             if len(anx_values) < 10:
                 continue
             hist, bin_edges = np.histogram(anx_values, bins=30, density=True)
             bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
             dados_kde.append({
-                'label': labels[i],
+                'label': label,
                 'x': bin_centers,
                 'y': hist
             })
+
 
         fig_alcohol = go.Figure()
         for d in dados_kde:
