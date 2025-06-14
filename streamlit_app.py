@@ -1115,7 +1115,7 @@ elif page == "Dashboard":
 
 
 
-         import plotly.graph_objects as go
+        import plotly.graph_objects as go
         import pandas as pd
         
         # ✅ Usar o DataFrame correto contendo informações de países
