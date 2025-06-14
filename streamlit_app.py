@@ -1110,7 +1110,6 @@ elif page == "Dashboard":
 
             import plotly.graph_objects as go
             import pandas as pd
-            import random
             
             # Usar DataFrame já preparado
             df_vis = df_dash.copy()
@@ -1143,38 +1142,40 @@ elif page == "Dashboard":
             top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
-            df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
-            
-            # Gerar cores distintas por país (exceto destaque)
-            def gerar_cor():
-                return f"hsl({random.randint(0, 360)}, 70%, 60%)"
-            
-            color_map = {
-                country: gerar_cor() for country in df_country_avg['Country'].unique()
-                if country != top_country_name
-            }
             
             # Criar figura
             fig = go.Figure()
             
-            # Adicionar países com cores únicas
-            for _, row in df_country_avg[df_country_avg['Country'] != top_country_name].iterrows():
-                fig.add_trace(go.Scattergeo(
-                    lon=[row['lon']],
-                    lat=[row['lat']],
-                    text=row['Country'],
-                    marker=dict(
-                        size=10,
-                        color=color_map.get(row['Country'], 'lightgray'),
-                        line_color='black',
-                        line_width=0.5
+            # Adicionar países com cor da escala baseada no nível de ansiedade
+            fig.add_trace(go.Scattergeo(
+                lon=df_country_avg['lon'],
+                lat=df_country_avg['lat'],
+                text=df_country_avg.apply(lambda row: f"{row['Country']}: {row['Anxiety Level (1-10)']:.2f}", axis=1),
+                mode='markers',
+                marker=dict(
+                    size=12,
+                    color=df_country_avg['Anxiety Level (1-10)'],
+                    colorscale='Turbo',
+                    cmin=1,
+                    cmax=10,
+                    colorbar=dict(
+                        title=dict(
+                            text='Nível de Ansiedade',
+                            font=dict(color='white')
+                        ),
+                        tickvals=list(range(1, 11)),
+                        tickfont=dict(color='white'),
+                        len=0.5,
+                        lenmode='fraction'
                     ),
-                    mode='markers',
-                    name=row['Country'],
-                    showlegend=True
-                ))
+                    line_color='black',
+                    line_width=0.5
+                ),
+                showlegend=False,
+                name='Nível de Ansiedade'
+            ))
             
-            # Adicionar país em destaque
+            # Adicionar país em destaque com estrela
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
@@ -1189,30 +1190,6 @@ elif page == "Dashboard":
                 mode='markers+text',
                 textposition='top center',
                 name=f'🔺 Destaque: {top_country_name}'
-            ))
-            
-            # Adicionar trace invisível para a barra de cor (escala de ansiedade)
-            fig.add_trace(go.Scattergeo(
-                lon=[None],
-                lat=[None],
-                marker=dict(
-                    size=0.1,
-                    color=[i for i in range(1, 11)],
-                    cmin=1,
-                    cmax=10,
-                    colorscale='Turbo',
-                    colorbar=dict(
-                        title=dict(
-                            text='Nível de Ansiedade',
-                            font=dict(color='white')
-                        ),
-                        tickvals=list(range(1, 11)),
-                        tickfont=dict(color='white'),
-                        len=0.5,
-                        lenmode='fraction'
-                    )
-                ),
-                showlegend=False
             ))
             
             # Layout escuro
