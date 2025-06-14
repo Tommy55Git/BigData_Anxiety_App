@@ -62,83 +62,6 @@ page = st.sidebar.selectbox(
 )
 
 
-elif page == "Dashboard":
-
-    st.header("Dashboard Geral de Saúde Mental e Ansiedade")
-
-    try:
-        import plotly.express as px
-        import plotly.graph_objects as go
-
-        if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
-            st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
-        else:
-            df_dash = df_inner.copy().dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
-
-            st.subheader("Média Geral de Ansiedade")
-            media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
-            st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
-
-            st.subheader("País com Maior Nível Médio de Ansiedade")
-            media_por_pais = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().sort_values(ascending=False)
-            pais_top_ansiedade = media_por_pais.idxmax()
-            valor_top_ansiedade = media_por_pais.max()
-            st.metric(label="País com Maior Ansiedade Média", value=pais_top_ansiedade, delta=f"{valor_top_ansiedade:.2f}")
-
-            fig_top_paises = px.bar(
-                media_por_pais.head(10).reset_index(),
-                x="Country",
-                y="Anxiety Level (1-10)",
-                title="Top 10 Países com Maior Nível Médio de Ansiedade",
-                labels={"Anxiety Level (1-10)": "Ansiedade Média"},
-                color="Anxiety Level (1-10)",
-                color_continuous_scale="Reds"
-            )
-            st.plotly_chart(fig_top_paises, use_container_width=True)
-
-            st.subheader("Distribuição de Condições de Saúde Mental por País")
-            condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
-
-            fig_condicao = px.bar(
-                condicao_pais,
-                x="Country",
-                y="Total",
-                color="Mental Health Condition",
-                title="Distribuição das Condições de Saúde Mental por País",
-                labels={"Total": "Casos"},
-                barmode="stack"
-            )
-            st.plotly_chart(fig_condicao, use_container_width=True)
-
-            st.subheader("Proporção de Condições de Saúde Mental (Geral)")
-            condicao_geral = df_dash["Mental Health Condition"].value_counts().reset_index()
-            condicao_geral.columns = ["Condição", "Total"]
-            fig_pizza = px.pie(
-                condicao_geral,
-                values="Total",
-                names="Condição",
-                title="Proporção de Condições de Saúde Mental",
-                hole=0.4
-            )
-            st.plotly_chart(fig_pizza, use_container_width=True)
-
-            st.subheader("Ansiedade por Gênero")
-            if "Gender" in df_dash.columns:
-                ansiedade_genero = df_dash.groupby("Gender")["Anxiety Level (1-10)"].mean().reset_index()
-                fig_genero = px.bar(
-                    ansiedade_genero,
-                    x="Gender",
-                    y="Anxiety Level (1-10)",
-                    title="Média de Ansiedade por Gênero",
-                    labels={"Anxiety Level (1-10)": "Ansiedade Média"},
-                    color="Anxiety Level (1-10)",
-                    color_continuous_scale="Blues"
-                )
-                st.plotly_chart(fig_genero, use_container_width=True)
-
-    except Exception as e:
-        st.warning("Erro ao carregar o dashboard.")
-        st.exception(e)
 
 
 
@@ -1089,7 +1012,91 @@ elif page == "Classification Model":
         st.warning("Erro ao executar o modelo de classificação. Verifique se os dados foram carregados corretamente.")
         st.exception(e)
 
-    
+
+
+
+
+
+elif page == "Dashboard":
+
+    st.header("Dashboard Geral de Saúde Mental e Ansiedade")
+
+    try:
+        import plotly.express as px
+        import plotly.graph_objects as go
+
+        if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
+            st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
+        else:
+            df_dash = df_inner.copy().dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
+
+            st.subheader("Média Geral de Ansiedade")
+            media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
+            st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
+
+            st.subheader("País com Maior Nível Médio de Ansiedade")
+            media_por_pais = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().sort_values(ascending=False)
+            pais_top_ansiedade = media_por_pais.idxmax()
+            valor_top_ansiedade = media_por_pais.max()
+            st.metric(label="País com Maior Ansiedade Média", value=pais_top_ansiedade, delta=f"{valor_top_ansiedade:.2f}")
+
+            fig_top_paises = px.bar(
+                media_por_pais.head(10).reset_index(),
+                x="Country",
+                y="Anxiety Level (1-10)",
+                title="Top 10 Países com Maior Nível Médio de Ansiedade",
+                labels={"Anxiety Level (1-10)": "Ansiedade Média"},
+                color="Anxiety Level (1-10)",
+                color_continuous_scale="Reds"
+            )
+            st.plotly_chart(fig_top_paises, use_container_width=True)
+
+            st.subheader("Distribuição de Condições de Saúde Mental por País")
+            condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
+
+            fig_condicao = px.bar(
+                condicao_pais,
+                x="Country",
+                y="Total",
+                color="Mental Health Condition",
+                title="Distribuição das Condições de Saúde Mental por País",
+                labels={"Total": "Casos"},
+                barmode="stack"
+            )
+            st.plotly_chart(fig_condicao, use_container_width=True)
+
+            st.subheader("Proporção de Condições de Saúde Mental (Geral)")
+            condicao_geral = df_dash["Mental Health Condition"].value_counts().reset_index()
+            condicao_geral.columns = ["Condição", "Total"]
+            fig_pizza = px.pie(
+                condicao_geral,
+                values="Total",
+                names="Condição",
+                title="Proporção de Condições de Saúde Mental",
+                hole=0.4
+            )
+            st.plotly_chart(fig_pizza, use_container_width=True)
+
+            st.subheader("Ansiedade por Gênero")
+            if "Gender" in df_dash.columns:
+                ansiedade_genero = df_dash.groupby("Gender")["Anxiety Level (1-10)"].mean().reset_index()
+                fig_genero = px.bar(
+                    ansiedade_genero,
+                    x="Gender",
+                    y="Anxiety Level (1-10)",
+                    title="Média de Ansiedade por Gênero",
+                    labels={"Anxiety Level (1-10)": "Ansiedade Média"},
+                    color="Anxiety Level (1-10)",
+                    color_continuous_scale="Blues"
+                )
+                st.plotly_chart(fig_genero, use_container_width=True)
+
+    except Exception as e:
+        st.warning("Erro ao carregar o dashboard.")
+        st.exception(e)
+
+
+
 
 
 
