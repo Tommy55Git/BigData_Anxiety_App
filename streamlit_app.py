@@ -1220,7 +1220,7 @@ elif page == "Dashboard":
 
             
              # 📊 Visão Geral Global da Ansiedade
-            st.subheader("Visão Geral Global da Ansiedade")
+            st.subheader("Visão Geral das Variáveis")
             
             # Estatísticas principais
             media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
