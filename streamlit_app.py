@@ -1215,9 +1215,33 @@ elif page == "Dashboard":
             
             st.markdown("---")
             
-            # Gráfico Donut de Gênero
+            import matplotlib.pyplot as plt
+    
+            # Dados de exemplo - substitua pelos seus dados reais
+            labels = ['Feminino', 'Masculino', 'Outro']
+            sizes = [33.3, 33.3, 33.3]  # Use os percentuais reais, se disponíveis
+            colors = ['#FFB300', '#F4511E', '#E91E63']
+            
+            # Título
             st.markdown("### 🧑‍🤝‍🧑 Distribuição por Gênero")
-            st.image("/mnt/data/distribuicao_genero.png", caption="Distribuição de Gênero na Amostra", use_column_width=True)
+            
+            # Criar gráfico donut
+            fig, ax = plt.subplots(figsize=(6, 6))
+            wedges, texts, autotexts = ax.pie(
+                sizes,
+                labels=labels,
+                autopct='%1.1f%%',
+                startangle=90,
+                colors=colors,
+                wedgeprops=dict(width=0.4)
+            )
+            ax.axis('equal')  # Mantém o círculo perfeito
+            plt.setp(autotexts, size=12, weight="bold")
+            plt.title("Distribuição de Gênero (%)", fontsize=14)
+            
+            # Exibir no Streamlit
+            st.pyplot(fig)
+
 
 
 
