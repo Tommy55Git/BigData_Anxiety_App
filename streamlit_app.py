@@ -922,94 +922,93 @@ elif page == "Classification Model":
     ]
     coluna_alvo = "Anxiety Level (1-10)"
 
-    # Verificação completa ANTES de qualquer uso de X ou y
-    if 'df_inner' in locals() and not df_inner.empty and all(
-        col in df_inner.columns for col in colunas_independentes + [coluna_alvo]
-    ):
-        # Preparar dados
-        df_class = df_inner[colunas_independentes + [coluna_alvo]].dropna()
-        df_class["Anxiety_High"] = (df_class[coluna_alvo] > 6).astype(int)
+    # Verificação segura de dados
+    if 'df_inner' in locals():
+        if df_inner.empty:
+            st.warning("⚠️ O dataframe está vazio.")
+        elif not all(col in df_inner.columns for col in colunas_independentes + [coluna_alvo]):
+            st.error("❌ Colunas ausentes em df_inner: " + 
+                     ", ".join(set(colunas_independentes + [coluna_alvo]) - set(df_inner.columns)))
+        else:
+            # Preparar os dados
+            df_class = df_inner[colunas_independentes + [coluna_alvo]].dropna()
+            df_class["Anxiety_High"] = (df_class[coluna_alvo] > 6).astype(int)
 
-        X = df_class[colunas_independentes]
-        y = df_class["Anxiety_High"]
+            X = df_class[colunas_independentes]
+            y = df_class["Anxiety_High"]
 
-        # Split
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            # Dividir treino/teste
+            from sklearn.model_selection import train_test_split
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Modelos
-        models = {
-            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-            'k-NN': KNeighborsClassifier(),
-            'Decision Tree': DecisionTreeClassifier(random_state=42),
-            'Random Forest': RandomForestClassifier(random_state=42),
-            'SVM': SVC(random_state=42)
-        }
+            # Modelos
+            models = {
+                'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
+                'k-NN': KNeighborsClassifier(),
+                'Decision Tree': DecisionTreeClassifier(random_state=42),
+                'Random Forest': RandomForestClassifier(random_state=42),
+                'SVM': SVC(random_state=42)
+            }
 
-        # Avaliação
-        model_metrics = []
-        confusion_matrices = {}
+            # Avaliação
+            model_metrics = []
+            confusion_matrices = {}
 
-        for name, model in models.items():
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
+            for name, model in models.items():
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
 
-            accuracy = accuracy_score(y_test, y_pred)
-            report = classification_report(y_test, y_pred, output_dict=True)
-            cm = confusion_matrix(y_test, y_pred)
+                accuracy = accuracy_score(y_test, y_pred)
+                report = classification_report(y_test, y_pred, output_dict=True)
+                cm = confusion_matrix(y_test, y_pred)
 
-            model_metrics.append({
-                'Model': name,
-                'Accuracy': accuracy,
-                'Precision': report['macro avg']['precision'],
-                'Recall': report['macro avg']['recall'],
-                'F1-Score': report['macro avg']['f1-score']
-            })
-            confusion_matrices[name] = cm
+                model_metrics.append({
+                    'Model': name,
+                    'Accuracy': accuracy,
+                    'Precision': report['macro avg']['precision'],
+                    'Recall': report['macro avg']['recall'],
+                    'F1-Score': report['macro avg']['f1-score']
+                })
+                confusion_matrices[name] = cm
 
-        metrics_df = pd.DataFrame(model_metrics)
+            # Mostrar métricas
+            metrics_df = pd.DataFrame(model_metrics)
+            st.markdown("### Métricas dos Modelos")
+            st.dataframe(metrics_df.style.format({
+                "Accuracy": "{:.2%}",
+                "Precision": "{:.2%}",
+                "Recall": "{:.2%}",
+                "F1-Score": "{:.2%}"
+            }))
 
-        # Tabela
-        st.markdown("### Métricas dos Modelos")
-        st.dataframe(metrics_df.style.format({
-            "Accuracy": "{:.2%}",
-            "Precision": "{:.2%}",
-            "Recall": "{:.2%}",
-            "F1-Score": "{:.2%}"
-        }))
+            # Gráfico
+            fig = px.bar(
+                metrics_df.melt(id_vars="Model", var_name="Métrica", value_name="Valor"),
+                x="Model", y="Valor", color="Métrica",
+                barmode="group", title="Desempenho dos Modelos de Classificação",
+                text_auto=".2f"
+            )
+            fig.update_layout(xaxis_title="Modelo", yaxis_title="Pontuação", legend_title="Métrica")
+            st.plotly_chart(fig, use_container_width=True)
 
-        # Gráfico
-        st.markdown("### Comparação Gráfica dos Modelos")
-        fig = px.bar(
-            metrics_df.melt(id_vars="Model", var_name="Métrica", value_name="Valor"),
-            x="Model",
-            y="Valor",
-            color="Métrica",
-            barmode="group",
-            title="Desempenho dos Modelos de Classificação",
-            text_auto=".2f"
-        )
-        fig.update_layout(xaxis_title="Modelo", yaxis_title="Pontuação", legend_title="Métrica")
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Matriz de Confusão
-        st.markdown("### Matriz de Confusão por Modelo")
-        selected_model = st.selectbox("Selecione um modelo para visualizar a matriz de confusão:", list(confusion_matrices.keys()))
-        cm = confusion_matrices[selected_model]
-        cm_labels = ['Baixa/Moderada', 'Alta']
-        z_text = [[str(y) for y in x] for x in cm]
-        fig_cm = ff.create_annotated_heatmap(
-            cm, x=cm_labels, y=cm_labels,
-            annotation_text=z_text, colorscale='YlGnBu',
-            showscale=True
-        )
-        fig_cm.update_layout(title=f"Matriz de Confusão - {selected_model}",
-                             xaxis_title="Previsto", yaxis_title="Real")
-        st.plotly_chart(fig_cm, use_container_width=True)
+            # Matriz de confusão
+            st.markdown("### Matriz de Confusão por Modelo")
+            selected_model = st.selectbox("Selecione um modelo para visualizar a matriz de confusão:", list(confusion_matrices.keys()))
+            cm = confusion_matrices[selected_model]
+            cm_labels = ['Baixa/Moderada', 'Alta']
+            z_text = [[str(y) for y in x] for x in cm]
+            fig_cm = ff.create_annotated_heatmap(
+                cm, x=cm_labels, y=cm_labels,
+                annotation_text=z_text, colorscale='YlGnBu',
+                showscale=True
+            )
+            fig_cm.update_layout(title=f"Matriz de Confusão - {selected_model}",
+                                 xaxis_title="Previsto", yaxis_title="Real")
+            st.plotly_chart(fig_cm, use_container_width=True)
 
     else:
-        st.warning("❗ Dados insuficientes ou colunas ausentes para realizar a classificação.")
-
-                
+        st.error("❌ O DataFrame `df_inner` não está definido.")
+     
         
         
 
