@@ -254,55 +254,6 @@ elif page == "Visualizations":
                     st.plotly_chart(fig, use_container_width=True)
 
 
-            # GRÁFICO: Distribuição da Idade por Condição de Saúde Mental (usando PySpark + matplotlib)
-            st.subheader("Distribuição da Idade por Condição de Saúde Mental (matplotlib)")
-            
-            from pyspark.sql.functions import when
-            import matplotlib.pyplot as plt
-            import streamlit as st
-            
-            try:
-                # Etapa 1: Identificar colunas de condição mental
-                condition_cols = [col for col in df_dash.columns if col.startswith('Mental Health Condition_')]
-            
-                # Etapa 2: Criar expressão encadeada
-                condition_expr = when(df_dash[condition_cols[0]] == 1, condition_cols[0].replace('Mental Health Condition_', ''))
-                for col_name in condition_cols[1:]:
-                    condition_expr = condition_expr.when(df_dash[col_name] == 1, col_name.replace('Mental Health Condition_', ''))
-                condition_expr = condition_expr.otherwise('Unknown')
-            
-                # Etapa 3: Adicionar coluna categórica
-                df_dash = df_dash.withColumn("Mental Health Condition", condition_expr)
-            
-                # Etapa 4: Agrupar por idade e condição
-                grouped_df = (
-                    df_dash.groupBy("Age", "Mental Health Condition")
-                    .count()
-                    .orderBy("Age")
-                )
-            
-                # Etapa 5: Converter para pandas
-                df_pd = grouped_df.toPandas()
-            
-                # Etapa 6: Plotar com matplotlib
-                plt.figure(figsize=(12, 6))
-                for condition in df_pd['Mental Health Condition'].unique():
-                    subset = df_pd[df_pd['Mental Health Condition'] == condition]
-                    plt.bar(subset['Age'], subset['count'], label=condition, alpha=0.7)
-            
-                plt.title("Distribuição da Idade por Condição de Saúde Mental")
-                plt.xlabel("Idade")
-                plt.ylabel("Contagem")
-                plt.legend(title="Condição Mental")
-                plt.grid(axis='y', linestyle='--', alpha=0.5)
-                plt.tight_layout()
-            
-                st.pyplot(plt.gcf())
-                plt.clf()  # limpa a figura do matplotlib para evitar conflitos futuros
-            
-            except Exception as e:
-                st.warning("Erro ao gerar gráfico com matplotlib.")
-                st.exception(e)
 
 
        
@@ -438,8 +389,61 @@ elif page == "Visualizations":
             fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
             st.plotly_chart(fig3, use_container_width=True)
 
+
+            # GRÁFICO: Distribuição da Idade por Condição de Saúde Mental (usando PySpark + matplotlib)
+            st.subheader("Distribuição da Idade por Condição de Saúde Mental (matplotlib)")
+            
+            from pyspark.sql.functions import when
+            import matplotlib.pyplot as plt
+            import streamlit as st
+            
+            try:
+                # Etapa 1: Identificar colunas de condição mental
+                condition_cols = [col for col in df_dash.columns if col.startswith('Mental Health Condition_')]
+            
+                # Etapa 2: Criar expressão encadeada
+                condition_expr = when(df_dash[condition_cols[0]] == 1, condition_cols[0].replace('Mental Health Condition_', ''))
+                for col_name in condition_cols[1:]:
+                    condition_expr = condition_expr.when(df_dash[col_name] == 1, col_name.replace('Mental Health Condition_', ''))
+                condition_expr = condition_expr.otherwise('Unknown')
+            
+                # Etapa 3: Adicionar coluna categórica
+                df_dash = df_dash.withColumn("Mental Health Condition", condition_expr)
+            
+                # Etapa 4: Agrupar por idade e condição
+                grouped_df = (
+                    df_dash.groupBy("Age", "Mental Health Condition")
+                    .count()
+                    .orderBy("Age")
+                )
+            
+                # Etapa 5: Converter para pandas
+                df_pd = grouped_df.toPandas()
+            
+                # Etapa 6: Plotar com matplotlib
+                plt.figure(figsize=(12, 6))
+                for condition in df_pd['Mental Health Condition'].unique():
+                    subset = df_pd[df_pd['Mental Health Condition'] == condition]
+                    plt.bar(subset['Age'], subset['count'], label=condition, alpha=0.7)
+            
+                plt.title("Distribuição da Idade por Condição de Saúde Mental")
+                plt.xlabel("Idade")
+                plt.ylabel("Contagem")
+                plt.legend(title="Condição Mental")
+                plt.grid(axis='y', linestyle='--', alpha=0.5)
+                plt.tight_layout()
+            
+                st.pyplot(plt.gcf())
+                plt.clf()  # limpa a figura do matplotlib para evitar conflitos futuros
+            
+            except Exception as e:
+                st.warning("Erro ao gerar gráfico com matplotlib.")
+                st.exception(e)
+
    
         
+
+
         
         
         
