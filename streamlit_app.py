@@ -1132,60 +1132,9 @@ elif page == "Dashboard":
 
             
 
-            # GRÁFICO: Distribuição da Idade por Condição de Saúde Mental
-            st.subheader("Distribuição da Idade por Condição de Saúde Mental")
+          
 
-            fig_age_mental = px.histogram(
-                df_dash,
-                x="Age",
-                color="Mental Health Condition",
-                barmode="group",
-                title="Idade vs Condição de Saúde Mental",
-                labels={"Age": "Idade", "count": "Quantidade", "Mental Health Condition": "Condição"}
-            )
-            st.plotly_chart(fig_age_mental, use_container_width=True)
-
-            # GRÁFICOS: Condições de Saúde Mental por Variáveis Sociodemográficas
-            st.subheader("Distribuição de Condições de Saúde Mental por Variáveis Sociodemográficas")
-            for col in ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income', 'Country']:
-                if col in df_dash.columns:
-                    fig = px.histogram(
-                        df_dash,
-                        x=col,
-                        color='Mental Health Condition',
-                        title=f"{col} vs Condição de Saúde Mental",
-                        barmode='group'
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-            # GRÁFICO: Condição de Saúde Mental por País
-            st.subheader("Distribuição de Condições de Saúde Mental por País")
-            condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
-
-            fig_condicao = px.bar(
-                condicao_pais,
-                x="Country",
-                y="Total",
-                color="Mental Health Condition",
-                title="Distribuição das Condições de Saúde Mental por País",
-                labels={"Total": "Casos"},
-                barmode="stack"
-            )
-            st.plotly_chart(fig_condicao, use_container_width=True)
-
-            # GRÁFICO: Pizza Geral de Condições Mentais
-            st.subheader("Proporção de Condições de Saúde Mental (Geral)")
-            condicao_geral = df_dash["Mental Health Condition"].value_counts().reset_index()
-            condicao_geral.columns = ["Condição", "Total"]
-            fig_pizza = px.pie(
-                condicao_geral,
-                values="Total",
-                names="Condição",
-                title="Proporção de Condições de Saúde Mental",
-                hole=0.4
-            )
-            st.plotly_chart(fig_pizza, use_container_width=True)
-
+          
             # GRÁFICO: Top Países com Mais Registros
             st.subheader("País com Maior Registro de Condições de Saúde Mental")
             top_condition_country = condicao_pais.groupby("Country")["Total"].sum().reset_index()
