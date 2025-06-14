@@ -1353,15 +1353,19 @@ elif page == "Dashboard":
             )
             
             # Atualizar layout para alinhar o título à esquerda
+
+            st.subheader("Distribuição por Género")
+            
+            # Atualizar layout do gráfico
             fig.update_traces(textinfo='percent+label', textfont_size=14)
             fig.update_layout(
                 title={
-                    st.subheader("Distribuição por Género")
+                    'text': "Distribuição por Gênero",
                     'x': 0,  # Alinhar à esquerda
                     'xanchor': 'left'
-                }
-            )
-            
+    }
+)
+
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
 
