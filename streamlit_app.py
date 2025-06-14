@@ -1144,7 +1144,12 @@ elif page == "Dashboard":
                 df_quartis['Anxiety Quartile'] = pd.qcut(
                     df_quartis['Anxiety Level (1-10)'],
                     q=4,
-                    labels=['Q1 (Baixo)', 'Q2', 'Q3', 'Q4 (Alto)']
+                    labels=[
+                        'Q1 🔹 Baixo (0–25%)',
+                        'Q2 🟦 Médio-Baixo (25–50%)',
+                        'Q3 🟨 Médio-Alto (50–75%)',
+                        'Q4 🔺 Alto (75–100%)'
+                    ]
                 )
             
                 # Verifica se colunas binárias de gênero existem
@@ -1174,18 +1179,27 @@ elif page == "Dashboard":
                         y='Anxiety Quartile',
                         color='Gênero',
                         orientation='h',
-                        text='Percentual',
-                        title='Proporção de Gênero por Quartil de Ansiedade<br>'
-                              '🔸 Q1 (Baixo): 25% com os menores níveis de ansiedade<br>'
-                              '🔸 Q2 e Q3: 50% intermediários<br>'
-                              '🔸 Q4 (Alto): 25% com os maiores níveis de ansiedade',
+                        text=df_long['Percentual'].map(lambda x: f"{x:.1f}%"),
+                        title=(
+                            "<b>Distribuição de Gênero por Quartis de Ansiedade</b><br><br>"
+                            "🔹 <b>Q1:</b> 25% com os <i>menores</i> níveis de ansiedade<br>"
+                            "🟦 <b>Q2:</b> 25% com níveis <i>médio-baixos</i><br>"
+                            "🟨 <b>Q3:</b> 25% com níveis <i>médio-altos</i><br>"
+                            "🔺 <b>Q4:</b> 25% com os <i>maiores</i> níveis de ansiedade"
+                        ),
                         labels={
                             'Anxiety Quartile': 'Quartil de Ansiedade',
                             'Percentual': 'Proporção (%)'
                         }
                     )
             
-                    fig_quartil.update_layout(barmode='stack', xaxis=dict(range=[0, 100]))
+                    fig_quartil.update_layout(
+                        barmode='stack',
+                        xaxis=dict(range=[0, 100]),
+                        yaxis_title=None,
+                        legend_title='Gênero'
+                    )
+            
                     st.plotly_chart(fig_quartil, use_container_width=True)
             
                 else:
@@ -1194,6 +1208,7 @@ elif page == "Dashboard":
             except Exception as e:
                 st.warning("Erro ao gerar gráfico de quartis de ansiedade por gênero.")
                 st.exception(e)
+
 
             
 
