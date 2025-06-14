@@ -1584,7 +1584,6 @@ elif page == "Predict your Anxiety":
     
     if st.button("🔮 Predict My Anxiety Level", type="primary"):
         try:
-            # Substitua df_inner por classificacao aqui
             if not df_clusters.empty:
                 colunas_independentes = [
                     "Age", 
@@ -1598,10 +1597,11 @@ elif page == "Predict your Anxiety":
                     "Work Hours per Week"
                 ]
                 
-                df_model = df_clusters[['Stress_Level_Label'] + colunas_independentes].dropna()
+                # Use a coluna codificada para treino e predição
+                df_model = df_clusters[['Stress_Label_Encoded'] + colunas_independentes].dropna()
 
                 X = df_model[colunas_independentes]
-                y = df_model['Stress_Level_Label']
+                y = df_model['Stress_Label_Encoded']
 
                 from sklearn.model_selection import train_test_split
                 from sklearn.linear_model import LogisticRegression
@@ -1642,14 +1642,22 @@ elif page == "Predict your Anxiety":
                     "Work Hours per Week": [work_hours]
                 })
 
-                prediction_class = best_model.predict(input_data)[0]
+                prediction_encoded = best_model.predict(input_data)[0]
+
+                # Mapeamento dos labels codificados para texto
+                label_map = {
+                    0: "Low",
+                    1: "Moderate",
+                    2: "High"
+                }
+                prediction_class = label_map.get(prediction_encoded, "Unknown")
 
                 if hasattr(best_model, "predict_proba"):
                     prediction_proba = best_model.predict_proba(input_data)[0]
                 else:
                     prediction_proba = None
 
-                class_labels = sorted(y.unique())
+                class_labels = [label_map[k] for k in sorted(label_map.keys())]
 
                 st.success(f"✅ Prediction Complete with {best_model_name} (Accuracy: {best_accuracy:.2f})")
 
