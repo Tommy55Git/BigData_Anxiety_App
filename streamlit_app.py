@@ -1182,10 +1182,6 @@ elif page == "Dashboard":
                         text=df_long['Percentual'].map(lambda x: f"{x:.1f}%"),
                         title=(
                             "<b>Distribuição de Gênero por Quartis de Ansiedade</b><br><br>"
-                            "🔹 <b>Q1:</b> 25% com os <i>menores</i> níveis de ansiedade<br>"
-                            "🟦 <b>Q2:</b> 25% com níveis <i>médio-baixos</i><br>"
-                            "🟨 <b>Q3:</b> 25% com níveis <i>médio-altos</i><br>"
-                            "🔺 <b>Q4:</b> 25% com os <i>maiores</i> níveis de ansiedade"
                         ),
                         labels={
                             'Anxiety Quartile': 'Quartil de Ansiedade',
