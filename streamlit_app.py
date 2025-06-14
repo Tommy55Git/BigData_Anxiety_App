@@ -964,42 +964,42 @@ elif page == "Visualizations":
 
 
     
-        st.markdown("---")
-        st.subheader("Sinais Fisiológicos Médios por Gênero")
-    
-        # Verifica se colunas dummy de gênero e os sinais estão no DataFrame
-        genero_cols = ['Gender_Male', 'Gender_Female', 'Gender_Other']
-        if all(col in df_pd.columns for col in genero_cols) and all(col in df_pd.columns for col in sinais_fisiologicos):
-            
-            # Cria a coluna 'Gender' com base nas dummies
-            def get_gender(row):
-                if row['Gender_Male'] == 1:
-                    return 'Masculino'
-                elif row['Gender_Female'] == 1:
-                    return 'Feminino'
-                elif row['Gender_Other'] == 1:
-                    return 'Outros'
-                else:
-                    return 'Desconhecido'
-    
-            df_pd['Gender'] = df_pd.apply(get_gender, axis=1)
-    
-            # Agrupa e calcula a média dos sinais fisiológicos
-            sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
-    
-            # Gera o gráfico usando matplotlib
-            import matplotlib.pyplot as plt
-            import seaborn as sns
-    
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sinais_por_genero.plot(kind='barh', ax=ax)
-            ax.set_title("Sinais Fisiológicos Médios por Gênero")
-            ax.set_xlabel("Média")
-            plt.tight_layout()
-            st.pyplot(fig)
-    
-        else:
-            st.warning("Colunas de gênero ou sinais fisiológicos ausentes para gerar o gráfico.")
+    st.markdown("---")
+    st.subheader("Sinais Fisiológicos Médios por Gênero")
+
+    # Verifica se colunas dummy de gênero e os sinais estão no DataFrame
+    genero_cols = ['Gender_Male', 'Gender_Female', 'Gender_Other']
+    if all(col in df_pd.columns for col in genero_cols) and all(col in df_pd.columns for col in sinais_fisiologicos):
+        
+        # Cria a coluna 'Gender' com base nas dummies
+        def get_gender(row):
+            if row['Gender_Male'] == 1:
+                return 'Masculino'
+            elif row['Gender_Female'] == 1:
+                return 'Feminino'
+            elif row['Gender_Other'] == 1:
+                return 'Outros'
+            else:
+                return 'Desconhecido'
+
+        df_pd['Gender'] = df_pd.apply(get_gender, axis=1)
+
+        # Agrupa e calcula a média dos sinais fisiológicos
+        sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
+
+        # Gera o gráfico usando matplotlib
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sinais_por_genero.plot(kind='barh', ax=ax)
+        ax.set_title("Sinais Fisiológicos Médios por Gênero")
+        ax.set_xlabel("Média")
+        plt.tight_layout()
+        st.pyplot(fig)
+
+    else:
+        st.warning("Colunas de gênero ou sinais fisiológicos ausentes para gerar o gráfico.")
 
 
 
