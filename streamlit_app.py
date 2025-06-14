@@ -1330,21 +1330,32 @@ elif page == "Dashboard":
             
             # País em destaque
             fig.add_trace(go.Scattergeo(
-                lon=[top_country['lon']],
-                lat=[top_country['lat']],
-                text=[f"{top_country_name}<br>{top_country_value:.2f}"],
+                lon=[None], lat=[None],  # invisível
                 marker=dict(
-                    size=18,
-                    color='#FF1744',
-                    line_color='white',
-                    line_width=2,
-                    symbol='star'
+                    size=0.01,
+                    color=df_country_avg['Anxiety Level (1-10)'],  # escala real
+                    colorscale='Turbo',
+                    showscale=True,
+                    colorbar=dict(
+                        title=dict(  # ✅ Correto: dict com 'text' e 'font'
+                            text='Escala de Ansiedade',
+                            font=dict(color='white')
+                        ),
+                        tickvals=[1, 3, 5, 7, 10],
+                        ticktext=["1 (baixa)", "3", "5", "7", "10 (alta)"],
+                        thickness=15,
+                        len=0.35,
+                        y=0.15,  # posição vertical (abaixo da legenda)
+                        yanchor='bottom',
+                        x=1.02,
+                        xanchor='left',
+                        tickfont=dict(color='white')  # ✅ tickfont está OK
+                    )
                 ),
-                mode='markers+text',
-                textposition='top center',
-                name=f'🔺 Destaque: {top_country_name}'
+                mode='markers',
+                showlegend=False
             ))
-            
+
             # Adicionar traço fantasma para escala de ansiedade
             fig.add_trace(go.Scattergeo(
                 lon=[None], lat=[None],  # Invisível
