@@ -1108,92 +1108,92 @@ elif page == "Dashboard":
 
             # ================= GRÁFICOS ===================
 
-        # Título da seção
-        st.subheader("📊 Visão Geral Global da Ansiedade")
-        
-        # Estatísticas principais
-        media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
-        mediana_ansiedade = df_dash["Anxiety Level (1-10)"].median()
-        media_sessoes_terapia = df_dash["Therapy Sessions (per month)"].mean()
-        prop_terapia = df_dash["Therapy Sessions (per month)"].gt(0).mean() * 100
-        
-        # Sexo com maior ansiedade
-        sexo_cols = {"Feminino": "Gender_Female", "Masculino": "Gender_Male", "Outro": "Gender_Other"}
-        sexo_media = {
-            sexo: df_dash[df_dash[col] == 1]["Anxiety Level (1-10)"].mean()
-            for sexo, col in sexo_cols.items() if col in df_dash.columns
-        }
-        sexo_top = max(sexo_media, key=sexo_media.get)
-        
-        # País com maior ansiedade média
-        if 'Country' in df_dash.columns:
-            pais_top = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().idxmax()
-            pais_top_valor = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().max()
-        else:
-            pais_top, pais_top_valor = "N/A", 0
-        
-        # Condição de saúde mental mais comum
-        condicoes = [col for col in df_dash.columns if col.startswith("Mental Health Condition_")]
-        condicao_top = max(condicoes, key=lambda c: df_dash[c].sum()).replace("Mental Health Condition_", "")
-        
-        # Idade média
-        idade_media = df_dash["Age"].mean()
-        
-        # Sono médio
-        sono_medio = df_dash["Sleep Hours"].mean()
-        
-        # Consumo médio de álcool
-        alcool_medio = df_dash["Alcohol Consumption (drinks/week)"].mean()
-        
-        # Estilo para as caixas
-        box_style = """
-        <style>
-        .box-metric {
-            background-color: #f0f2f6;
-            padding: 1rem;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
-        }
-        .box-title {
-            font-size: 0.9rem;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-        .box-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #0072C6;
-        }
-        </style>
-        """
-        st.markdown(box_style, unsafe_allow_html=True)
-        
-        # Função para renderizar uma "caixa"
-        def render_box(title, value, emoji=""):
-            st.markdown(f"""
-            <div class="box-metric">
-                <div class="box-title">{emoji} {title}</div>
-                <div class="box-value">{value}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Organização em colunas com design
-        cols1 = st.columns(4)
-        render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈")
-        render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊")
-        render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬")
-        render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠")
-        
-        cols2 = st.columns(4)
-        with cols2[0]: render_box("Sexo Mais Ansioso", sexo_top, "🚻")
-        with cols2[1]: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍")
-        with cols2[2]: render_box("Condição Mental + Comum", condicao_top, "⚠️")
-        with cols2[3]: render_box("Idade Média", f"{idade_media:.1f} anos", "👤")
-        
-        cols3 = st.columns(2)
-        with cols3[0]: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
-        with cols3[1]: render_box("Consumo Médio de Álcool", f"{alcool_medio:.1f}/sem", "🍷")
+            # Título da seção
+            st.subheader("📊 Visão Geral Global da Ansiedade")
+            
+            # Estatísticas principais
+            media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
+            mediana_ansiedade = df_dash["Anxiety Level (1-10)"].median()
+            media_sessoes_terapia = df_dash["Therapy Sessions (per month)"].mean()
+            prop_terapia = df_dash["Therapy Sessions (per month)"].gt(0).mean() * 100
+            
+            # Sexo com maior ansiedade
+            sexo_cols = {"Feminino": "Gender_Female", "Masculino": "Gender_Male", "Outro": "Gender_Other"}
+            sexo_media = {
+                sexo: df_dash[df_dash[col] == 1]["Anxiety Level (1-10)"].mean()
+                for sexo, col in sexo_cols.items() if col in df_dash.columns
+            }
+            sexo_top = max(sexo_media, key=sexo_media.get)
+            
+            # País com maior ansiedade média
+            if 'Country' in df_dash.columns:
+                pais_top = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().idxmax()
+                pais_top_valor = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().max()
+            else:
+                pais_top, pais_top_valor = "N/A", 0
+            
+            # Condição de saúde mental mais comum
+            condicoes = [col for col in df_dash.columns if col.startswith("Mental Health Condition_")]
+            condicao_top = max(condicoes, key=lambda c: df_dash[c].sum()).replace("Mental Health Condition_", "")
+            
+            # Idade média
+            idade_media = df_dash["Age"].mean()
+            
+            # Sono médio
+            sono_medio = df_dash["Sleep Hours"].mean()
+            
+            # Consumo médio de álcool
+            alcool_medio = df_dash["Alcohol Consumption (drinks/week)"].mean()
+            
+            # Estilo para as caixas
+            box_style = """
+            <style>
+            .box-metric {
+                background-color: #f0f2f6;
+                padding: 1rem;
+                border-radius: 10px;
+                text-align: center;
+                box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+            }
+            .box-title {
+                font-size: 0.9rem;
+                color: #333;
+                margin-bottom: 0.5rem;
+            }
+            .box-value {
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: #0072C6;
+            }
+            </style>
+            """
+            st.markdown(box_style, unsafe_allow_html=True)
+            
+            # Função para renderizar uma "caixa"
+            def render_box(title, value, emoji=""):
+                st.markdown(f"""
+                <div class="box-metric">
+                    <div class="box-title">{emoji} {title}</div>
+                    <div class="box-value">{value}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Organização em colunas com design
+            cols1 = st.columns(4)
+            render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈")
+            render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊")
+            render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬")
+            render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠")
+            
+            cols2 = st.columns(4)
+            with cols2[0]: render_box("Sexo Mais Ansioso", sexo_top, "🚻")
+            with cols2[1]: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍")
+            with cols2[2]: render_box("Condição Mental + Comum", condicao_top, "⚠️")
+            with cols2[3]: render_box("Idade Média", f"{idade_media:.1f} anos", "👤")
+            
+            cols3 = st.columns(2)
+            with cols3[0]: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
+            with cols3[1]: render_box("Consumo Médio de Álcool", f"{alcool_medio:.1f}/sem", "🍷")
 
 
 
