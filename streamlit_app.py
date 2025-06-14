@@ -391,7 +391,7 @@ elif page == "Visualizations":
         
         # GRÁFICO: Distribuição da Idade por Condição de Saúde Mental (PySpark + matplotlib)
         import pandas as pd
-        import matplotlib.pyplot as plt
+        import plotly.express as px
         import streamlit as st
         
         # df: pandas DataFrame já carregado
@@ -412,21 +412,25 @@ elif page == "Visualizations":
             .reset_index(name='count')
         )
         
-        # Plot com matplotlib
-        plt.figure(figsize=(12, 6))
-        for cond in df_grouped['Mental Health Condition'].unique():
-            subset = df_grouped[df_grouped['Mental Health Condition'] == cond]
-            plt.bar(subset['Age'], subset['count'], label=cond, alpha=0.7)
+        # Gráfico interativo com Plotly
+        fig = px.bar(
+            df_grouped,
+            x='Age',
+            y='count',
+            color='Mental Health Condition',
+            title="Distribuição da Idade por Condição de Saúde Mental",
+            labels={'Age': 'Idade', 'count': 'Contagem', 'Mental Health Condition': 'Condição Mental'},
+            barmode='group'
+        )
         
-        plt.title("Distribuição da Idade por Condição de Saúde Mental")
-        plt.xlabel("Idade")
-        plt.ylabel("Contagem")
-        plt.legend(title="Condição Mental")
-        plt.grid(axis='y', linestyle='--', alpha=0.5)
-        plt.tight_layout()
+        fig.update_layout(
+            xaxis_title="Idade",
+            yaxis_title="Contagem",
+            legend_title="Condição Mental"
+        )
         
-        st.pyplot(plt.gcf())
-        plt.clf()
+        st.plotly_chart(fig, use_container_width=True)
+        
 
 
 
