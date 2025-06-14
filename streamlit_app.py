@@ -1480,44 +1480,6 @@ elif page == "Dashboard":
                 st.exception(e)
 
 
-
-            
-
-
-
-
-            
-            # GRÁFICO: Top Países com Mais Registros
-            st.subheader("País com Maior Registro de Condições de Saúde Mental")
-            top_condition_country = condicao_pais.groupby("Country")["Total"].sum().reset_index()
-            top_condition_country = top_condition_country.sort_values(by="Total", ascending=False).head(20)
-
-            fig_top_condition = px.bar(
-                top_condition_country,
-                x="Country",
-                y="Total",
-                title="Top Países com Mais Registros de Condições de Saúde Mental",
-                labels={"Total": "Número de Registros"},
-                color="Total",
-                color_continuous_scale="Viridis"
-            )
-            st.plotly_chart(fig_top_condition, use_container_width=True)
-
-            # GRÁFICO: Ansiedade por Gênero
-            st.subheader("Ansiedade por Gênero")
-            if "Gender" in df_dash.columns:
-                ansiedade_genero = df_dash.groupby("Gender")["Anxiety Level (1-10)"].mean().reset_index()
-                fig_genero = px.bar(
-                    ansiedade_genero,
-                    x="Gender",
-                    y="Anxiety Level (1-10)",
-                    title="Média de Ansiedade por Gênero",
-                    labels={"Anxiety Level (1-10)": "Ansiedade Média"},
-                    color="Anxiety Level (1-10)",
-                    color_continuous_scale="Blues"
-                )
-                st.plotly_chart(fig_genero, use_container_width=True)
-
     except Exception as e:
         st.warning("Erro ao carregar o dashboard.")
         st.exception(e)
