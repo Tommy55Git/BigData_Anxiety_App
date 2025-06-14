@@ -34,7 +34,7 @@ def load_data_from_mongo():
         mental_data = list(db['mental_health'].find())
         df_inner_data = list(db['df_inner'].find())
         cluster_data = list(db['modelação/clusters'].find())
-        var_data = list(db['modelação/clusters'].find())
+        var_data = list(db['var'].find())
        # classificacao_data = list(db['classificação'].find())# <- NEW COLLECTION
         
         # Convert to DataFrames
