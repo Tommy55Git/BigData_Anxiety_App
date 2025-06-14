@@ -1147,27 +1147,31 @@ elif page == "Dashboard":
             
             # Calcular média de ansiedade por país
             df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
-            
-            # Adicionar latitude e longitude
             df_country_avg[['lat', 'lon']] = df_country_avg['Country'].apply(
                 lambda x: pd.Series(country_coords.get(x, (None, None)))
             )
             df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
             
-            # Identificar o país com maior ansiedade
+            # Filtrar intervalo de ansiedade real
+            min_ansiedade = 3
+            max_ansiedade = 4
+            
+            # Normalizar cores entre 3 e 4
+            norm_colors = px.colors.sample_colorscale(
+                "Turbo",
+                df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x - min_ansiedade) / (max_ansiedade - min_ansiedade))
+            )
+            
+            # País com maior ansiedade
             top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
             
-            # Normalizar cores pela escala de ansiedade
-            norm_colors = px.colors.sample_colorscale("Turbo", df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x - 1) / 9))
-            
             # Criar figura
             fig = go.Figure()
             
-            # Adicionar países com bandeiras na legenda
+            # Adicionar países
             for i, row in df_country_avg.iterrows():
-                flag = flags.get(row['Country'], '')
                 fig.add_trace(go.Scattergeo(
                     lon=[row['lon']],
                     lat=[row['lat']],
@@ -1179,11 +1183,11 @@ elif page == "Dashboard":
                         line_width=0.5
                     ),
                     mode='markers',
-                    name=f"{flag} {row['Country']}",  # Bandeira na legenda
+                    name=f"{flags.get(row['Country'], '')} {row['Country']}",
                     showlegend=True
                 ))
             
-            # Adicionar país em destaque
+            # País em destaque
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
@@ -1200,31 +1204,33 @@ elif page == "Dashboard":
                 name=f'🔺 Destaque: {top_country_name}'
             ))
             
-            # Trace invisível para barra de cor
+            # Barra de cor com intervalo de 3 a 4 à direita
             fig.add_trace(go.Scattergeo(
                 lon=[None],
                 lat=[None],
                 marker=dict(
                     size=0.1,
-                    color=list(range(1, 11)),
-                    cmin=1,
-                    cmax=10,
+                    color=[i / 10 for i in range(30, 41)],  # Valores de 3.0 a 4.0
+                    cmin=3,
+                    cmax=4,
                     colorscale='Turbo',
                     colorbar=dict(
                         title=dict(
                             text='Nível de Ansiedade',
                             font=dict(color='white')
                         ),
-                        tickvals=list(range(1, 11)),
+                        tickvals=[3, 3.5, 4],
                         tickfont=dict(color='white'),
                         len=0.5,
-                        lenmode='fraction'
+                        lenmode='fraction',
+                        x=1.05,  # Deslocar mais à direita
+                        xanchor='left'
                     )
                 ),
                 showlegend=False
             ))
             
-            # Layout escuro
+            # Layout
             fig.update_layout(
                 geo=dict(
                     projection_type='orthographic',
@@ -1248,6 +1254,7 @@ elif page == "Dashboard":
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
