@@ -390,7 +390,6 @@ elif page == "Visualizations":
         
         
         
-                
         with tab3:
             st.subheader("Estilo de Vida")
         
@@ -414,24 +413,37 @@ elif page == "Visualizations":
         
             for nivel in exercise_levels:
                 valores = df_exercise[df_exercise["Exercise Level"] == nivel]["Anxiety Level (1-10)"].dropna().tolist()
-                ansiedade_por_nivel[nivel] = valores
+                if len(valores) >= 10:
+                    ansiedade_por_nivel[nivel] = valores
         
-            # Gerar gráfico
-            plt.figure(figsize=(6, 4))
+            # Criar gráfico interativo com Plotly
+            import plotly.graph_objects as go
+            import numpy as np
+        
+            fig = go.Figure()
+        
             for nivel, valores in ansiedade_por_nivel.items():
-                if len(valores) < 10:
-                    continue
                 hist, bin_edges = np.histogram(valores, bins=30, density=True)
                 bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-                plt.plot(bin_centers, hist, label=nivel, alpha=0.7)
+                fig.add_trace(go.Scatter(
+                    x=bin_centers,
+                    y=hist,
+                    mode='lines',
+                    name=nivel,
+                    fill='tozeroy'
+                ))
         
-            plt.title('Distribuição do Nível de Ansiedade por Nível de Exercício')
-            plt.xlabel('Nível de Ansiedade (1-10)')
-            plt.ylabel('Densidade Aproximada')
-            plt.legend()
-            plt.grid(True)
-            st.pyplot(plt.gcf())
-            plt.clf()
+            fig.update_layout(
+                title="Distribuição do Nível de Ansiedade por Nível de Exercício",
+                xaxis_title="Nível de Ansiedade (1-10)",
+                yaxis_title="Densidade Aproximada",
+                template="plotly_white",
+                hovermode="x unified"
+            )
+        
+            st.plotly_chart(fig, use_container_width=True)
+        
+
 
 
 
