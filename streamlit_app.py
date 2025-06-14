@@ -910,7 +910,7 @@ elif page == "Visualizations":
 
     
 
-    with tab_classification:
+    elif page == "Classification Model":
         st.subheader("Modelos de Classificação para Previsão de Ansiedade Alta")
     
         # 1. Preparar os dados
@@ -975,8 +975,6 @@ elif page == "Visualizations":
         }))
     
         # 6. Gráfico interativo com Plotly
-        import plotly.express as px
-    
         st.markdown("### Comparação Gráfica dos Modelos")
         fig = px.bar(
             metrics_df.melt(id_vars="Model", var_name="Métrica", value_name="Valor"),
@@ -998,7 +996,6 @@ elif page == "Visualizations":
         cm_labels = ['Baixa/Moderada', 'Alta']
     
         # Plotly para matriz de confusão
-        import plotly.figure_factory as ff
         z = cm
         z_text = [[str(y) for y in x] for x in z]
         fig_cm = ff.create_annotated_heatmap(
@@ -1010,7 +1007,7 @@ elif page == "Visualizations":
                              xaxis_title="Previsto", yaxis_title="Real")
         st.plotly_chart(fig_cm, use_container_width=True)
     
-            
+                
         
         
 
