@@ -1006,9 +1006,11 @@ elif page == "Visualizations":
     # Exibir gráfico
     st.plotly_chart(fig_genero, use_container_width=True)
 
+    
+
     # --- Gráfico de Estresse e Terapia por País ---
     st.markdown("---")
-    st.subheader("Estresse e Sessões de Terapia por País")
+    st.subheader("Stress e Sessões de Terapia por País")
 
     # Agrupar dados por país
     df_pais = df.groupby('Country')[['Stress Level (1-10)', 'Therapy Sessions (per month)']].mean().reset_index()
