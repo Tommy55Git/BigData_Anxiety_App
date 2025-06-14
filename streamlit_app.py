@@ -1134,7 +1134,7 @@ elif page == "Dashboard":
 
 
 
-            # GRÁFICO: Proporção de Gênero por Quartis de Ansiedade
+            # GRÁFICO: Proporção de Gênero por Quartis de Ansiedade (com Others)
             st.subheader("Distribuição de Gênero por Quartis de Ansiedade")
             
             try:
@@ -1152,23 +1152,31 @@ elif page == "Dashboard":
                     ]
                 )
             
-                # Verifica se colunas binárias de gênero existem
+                # Verificar colunas binárias e criar 'Others'
                 if 'Gender_Female' in df_quartis.columns and 'Gender_Male' in df_quartis.columns:
-                    # Soma por quartil
-                    quartile_gender = df_quartis.groupby('Anxiety Quartile')[['Gender_Female', 'Gender_Male']].sum()
+                    # Criar coluna "Others" onde nem female nem male são 1
+                    df_quartis['Gender_Other'] = ((df_quartis['Gender_Female'] != 1) & (df_quartis['Gender_Male'] != 1)).astype(int)
+            
+                    # Agrupar por quartil
+                    quartile_gender = df_quartis.groupby('Anxiety Quartile')[['Gender_Female', 'Gender_Male', 'Gender_Other']].sum()
+            
+                    # Calcular percentuais
                     quartile_gender_percent = quartile_gender.div(quartile_gender.sum(axis=1), axis=0) * 100
                     quartile_gender_percent = quartile_gender_percent.reset_index()
             
-                    # Reestruturar para long format para plotly
+                    # Reestruturar para long format
                     df_long = quartile_gender_percent.melt(
                         id_vars='Anxiety Quartile',
-                        value_vars=['Gender_Female', 'Gender_Male'],
+                        value_vars=['Gender_Female', 'Gender_Male', 'Gender_Other'],
                         var_name='Gênero',
                         value_name='Percentual'
                     )
+            
+                    # Renomear valores
                     df_long['Gênero'] = df_long['Gênero'].map({
                         'Gender_Female': 'Feminino',
-                        'Gender_Male': 'Masculino'
+                        'Gender_Male': 'Masculino',
+                        'Gender_Other': 'Outros'
                     })
             
                     import plotly.express as px
@@ -1180,13 +1188,7 @@ elif page == "Dashboard":
                         color='Gênero',
                         orientation='h',
                         text=df_long['Percentual'].map(lambda x: f"{x:.1f}%"),
-                        title=(
-                            "<b>Distribuição de Gênero por Quartis de Ansiedade</b><br><br>"
-                        ),
-                        labels={
-                            'Anxiety Quartile': 'Quartil de Ansiedade',
-                            'Percentual': 'Proporção (%)'
-                        }
+                        title="<b>Distribuição de Gênero por Quartis de Ansiedade</b><br><br>"
                     )
             
                     fig_quartil.update_layout(
@@ -1204,6 +1206,7 @@ elif page == "Dashboard":
             except Exception as e:
                 st.warning("Erro ao gerar gráfico de quartis de ansiedade por gênero.")
                 st.exception(e)
+
 
 
             
