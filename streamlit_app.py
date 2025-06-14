@@ -1306,7 +1306,7 @@ elif page == "Dashboard":
             eventos = df_dash["Recent Major Life Event_Yes"].mean() * 100
             medicacao = df_dash["Medication_Yes"].mean() * 100
             
-            # Estilos com gradientes suaves
+            # Estilos com gradientes suaves e texto escuro
             box_style = """
             <style>
             .box-metric {
@@ -1315,7 +1315,7 @@ elif page == "Dashboard":
                 text-align: center;
                 box-shadow: 2px 2px 10px rgba(0,0,0,0.15);
                 margin: 0.5rem 0.3rem;
-                color: white;
+                color: #222;
                 font-family: 'Segoe UI', sans-serif;
             }
             .gradient1 { background: linear-gradient(135deg, #fbc2eb, #a6c1ee); }
@@ -1330,7 +1330,7 @@ elif page == "Dashboard":
             """
             st.markdown(box_style, unsafe_allow_html=True)
             
-            # Função de renderização das métricas
+            # Função para exibir cada métrica
             def render_box(title, value, emoji, gradient_class="gradient1"):
                 st.markdown(f"""
                 <div class="box-metric {gradient_class}">
@@ -1339,7 +1339,7 @@ elif page == "Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Blocos de exibição
+            # Blocos com colunas
             with st.container():
                 col1, col2, col3, col4 = st.columns(4)
                 with col1: render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈", "gradient1")
@@ -1372,6 +1372,7 @@ elif page == "Dashboard":
                 with col16: render_box("% Usa Medicação", f"{medicacao:.1f}%", "💊", "gradient8")
             
             st.markdown("---")
+
 
 
 
