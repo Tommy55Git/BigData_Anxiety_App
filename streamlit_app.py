@@ -1108,9 +1108,87 @@ elif page == "Dashboard":
 
             # ================= GRÁFICOS ===================
 
-            st.subheader("Média Geral de Ansiedade")
-            media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
-            st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
+        # Título da seção
+        st.subheader("📊 Visão Geral Global da Ansiedade")
+        
+        # Estatísticas principais
+        media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
+        mediana_ansiedade = df_dash["Anxiety Level (1-10)"].median()
+        media_sessoes_terapia = df_dash["Therapy Sessions (per month)"].mean()
+        prop_terapia = df_dash["Therapy Sessions (per month)"].gt(0).mean() * 100
+        
+        # Sexo com maior ansiedade
+        sexo_cols = {"Feminino": "Gender_Female", "Masculino": "Gender_Male", "Outro": "Gender_Other"}
+        sexo_media = {
+            sexo: df_dash[df_dash[col] == 1]["Anxiety Level (1-10)"].mean()
+            for sexo, col in sexo_cols.items() if col in df_dash.columns
+        }
+        sexo_top = max(sexo_media, key=sexo_media.get)
+        
+        # País com maior ansiedade média
+        if 'Country' in df_dash.columns:
+            pais_top = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().idxmax()
+            pais_top_valor = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().max()
+        else:
+            pais_top, pais_top_valor = "N/A", 0
+        
+        # Condição de saúde mental mais comum
+        condicoes = [col for col in df_dash.columns if col.startswith("Mental Health Condition_")]
+        condicao_top = max(condicoes, key=lambda c: df_dash[c].sum()).replace("Mental Health Condition_", "")
+        
+        # Idade média
+        idade_media = df_dash["Age"].mean()
+        
+        # Sono médio
+        sono_medio = df_dash["Sleep Hours"].mean()
+        
+        # Consumo médio de álcool
+        alcool_medio = df_dash["Alcohol Consumption (drinks/week)"].mean()
+        
+        # Exibir caixas informativas
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.markdown("### Média de Ansiedade")
+            st.metric(label="Média (1-10)", value=f"{media_ansiedade:.2f}")
+        
+        with col2:
+            st.markdown("### Mediana de Ansiedade")
+            st.metric(label="Mediana (1-10)", value=f"{mediana_ansiedade:.2f}")
+        
+        with col3:
+            st.markdown("### Média de Sessões de Terapia")
+            st.metric(label="Sessões/mês", value=f"{media_sessoes_terapia:.2f}")
+        
+        with col4:
+            st.markdown("### % em Terapia")
+            st.metric(label="Com sessões", value=f"{prop_terapia:.1f}%", delta="ativos")
+        
+        col5, col6, col7, col8 = st.columns(4)
+        with col5:
+            st.markdown("### Sexo Mais Ansioso")
+            st.metric(label="Gênero", value=sexo_top)
+        
+        with col6:
+            st.markdown("### País com Maior Ansiedade")
+            st.metric(label=pais_top, value=f"{pais_top_valor:.2f}")
+        
+        with col7:
+            st.markdown("### Condição Mental + Comum")
+            st.metric(label="Condição", value=condicao_top)
+        
+        with col8:
+            st.markdown("### Idade Média")
+            st.metric(label="Anos", value=f"{idade_media:.1f}")
+        
+        col9, col10 = st.columns(2)
+        with col9:
+            st.markdown("### Sono Médio Diário")
+            st.metric(label="Horas", value=f"{sono_medio:.1f}")
+        
+        with col10:
+            st.markdown("### Consumo Médio de Álcool")
+            st.metric(label="Drinks/semana", value=f"{alcool_medio:.1f}")
+
 
 
 
