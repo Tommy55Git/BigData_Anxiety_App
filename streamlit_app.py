@@ -55,7 +55,7 @@ def load_data_from_mongo():
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 # Load data
-df_anxiety, df_mental, df_inner, df_clusters, var_data = load_data_from_mongo()
+df_anxiety, df_mental, df_inner, df_clusters = load_data_from_mongo()
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
