@@ -1047,7 +1047,7 @@ elif page == "Dashboard":
                     return 'None'
                 df_dash['Mental Health Condition'] = df_dash.apply(get_condition, axis=1)
 
-            # Remover linhas com dados ausentes nas colunas principais
+            # Só após recriar as colunas é que fazemos o dropna
             df_dash = df_dash.dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
 
             st.subheader("Média Geral de Ansiedade")
@@ -1114,7 +1114,6 @@ elif page == "Dashboard":
     except Exception as e:
         st.warning("Erro ao carregar o dashboard.")
         st.exception(e)
-
 
 
 
