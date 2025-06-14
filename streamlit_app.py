@@ -1421,7 +1421,7 @@ elif page == "Dashboard":
                         color='Gênero',
                         orientation='h',
                         text=df_long['Percentual'].map(lambda x: f"{x:.1f}%"),
-                        title="<b>Distribuição de Gênero por Quartis de Ansiedade</b><br><br>"
+                        title="<b>Distribuição de Género por Quartis de Ansiedade</b><br><br>"
                     )
             
                     fig_quartil.update_layout(
