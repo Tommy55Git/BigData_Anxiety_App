@@ -832,6 +832,284 @@ elif page == "Visualizations":
         st.plotly_chart(fig_interativo, use_container_width=True)
 
 
+# --- Gráfico 6 (Original): Interativo com dropdown para Evento Recente, Tempo Tela, Terapia, Interação ---
+    st.markdown("---")
+    st.subheader("Nível Médio de Ansiedade por Fatores Diversos (Interativo)")
+
+    cols_desejadas = [
+        "Anxiety Level (1-10)",
+        "Recent Major Life Event_Yes", # Corrected column name as per your new code
+        "Screen Time per Day (Hours)", # Corrected column name as per your new code
+        "Therapy Sessions (per month)", # Corrected column name as per your new code
+        "Social Interaction Score" # Corrected column name as per your new code
+    ]
+
+    # Verificar colunas existentes
+    cols_existentes = [col for col in cols_desejadas if col in df_clusters.columns]
+    df_interativo = df_clusters[cols_existentes].copy()
+
+    def avg_anxiety_by_col(df, col_name, val_map=None):
+        if col_name not in df.columns:
+            return [], []
+        grouped = df.groupby(col_name)["Anxiety Level (1-10)"].mean().reset_index()
+        grouped = grouped.dropna()
+        x_vals, y_vals = [], []
+        for _, row in grouped.iterrows():
+            key = row[col_name]
+            if val_map:
+                key = val_map.get(key, key)
+            x_vals.append(str(key))  # garantir que x seja string
+            y_vals.append(round(row["Anxiety Level (1-10)"], 2))  # arredondar para melhor visual
+        return x_vals, y_vals
+
+    event_map = {0: "Nenhum", 1: "Sim"}
+    therapy_map = {0: "Não", 1: "Sim"} # This map might not be directly applicable if Therapy Sessions is numerical
+
+    dados_interativo = {}
+
+    # Coletar dados por variável
+    if "Recent Major Life Event_Yes" in df_interativo.columns:
+        xv, yv = avg_anxiety_by_col(df_interativo, "Recent Major Life Event_Yes", event_map)
+        if len(xv) > 0 and len(yv) > 0:
+            dados_interativo["Evento Recente"] = (xv, yv)
+
+    if "Screen Time per Day (Hours)" in df_interativo.columns:
+        # For continuous data, group into bins for better visualization in a bar chart
+        df_interativo["Screen Time Binned"] = pd.cut(df_interativo["Screen Time per Day (Hours)"], bins=3, labels=["Baixo", "Médio", "Alto"])
+        xv, yv = avg_anxiety_by_col(df_interativo, "Screen Time Binned")
+        if len(xv) > 0 and len(yv) > 0:
+            dados_interativo["Tempo de Tela"] = (xv, yv)
+
+    if "Therapy Sessions (per month)" in df_interativo.columns:
+        # For continuous data, group into bins
+        df_interativo["Therapy Sessions Binned"] = pd.cut(df_interativo["Therapy Sessions (per month)"], bins=3, labels=["Poucas", "Moderadas", "Muitas"])
+        xv, yv = avg_anxiety_by_col(df_interativo, "Therapy Sessions Binned")
+        if len(xv) > 0 and len(yv) > 0:
+            dados_interativo["Terapia"] = (xv, yv)
+
+    if "Social Interaction Score" in df_interativo.columns:
+        # For continuous data, group into bins
+        df_interativo["Social Interaction Binned"] = pd.cut(df_interativo["Social Interaction Score"], bins=3, labels=["Baixa", "Média", "Alta"])
+        xv, yv = avg_anxiety_by_col(df_interativo, "Social Interaction Binned")
+        if len(xv) > 0 and len(yv) > 0:
+            dados_interativo["Interação Social"] = (xv, yv)
+
+    fig_interativo = go.Figure()
+
+    if dados_interativo:
+        # Adiciona o primeiro gráfico com dados
+        nome_inicial = list(dados_interativo.keys())[0]
+        xv, yv = dados_interativo[nome_inicial]
+        fig_interativo.add_trace(go.Bar(x=xv, y=yv, marker_color='teal'))
+        title_inicial = f"Nível Médio de Ansiedade por {nome_inicial}"
+    else:
+        # Criar gráfico vazio com aviso visual
+        fig_interativo.add_trace(go.Bar(x=[], y=[]))
+        title_inicial = "Nenhum dado disponível para variáveis selecionadas"
+
+    # Criar botões para dropdown
+    buttons = []
+    for nome, (xv, yv) in dados_interativo.items():
+        buttons.append(
+            dict(
+                label=nome,
+                method="update",
+                args=[
+                    {"x": [xv], "y": [yv]},
+                    {"layout": {"title": f"Nível Médio de Ansiedade por {nome}", "xaxis_title": nome}}
+                ]
+            )
+        )
+
+    # Layout do gráfico
+    fig_interativo.update_layout(
+        updatemenus=[dict(
+            buttons=buttons,
+            direction="down",
+            x=0.5,
+            xanchor="center",
+            y=1.1,
+            yanchor="top"
+        )] if buttons else [],
+        yaxis_title="Ansiedade Média",
+        title=title_inicial,
+        font=dict(color='white'),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+    )
+
+    st.plotly_chart(fig_interativo, use_container_width=True)
+
+    # --- New Interactive Plot from your request ---
+    st.markdown("---")
+    st.subheader("Análise Detalhada de Fatores de Estilo de Vida e Ansiedade")
+
+    # Select columns
+    pdf = df[[
+        "Recent Major Life Event_Yes",
+        "Screen Time per Day (Hours)",
+        "Therapy Sessions (per month)",
+        "Social Interaction Score",
+        "Anxiety Level (1-10)"
+    ]].copy()
+
+    # Mapping
+    pdf['Evento Recente'] = pdf['Recent Major Life Event_Yes'].map({0: 'Não', 1: 'Sim'})
+
+    # Categories with pd.cut (creates interpretable ranges)
+    # Using 4 bins for slightly more granularity
+    pdf['Tela (horas)'] = pd.cut(pdf['Screen Time per Day (Hours)'], bins=4, labels=[f'{i}-{i+1}' for i in range(4)])
+    pdf['Terapia (mês)'] = pd.cut(pdf['Therapy Sessions (per month)'], bins=4, labels=[f'{i}-{i+1}' for i in range(4)])
+    pdf['Interação'] = pd.cut(pdf['Social Interaction Score'], bins=4, labels=[f'{i}-{i+1}' for i in range(4)])
+
+    # Aggregate data
+    event_data = pdf.groupby('Evento Recente', as_index=False)['Anxiety Level (1-10)'].mean()
+    screen_data = pdf.groupby('Tela (horas)', as_index=False)['Anxiety Level (1-10)'].mean()
+    therapy_data = pdf.groupby('Terapia (mês)', as_index=False)['Anxiety Level (1-10)'].mean()
+    social_data = pdf.groupby('Interação', as_index=False)['Anxiety Level (1-10)'].mean()
+
+    # Ensure all dataframes are not empty before creating traces
+    data_traces = []
+
+    if not event_data.empty:
+        data_traces.append(go.Bar(
+            x=event_data['Evento Recente'],
+            y=event_data['Anxiety Level (1-10)'],
+            name='Evento Recente',
+            marker_color='lightcoral',
+            visible=True
+        ))
+
+    if not screen_data.empty:
+        data_traces.append(go.Bar(
+            x=screen_data['Tela (horas)'].astype(str),
+            y=screen_data['Anxiety Level (1-10)'],
+            name='Tempo de Tela (Média)',
+            marker_color='lightsteelblue',
+            visible=False
+        ))
+        data_traces.append(go.Scatter(
+            x=screen_data['Tela (horas)'].astype(str),
+            y=screen_data['Anxiety Level (1-10)'],
+            name='Tendência Tela',
+            mode='lines+markers',
+            line=dict(color='darkblue', dash='dot', width=2),
+            marker=dict(size=8, symbol='circle-open'),
+            visible=False
+        ))
+
+    if not therapy_data.empty:
+        data_traces.append(go.Bar(
+            x=therapy_data['Terapia (mês)'].astype(str),
+            y=therapy_data['Anxiety Level (1-10)'],
+            name='Terapia (Média)',
+            marker_color='lightgreen',
+            visible=False
+        ))
+        data_traces.append(go.Scatter(
+            x=therapy_data['Terapia (mês)'].astype(str),
+            y=therapy_data['Anxiety Level (1-10)'],
+            name='Tendência Terapia',
+            mode='lines+markers',
+            line=dict(color='darkgreen', dash='dot', width=2),
+            marker=dict(size=8, symbol='circle-open'),
+            visible=False
+        ))
+
+    if not social_data.empty:
+        data_traces.append(go.Bar(
+            x=social_data['Interação'].astype(str),
+            y=social_data['Anxiety Level (1-10)'],
+            name='Interação Social (Média)',
+            marker_color='mediumorchid',
+            visible=False
+        ))
+        data_traces.append(go.Scatter(
+            x=social_data['Interação'].astype(str),
+            y=social_data['Anxiety Level (1-10)'],
+            name='Tendência Interação',
+            mode='lines+markers',
+            line=dict(color='darkmagenta', dash='dot', width=2),
+            marker=dict(size=8, symbol='circle-open'),
+            visible=False
+        ))
+
+    # Initialize figure with collected traces
+    fig_new_interactive = go.Figure(data=data_traces)
+
+    # Dropdown menu buttons logic
+    buttons = []
+    
+    # Evento Recente
+    event_visibility = [True] + [False] * (len(data_traces) - 1) if not event_data.empty else [False] * len(data_traces)
+    buttons.append(
+        dict(label='Evento Recente',
+             method='update',
+             args=[{'visible': event_visibility},
+                   {'title': 'Ansiedade por Evento de Vida Recente',
+                    'xaxis': {'title': 'Evento Recente'}}])
+    )
+
+    # Tempo de Tela
+    screen_start_idx = 1 if not event_data.empty else 0
+    screen_visibility = [False] * screen_start_idx + [True, True] + [False] * (len(data_traces) - screen_start_idx - 2) if not screen_data.empty else [False] * len(data_traces)
+    buttons.append(
+        dict(label='Tempo de Tela',
+             method='update',
+             args=[{'visible': screen_visibility},
+                   {'title': 'Ansiedade por Tempo de Tela',
+                    'xaxis': {'title': 'Tempo de Tela (horas/dia)'}}])
+    )
+
+    # Terapia por Mês
+    therapy_start_idx = screen_start_idx + 2 if not screen_data.empty else (screen_start_idx + 1 if not event_data.empty else 0) # Adjust index based on previous additions
+    therapy_visibility = [False] * therapy_start_idx + [True, True] + [False] * (len(data_traces) - therapy_start_idx - 2) if not therapy_data.empty else [False] * len(data_traces)
+    buttons.append(
+        dict(label='Terapia por Mês',
+             method='update',
+             args=[{'visible': therapy_visibility},
+                   {'title': 'Ansiedade por Sessões de Terapia',
+                    'xaxis': {'title': 'Sessões de Terapia (mês)'}}])
+    )
+
+    # Interação Social
+    social_start_idx = therapy_start_idx + 2 if not therapy_data.empty else (therapy_start_idx + 1 if not screen_data.empty else (screen_start_idx + 1 if not event_data.empty else 0))
+    social_visibility = [False] * social_start_idx + [True, True] + [False] * (len(data_traces) - social_start_idx - 2) if not social_data.empty else [False] * len(data_traces)
+    buttons.append(
+        dict(label='Interação Social',
+             method='update',
+             args=[{'visible': social_visibility},
+                   {'title': 'Ansiedade por Interação Social',
+                    'xaxis': {'title': 'Interação Social'}}])
+    )
+
+    fig_new_interactive.update_layout(
+        updatemenus=[
+            dict(
+                type='dropdown',
+                direction='down',
+                x=0.5,
+                xanchor='center',
+                y=1.15,
+                yanchor='top',
+                buttons=buttons
+            )
+        ] if buttons else [],
+        title="Ansiedade por Evento de Vida Recente",
+        yaxis_title="Ansiedade Média",
+        xaxis_title="Evento Recente",
+        barmode='group',
+        legend_title="Indicador",
+        height=500,
+        font=dict(color='white'),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        hovermode="x unified"
+    )
+
+    # Display the new interactive plot
+    st.plotly_chart(fig_new_interactive, use_container_width=True)
+       
 
 
 
