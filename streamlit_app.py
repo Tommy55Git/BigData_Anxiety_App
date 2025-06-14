@@ -1144,8 +1144,8 @@ elif page == "Dashboard":
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
             
-            # Normalizar os valores de ansiedade para cores
-            norm = px.colors.sample_colorscale("Turbo", df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x-1)/9))
+            # Normalizar os valores de ansiedade para cores na escala Turbo
+            norm = px.colors.sample_colorscale("Turbo", df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x - 1) / 9))
             
             # Criar figura
             fig = go.Figure()
@@ -1184,7 +1184,7 @@ elif page == "Dashboard":
                 name=f'🔺 Destaque: {top_country_name}'
             ))
             
-            # Adicionar trace invisível só para mostrar a barra de cor contínua
+            # Adicionar trace invisível para a colorbar
             fig.add_trace(go.Scattergeo(
                 lon=[None],
                 lat=[None],
@@ -1208,7 +1208,14 @@ elif page == "Dashboard":
                 showlegend=False
             ))
             
-            # Layout escuro
+            # ➕ Adicionar anotação com países ordenados por ansiedade
+            ordered_countries = df_country_avg.sort_values("Anxiety Level (1-10)")
+            legenda_texto = "<b>Países (por ansiedade)</b><br>" + "<br>".join([
+                f"{row['Country']}: {row['Anxiety Level (1-10)']:.1f}"
+                for _, row in ordered_countries.iterrows()
+            ])
+            
+            # Atualizar layout com a anotação lateral
             fig.update_layout(
                 geo=dict(
                     projection_type='orthographic',
@@ -1220,14 +1227,27 @@ elif page == "Dashboard":
                     bgcolor='black'
                 ),
                 height=700,
-                margin=dict(l=0, r=0, t=50, b=0),
+                margin=dict(l=0, r=120, t=50, b=0),  # espaço maior à direita
                 paper_bgcolor='black',
                 plot_bgcolor='black',
                 font=dict(color='white'),
                 legend=dict(
                     bgcolor='rgba(0,0,0,0)',
                     font=dict(color='white')
-                )
+                ),
+                annotations=[
+                    dict(
+                        x=1.13,
+                        y=0.5,
+                        xref='paper',
+                        yref='paper',
+                        showarrow=False,
+                        align='left',
+                        text=legenda_texto,
+                        font=dict(color='white', size=12),
+                        bgcolor='rgba(0,0,0,0)'
+                    )
+                ]
             )
             
             # Exibir no Streamlit
