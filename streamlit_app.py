@@ -1238,14 +1238,22 @@ elif page == "Dashboard":
                     "Feminino": "#FFB300",
                     "Masculino": "#F4511E",
                     "Outro": "#E91E63"
-                },
-                title="🧑‍🤝‍🧑 Distribuição por Gênero"
+                }
             )
             
+            # Atualizar layout para alinhar o título à esquerda
             fig.update_traces(textinfo='percent+label', textfont_size=14)
-            fig.update_layout(title_x=0.5)
+            fig.update_layout(
+                title={
+                    'text': "🧑‍🤝‍🧑 Distribuição por Gênero",
+                    'x': 0,  # Alinhar à esquerda
+                    'xanchor': 'left'
+                }
+            )
             
+            # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
