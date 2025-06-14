@@ -1115,44 +1115,48 @@ elif page == "Dashboard":
 
 
 
-            import plotly.graph_objects as go
-            import pandas as pd
-            
-            # Dados de entrada do DataFrame (use seu df_dash ou df_map com países e ansiedade)
-            df_vis = df_map.copy()
-            
+         import plotly.graph_objects as go
+        import pandas as pd
+        
+        # ✅ Usar o DataFrame correto contendo informações de países
+        df_vis = df_dash.copy()
+        
+        # ✅ Garantir que há uma coluna 'Country'
+        if 'Country' not in df_vis.columns:
+            st.warning("A coluna 'Country' não está disponível nos dados carregados.")
+        else:
             # Agrupar por país e calcular média de ansiedade
             df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
-            
-            # Identificar país com maior média
+        
+            # Identificar o país com maior média
             top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
-            
+        
             # Marcar país como destaque
-            df_country_avg['Destaque'] = df_country_avg['Country'].apply(lambda x: x == top_country_name)
-            
-            # Adicionar coordenadas lat/lon aproximadas por país (substitua por mapeamento real se tiver)
-            # Para visualização simulada, usamos centroids fictícios com plotly geopandas ou pode usar:
+            df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
+        
+            # ✅ Adicionar coordenadas com geopy (ou substitua por mapeamento prévio)
             from geopy.geocoders import Nominatim
             geolocator = Nominatim(user_agent="geoapi")
-            
+        
+            @st.cache_data(show_spinner=False)
             def get_coords(country):
                 try:
-                    location = geolocator.geocode(country)
+                    location = geolocator.geocode(country, timeout=10)
                     return pd.Series([location.latitude, location.longitude])
                 except:
                     return pd.Series([None, None])
-            
+        
             df_country_avg[['lat', 'lon']] = df_country_avg['Country'].apply(get_coords)
-            
+        
             # Remover países sem coordenadas
             df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
-            
-            # Criar o mapa esférico com destaque
+        
+            # Criar o mapa esférico com Plotly
             fig = go.Figure()
-            
-            # Adicionar países normais
+        
+            # Países normais
             fig.add_trace(go.Scattergeo(
                 lon=df_country_avg[~df_country_avg['Destaque']]['lon'],
                 lat=df_country_avg[~df_country_avg['Destaque']]['lat'],
@@ -1168,8 +1172,8 @@ elif page == "Dashboard":
                 mode='markers',
                 name='Outros Países'
             ))
-            
-            # Adicionar país com maior ansiedade com destaque visual
+        
+            # País com maior ansiedade
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
@@ -1185,10 +1189,13 @@ elif page == "Dashboard":
                 textposition='top center',
                 name=f'Destaque: {top_country_name}'
             ))
-            
-            # Layout
+        
+            # Layout esférico
             fig.update_layout(
-                title=f'<b>Mapa Esférico da Ansiedade Média por País</b><br><sub>Destaque: {top_country_name} com {top_country_value:.2f}</sub>',
+                title=(
+                    f'<b>Mapa Esférico da Ansiedade Média por País</b><br>'
+                    f'<sub>🔺 Destaque: {top_country_name} com ansiedade média de {top_country_value:.2f}</sub>'
+                ),
                 geo=dict(
                     projection_type='orthographic',
                     showland=True,
@@ -1200,8 +1207,9 @@ elif page == "Dashboard":
                 height=700,
                 margin=dict(l=0, r=0, t=80, b=0)
             )
-            
+        
             st.plotly_chart(fig, use_container_width=True)
+
 
             
 
