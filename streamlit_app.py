@@ -1110,7 +1110,7 @@ elif page == "Dashboard":
 
             import plotly.graph_objects as go
             import pandas as pd
-            import random
+            import plotly.express as px
             
             # Usar DataFrame já preparado
             df_vis = df_dash.copy()
@@ -1130,6 +1130,21 @@ elif page == "Dashboard":
                 'China': (35.9, 104.2)
             }
             
+            # Emojis de bandeira por país
+            flags = {
+                'USA': '🇺🇸',
+                'Brazil': '🇧🇷',
+                'Germany': '🇩🇪',
+                'India': '🇮🇳',
+                'Australia': '🇦🇺',
+                'Canada': '🇨🇦',
+                'Japan': '🇯🇵',
+                'UK': '🇬🇧',
+                'France': '🇫🇷',
+                'Mexico': '🇲🇽',
+                'China': '🇨🇳'
+            }
+            
             # Calcular média de ansiedade por país
             df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
             
@@ -1143,34 +1158,28 @@ elif page == "Dashboard":
             top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
-            df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
             
-            # Gerar cores distintas por país (exceto destaque)
-            def gerar_cor():
-                return f"hsl({random.randint(0, 360)}, 70%, 60%)"
-            
-            color_map = {
-                country: gerar_cor() for country in df_country_avg['Country'].unique()
-                if country != top_country_name
-            }
+            # Normalizar cores pela escala de ansiedade
+            norm_colors = px.colors.sample_colorscale("Turbo", df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x - 1) / 9))
             
             # Criar figura
             fig = go.Figure()
             
-            # Adicionar países com cores únicas
-            for _, row in df_country_avg[df_country_avg['Country'] != top_country_name].iterrows():
+            # Adicionar países com bandeiras na legenda
+            for i, row in df_country_avg.iterrows():
+                flag = flags.get(row['Country'], '')
                 fig.add_trace(go.Scattergeo(
                     lon=[row['lon']],
                     lat=[row['lat']],
-                    text=row['Country'],
+                    text=f"{row['Country']}: {row['Anxiety Level (1-10)']:.2f}",
                     marker=dict(
                         size=10,
-                        color=color_map.get(row['Country'], 'lightgray'),
+                        color=norm_colors[i],
                         line_color='black',
                         line_width=0.5
                     ),
                     mode='markers',
-                    name=row['Country'],
+                    name=f"{flag} {row['Country']}",  # Bandeira na legenda
                     showlegend=True
                 ))
             
@@ -1191,13 +1200,13 @@ elif page == "Dashboard":
                 name=f'🔺 Destaque: {top_country_name}'
             ))
             
-            # Adicionar trace invisível para a barra de cor (escala de ansiedade)
+            # Trace invisível para barra de cor
             fig.add_trace(go.Scattergeo(
                 lon=[None],
                 lat=[None],
                 marker=dict(
                     size=0.1,
-                    color=[i for i in range(1, 11)],
+                    color=list(range(1, 11)),
                     cmin=1,
                     cmax=10,
                     colorscale='Turbo',
@@ -1239,6 +1248,7 @@ elif page == "Dashboard":
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
