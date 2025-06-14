@@ -1550,299 +1550,160 @@ elif page == "Dashboard":
 
 
 
-# Nova página de Modelos de Regressão
-elif page == "Regression Model":
-    st.header("Modelos de Regressão para Predição da Ansiedade")
 
-    if not df_inner.empty:
-        import numpy as np
-        import pandas as pd
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        from sklearn.model_selection import train_test_split
-        from sklearn.linear_model import LinearRegression
-        from sklearn.ensemble import RandomForestRegressor
-        from sklearn.tree import DecisionTreeRegressor
-        from sklearn.neighbors import KNeighborsRegressor
-        from sklearn.svm import SVR
-        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-        # Selecionar colunas relevantes
-        df_reg = df_inner[[
-            "Age",
-            "Sleep Hours",
-            "Physical Activity (hrs/week)",
-            "Diet Quality (1-10)",
-            "Stress Level (1-10)",
-            "Caffeine Intake (mg/day)",
-            "Heart Rate (bpm)",
-            "Breathing Rate (breaths/min)",
-            "Anxiety Level (1-10)"
-        ]].dropna()
 
-        # Definir variáveis independentes e alvo
-        X = df_reg.drop(columns=["Anxiety Level (1-10)"])
-        y = df_reg["Anxiety Level (1-10)"]
 
-        # Dividir em treino e teste
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Modelos a comparar
-        models = {
-            'Linear Regression': LinearRegression(),
-            'Decision Tree': DecisionTreeRegressor(random_state=42),
-            'Random Forest': RandomForestRegressor(random_state=42),
-            'k-NN': KNeighborsRegressor(),
-            'SVR': SVR()
-        }
 
-        # Avaliar os modelos
-        model_metrics = []
 
-        for name, model in models.items():
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
 
-            mae = mean_absolute_error(y_test, y_pred)
-            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-            r2 = r2_score(y_test, y_pred)
-
-            model_metrics.append({
-                'Model': name,
-                'MAE': mae,
-                'RMSE': rmse,
-                'R2': r2
-            })
-
-        metrics_df = pd.DataFrame(model_metrics)
-        st.subheader("Métricas de Avaliação")
-        st.dataframe(metrics_df)
-
-        # Gráfico de comparação
-        st.subheader("Comparação de Métricas entre Modelos")
-        fig_metrics, ax_metrics = plt.subplots(figsize=(10, 6))
-        metrics_df.set_index('Model')[['MAE', 'RMSE', 'R2']].plot(kind='bar', ax=ax_metrics, cmap='Set2')
-        ax_metrics.set_title("Comparação dos Modelos de Regressão")
-        ax_metrics.set_ylabel("Valor da Métrica")
-        ax_metrics.grid(True)
-        st.pyplot(fig_metrics)
-
-        # Gráficos de dispersão com linha de regressão linear
-        st.subheader("Dispersões Individuais vs Ansiedade")
-        sns.set_style("whitegrid")
-        ncols = len(X.columns)
-        fig_disp, axes = plt.subplots(nrows=1, ncols=ncols, figsize=(6 * ncols, 5))
-
-        if ncols == 1:
-            axes = [axes]
-
-        for idx, col in enumerate(X.columns):
-            sns.regplot(x=col, y='Anxiety Level (1-10)', data=df_reg, ax=axes[idx])
-            axes[idx].set_title(f"{col} vs Ansiedade")
-
-        st.pyplot(fig_disp)
-
-        # Gráficos Real vs Predito por Modelo
-        st.subheader("Real vs Predito por Modelo")
-        fig_pred, axs = plt.subplots(2, 3, figsize=(18, 10))  # 2 linhas, 3 colunas
-        axs = axs.flatten()
-
-        for i, (name, model) in enumerate(models.items()):
-            y_pred = model.predict(X_test)
-            axs[i].scatter(y_test, y_pred, alpha=0.6, edgecolor='k')
-            axs[i].plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-            axs[i].set_title(f"{name} - Real vs Predito")
-            axs[i].set_xlabel("Valor Real")
-            axs[i].set_ylabel("Valor Predito")
-
-        for j in range(i + 1, len(axs)):
-            fig_pred.delaxes(axs[j])
-
-        fig_pred.suptitle("Comparação entre Valores Reais e Preditos por Modelo", fontsize=16)
-        st.pyplot(fig_pred)
-
-    else:
-        st.warning("Dados insuficientes para regressão.")
 
 
 elif page == "Predict your Anxiety":
     st.header("🧠 Predict Your Anxiety Level")
     st.markdown("Fill in your personal information below to get a prediction of your anxiety level (1-10 scale)")
     
-    # Create two columns for better layout
+    # Criar colunas para layout
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("📊 Personal Information")
         age = st.slider("Age", min_value=18, max_value=80, value=30, help="Your current age")
-        sleep_hours = st.slider("Sleep Hours per Night", min_value=3.0, max_value=12.0, value=7.0, step=0.5, 
-                               help="Average hours of sleep per night")
-        physical_activity = st.slider("Physical Activity (hours/week)", min_value=0.0, max_value=20.0, value=3.0, step=0.5,
-                                    help="Hours of physical exercise per week")
-        diet_quality = st.slider("Diet Quality (1-10)", min_value=1, max_value=10, value=5,
-                                help="Rate your diet quality from 1 (very poor) to 10 (excellent)")
+        sleep_hours = st.slider("Sleep Hours per Night", min_value=3.0, max_value=12.0, value=7.0, step=0.5, help="Average hours of sleep per night")
+        physical_activity = st.slider("Physical Activity (hours/week)", min_value=0.0, max_value=20.0, value=3.0, step=0.5, help="Hours of physical exercise per week")
+        diet_quality = st.slider("Diet Quality (1-10)", min_value=1, max_value=10, value=5, help="Rate your diet quality from 1 (very poor) to 10 (excellent)")
+        therapy_sessions = st.slider("Therapy Sessions (per month)", min_value=0, max_value=10, value=0, help="Number of therapy sessions you attend per month")
+        caffeine_intake = st.slider("Caffeine Intake (mg/day)", min_value=0, max_value=500, value=100, step=10, help="Approximate daily caffeine intake in mg")
     
     with col2:
         st.subheader("🏥 Health & Lifestyle")
-        stress_level = st.slider("Stress Level (1-10)", min_value=1, max_value=10, value=5,
-                                help="Rate your current stress level from 1 (very low) to 10 (very high)")
+        stress_level = st.slider("Stress Level (1-10)", min_value=1, max_value=10, value=5, help="Rate your current stress level from 1 (very low) to 10 (very high)")
+        heart_rate = st.slider("Heart Rate (bpm)", min_value=40, max_value=120, value=70, help="Your average resting heart rate")
+        work_hours = st.slider("Work Hours per Week", min_value=0, max_value=80, value=40, help="Average work hours per week")
     
     if st.button("🔮 Predict My Anxiety Level", type="primary"):
         try:
-        # Check if we have the necessary data and models
+            # Verifica se df_inner está disponível e contém dados
             if not df_inner.empty:
-                # Prepare the input data
-                input_data = pd.DataFrame({
-                    'Age': [age],
-                    'Sleep Hours': [sleep_hours],
-                    'Physical Activity (hrs/week)': [physical_activity],
-                    'Diet Quality (1-10)': [diet_quality],
-                    'Stress Level (1-10)': [stress_level],
-                })
-                
-                # Define independent columns
+                # Definir colunas independentes usadas no modelo
                 colunas_independentes = [
-                    "Age",
+                    "Age", 
                     "Sleep Hours", 
                     "Physical Activity (hrs/week)",
                     "Diet Quality (1-10)",
                     "Stress Level (1-10)",
+                    "Therapy Sessions (per month)",
+                    "Caffeine Intake (mg/day)",
+                    "Heart Rate (bpm)",
+                    "Work Hours per Week"
                 ]
                 
-                df_inner = df_inner[['Mental Health Condition_Anxiety'] + colunas_independentes].dropna()
-            
-                x = df_inner.drop(columns=['Mental Health Condition_Anxiety'])
-                y = df_inner['Mental Health Condition_Anxiety']
+                # Seleciona dados relevantes e remove NaNs
+                df_inner_model = df_inner[['Mental Health Condition_Anxiety'] + colunas_independentes].dropna()
 
-                
-                # Split train/test
+                X = df_inner_model[colunas_independentes]
+                y = df_inner_model['Mental Health Condition_Anxiety']
+
+                # Dividir treino/teste
                 from sklearn.model_selection import train_test_split
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+                # Usar apenas os 3 modelos que funcionam bem
+                from sklearn.linear_model import LogisticRegression
+                from sklearn.tree import DecisionTreeClassifier
                 from sklearn.ensemble import RandomForestClassifier
-                from sklearn.svm import SVC
-                from sklearn.metrics import accuracy_score, classification_report
-                
-                X_train, X_test, Y_train, Y_test = train_test_split(x, y, test_size=0.2, random_state = 5)
-                
-                # Classification models
+                from sklearn.metrics import accuracy_score
+
                 models = {
-                    'Random Forest': RandomForestClassifier(random_state=42),
-                    'SVM': SVC(random_state=5, probability=True)
+                    'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
+                    'Decision Tree': DecisionTreeClassifier(random_state=42),
+                    'Random Forest': RandomForestClassifier(random_state=42)
                 }
-                
-                # Train and evaluate models to choose the best one
+
                 best_model = None
                 best_accuracy = 0
                 best_model_name = ""
-                
+
                 for name, model in models.items():
-                    model.fit(X_train, Y_train)
+                    model.fit(X_train, y_train)
                     y_pred = model.predict(X_test)
-                    accuracy = accuracy_score(Y_test, y_pred)
-                    
+                    accuracy = accuracy_score(y_test, y_pred)
                     if accuracy > best_accuracy:
                         best_accuracy = accuracy
                         best_model = model
                         best_model_name = name
-                
-                # Make prediction with the best model
-                prediction_proba = best_model.predict_proba(input_data)[0]
+
+                # Preparar input para previsão
+                input_data = pd.DataFrame({
+                    "Age": [age],
+                    "Sleep Hours": [sleep_hours],
+                    "Physical Activity (hrs/week)": [physical_activity],
+                    "Diet Quality (1-10)": [diet_quality],
+                    "Stress Level (1-10)": [stress_level],
+                    "Therapy Sessions (per month)": [therapy_sessions],
+                    "Caffeine Intake (mg/day)": [caffeine_intake],
+                    "Heart Rate (bpm)": [heart_rate],
+                    "Work Hours per Week": [work_hours]
+                })
+
+                # Previsão
                 prediction_class = best_model.predict(input_data)[0]
-                
-                # Get probability for high anxiety
-                high_anxiety_prob = prediction_proba[1] if len(prediction_proba) > 1 else 0
-                
-                # Display results
-                st.success("✅ Prediction Complete!")
-                
-                # Create a nice display for the result
-                col_result1, col_result2, col_result3 = st.columns([1, 2, 1])
 
-                with col_result2:
-                    if prediction_class == 1:
-                        st.metric(
-                            label="🎯 Anxiety Level Prediction",
-                            value="High Risk",
-                            delta=f"😰 {high_anxiety_prob*100:.1f}% probability"
-                        )
-                    else:
-                        st.metric(
-                            label="🎯 Anxiety Level Prediction", 
-                            value="Low-Moderate Risk",
-                            delta=f"😌 {(1-high_anxiety_prob)*100:.1f}% probability"
-                        )
-            
-            # Model performance info
-            st.info(f"🤖 **Model Used**: {best_model_name} (Accuracy: {best_accuracy:.2f})")
-            
-            # Interpretation
-            st.subheader("📊 Interpretation")
-            if prediction_class == 0:
-                st.success("🌟 **Low-Moderate Anxiety Risk**: Your profile suggests you're likely managing stress well. Keep up the healthy habits!")
-                recommendations = [
-                    "Continue your current healthy lifestyle",
-                    "Maintain regular physical activity", 
-                    "Keep your good sleep schedule",
-                    "Consider sharing your wellness strategies with others"
-                ]
+                # Para RandomForest, temos feature_importances_, mas não para os outros modelos
+                if best_model_name == 'Random Forest':
+                    st.subheader("📈 Factors Influencing Your Prediction")
+                    import plotly.express as px
+                    feature_importance = pd.DataFrame({
+                        'Feature': colunas_independentes,
+                        'Importance': best_model.feature_importances_
+                    }).sort_values('Importance', ascending=False)
+                    fig_importance = px.bar(
+                        feature_importance,
+                        x='Importance',
+                        y='Feature',
+                        orientation='h',
+                        title="Feature Importance in Your Anxiety Risk Prediction",
+                        labels={'Importance': 'Importance Score', 'Feature': 'Health Factors'}
+                    )
+                    fig_importance.update_layout(yaxis={'categoryorder': 'total ascending'})
+                    st.plotly_chart(fig_importance, use_container_width=True)
+
+                # Mostrar resultado de forma simples
+                st.success(f"✅ Prediction Complete with {best_model_name} (Accuracy: {best_accuracy:.2f})")
+
+                if prediction_class == 1:
+                    st.warning("⚠️ High Anxiety Risk predicted based on your inputs.")
+                else:
+                    st.success("🌟 Low-Moderate Anxiety Risk predicted based on your inputs.")
+
+                # Recomendações (simplificadas)
+                st.subheader("💡 Personalized Recommendations")
+                if prediction_class == 1:
+                    recs = [
+                        "Consider consulting a mental health professional.",
+                        "Practice stress-reduction techniques like meditation.",
+                        "Maintain good sleep hygiene (7-9 hours).",
+                        "Engage in regular physical activity.",
+                        "Limit caffeine intake if high.",
+                        "Build a strong social support network."
+                    ]
+                else:
+                    recs = [
+                        "Maintain your healthy lifestyle.",
+                        "Keep up regular physical activity.",
+                        "Continue good sleep habits.",
+                        "Stay aware of your mental health."
+                    ]
+                for i, rec in enumerate(recs, 1):
+                    st.write(f"{i}. {rec}")
+
+                # Disclaimer
+                st.info("⚠️ This prediction is based on ML models trained on survey data and does not replace professional advice. If you experience persistent anxiety, seek help from a healthcare professional.")
+
             else:
-                st.warning("⚠️ **High Anxiety Risk**: Your profile suggests you may be at higher risk for elevated anxiety levels.")
-                recommendations = [
-                    "Consider speaking with a mental health professional",
-                    "Practice stress-reduction techniques like meditation",
-                    "Prioritize adequate sleep (7-9 hours)",
-                    "Engage in regular physical exercise",
-                    "Limit caffeine intake if high",
-                    "Build a strong support network"
-                ]
-            
-            st.subheader("💡 Personalized Recommendations")
-            for i, rec in enumerate(recommendations, 1):
-                st.write(f"{i}. {rec}")
-            
-            # Show feature importance (for Random Forest)
-            if best_model_name == 'Random Forest':
-                st.subheader("📈 Factors Influencing Your Prediction")
-                feature_importance = pd.DataFrame({
-                    'Feature': colunas_independentes,
-                    'Importance': best_model.feature_importances_
-                }).sort_values('Importance', ascending=False)
-                
-                import plotly.express as px
-                fig_importance = px.bar(
-                    feature_importance,
-                    x='Importance',
-                    y='Feature',
-                    orientation='h',
-                    title="Feature Importance in Your Anxiety Risk Prediction",
-                    labels={'Importance': 'Importance Score', 'Feature': 'Health Factors'}
-                )
-                fig_importance.update_layout(yaxis={'categoryorder': 'total ascending'})
-                st.plotly_chart(fig_importance, use_container_width=True)
-            
-            # Show probability breakdown
-            st.subheader("🎲 Prediction Probabilities")
-            prob_col1, prob_col2 = st.columns(2)
-            
-            with prob_col1:
-                st.metric(
-                    label="Low-Moderate Anxiety",
-                    value=f"{(1-high_anxiety_prob)*100:.1f}%"
-                )
-            
-            with prob_col2:
-                st.metric(
-                    label="High Anxiety Risk", 
-                    value=f"{high_anxiety_prob*100:.1f}%"
-                )
-            
-            # Disclaimer
-            st.info("⚠️ **Disclaimer**: This prediction is based on a machine learning classification model trained on survey data and should not replace professional medical advice. If you're experiencing persistent anxiety, please consult with a healthcare professional.")
-
+                st.error("The dataset for training the model is empty or not loaded.")
+        
         except Exception as e:
             st.error(f"❌ An error occurred during prediction: {str(e)}")
             st.info("Please check that all required data is available and try again.")
-
-    
-# Footer
-st.sidebar.markdown("---")
-st.sidebar.info("Mental Health Data Dashboard - Built with Streamlit")
