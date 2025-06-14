@@ -922,26 +922,21 @@ elif page == "Classification Model":
     ]
     coluna_alvo = "Anxiety Level (1-10)"
 
-    # 🔍 Diagnóstico: Verificar existência de df_inner
-    if 'df_inner' not in locals():
-        st.error("❌ O DataFrame `df_inner` não foi carregado.")
-    elif df_inner.empty:
-        st.warning("⚠️ O DataFrame está vazio. Verifique a fonte de dados.")
-    elif not all(col in df_inner.columns for col in colunas_independentes + [coluna_alvo]):
-        st.error("❌ Colunas obrigatórias ausentes: " +
-                 ", ".join(set(colunas_independentes + [coluna_alvo]) - set(df_inner.columns)))
-    else:
-        # ✅ Tudo certo — processar os dados
+    # Verificação completa ANTES de qualquer uso de X ou y
+    if 'df_inner' in locals() and not df_inner.empty and all(
+        col in df_inner.columns for col in colunas_independentes + [coluna_alvo]
+    ):
+        # Preparar dados
         df_class = df_inner[colunas_independentes + [coluna_alvo]].dropna()
         df_class["Anxiety_High"] = (df_class[coluna_alvo] > 6).astype(int)
 
         X = df_class[colunas_independentes]
         y = df_class["Anxiety_High"]
 
-        # 2. Dividir os dados
+        # Split
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # 3. Definir modelos
+        # Modelos
         models = {
             'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
             'k-NN': KNeighborsClassifier(),
@@ -950,7 +945,7 @@ elif page == "Classification Model":
             'SVM': SVC(random_state=42)
         }
 
-        # 4. Avaliar modelos
+        # Avaliação
         model_metrics = []
         confusion_matrices = {}
 
@@ -973,6 +968,7 @@ elif page == "Classification Model":
 
         metrics_df = pd.DataFrame(model_metrics)
 
+        # Tabela
         st.markdown("### Métricas dos Modelos")
         st.dataframe(metrics_df.style.format({
             "Accuracy": "{:.2%}",
@@ -981,6 +977,7 @@ elif page == "Classification Model":
             "F1-Score": "{:.2%}"
         }))
 
+        # Gráfico
         st.markdown("### Comparação Gráfica dos Modelos")
         fig = px.bar(
             metrics_df.melt(id_vars="Model", var_name="Métrica", value_name="Valor"),
@@ -994,6 +991,7 @@ elif page == "Classification Model":
         fig.update_layout(xaxis_title="Modelo", yaxis_title="Pontuação", legend_title="Métrica")
         st.plotly_chart(fig, use_container_width=True)
 
+        # Matriz de Confusão
         st.markdown("### Matriz de Confusão por Modelo")
         selected_model = st.selectbox("Selecione um modelo para visualizar a matriz de confusão:", list(confusion_matrices.keys()))
         cm = confusion_matrices[selected_model]
@@ -1008,7 +1006,9 @@ elif page == "Classification Model":
                              xaxis_title="Previsto", yaxis_title="Real")
         st.plotly_chart(fig_cm, use_container_width=True)
 
-    
+    else:
+        st.warning("❗ Dados insuficientes ou colunas ausentes para realizar a classificação.")
+
                 
         
         
