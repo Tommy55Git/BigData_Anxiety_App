@@ -1360,7 +1360,6 @@ elif page == "Dashboard":
             fig.update_traces(textinfo='percent+label', textfont_size=14)
             fig.update_layout(
                 title={
-                    'text': "Distribuição por Gênero",
                     'x': 0,  # Alinhar à esquerda
                     'xanchor': 'left'
     }
