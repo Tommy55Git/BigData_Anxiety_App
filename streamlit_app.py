@@ -1154,10 +1154,10 @@ elif page == "Dashboard":
                 if country != top_country_name
             }
             
-            # Criar gráfico
+            # Criar figura
             fig = go.Figure()
             
-            # Adicionar cada país (exceto destaque) individualmente com cores únicas
+            # Adicionar países com cores únicas
             for _, row in df_country_avg[df_country_avg['Country'] != top_country_name].iterrows():
                 fig.add_trace(go.Scattergeo(
                     lon=[row['lon']],
@@ -1170,10 +1170,11 @@ elif page == "Dashboard":
                         line_width=0.5
                     ),
                     mode='markers',
-                    name=row['Country']
+                    name=row['Country'],
+                    showlegend=True
                 ))
             
-            # País em destaque (cor vermelha vibrante)
+            # Adicionar país em destaque
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
@@ -1190,9 +1191,30 @@ elif page == "Dashboard":
                 name=f'🔺 Destaque: {top_country_name}'
             ))
             
-            # Layout estilizado escuro
+            # Adicionar trace invisível para a barra de cor (escala de ansiedade)
+            fig.add_trace(go.Scattergeo(
+                lon=[None],  # sem ponto visível
+                lat=[None],
+                marker=dict(
+                    size=0.1,
+                    color=[i for i in range(1, 11)],
+                    cmin=1,
+                    cmax=10,
+                    colorscale='Turbo',
+                    colorbar=dict(
+                        title='Nível de Ansiedade',
+                        tickvals=list(range(1, 11)),
+                        tickfont=dict(color='white'),
+                        titlefont=dict(color='white'),
+                        len=0.5,
+                        lenmode='fraction'
+                    )
+                ),
+                showlegend=False
+            ))
+            
+            # Layout escuro
             fig.update_layout(
-                title=f"<b style='color:white'>🌐 Mapa Esférico da Ansiedade Média por País</b><br><span style='color:#FF1744'>🔺 Destaque: {top_country_name} com {top_country_value:.2f}</span>",
                 geo=dict(
                     projection_type='orthographic',
                     showland=True,
@@ -1203,7 +1225,7 @@ elif page == "Dashboard":
                     bgcolor='black'
                 ),
                 height=700,
-                margin=dict(l=0, r=0, t=80, b=0),
+                margin=dict(l=0, r=0, t=50, b=0),
                 paper_bgcolor='black',
                 plot_bgcolor='black',
                 font=dict(color='white'),
@@ -1215,6 +1237,7 @@ elif page == "Dashboard":
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
