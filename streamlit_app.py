@@ -1562,101 +1562,100 @@ elif page == "Dashboard":
 
 
 elif page == "Predict your Anxiety":
+    import pandas as pd
+    import plotly.express as px
+    from sklearn.model_selection import train_test_split
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import accuracy_score
+
     st.header("🧠 Predict Your Anxiety Level")
     st.markdown("Fill in your personal information below to get a prediction of your anxiety level (Low, Moderate, High)")
-    
+
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("📊 Personal Information")
-        age = st.slider("Age", min_value=18, max_value=80, value=30, help="Your current age")
-        sleep_hours = st.slider("Sleep Hours per Night", min_value=3.0, max_value=12.0, value=7.0, step=0.5, help="Average hours of sleep per night")
-        physical_activity = st.slider("Physical Activity (hours/week)", min_value=0.0, max_value=20.0, value=3.0, step=0.5, help="Hours of physical exercise per week")
-        diet_quality = st.slider("Diet Quality (1-10)", min_value=1, max_value=10, value=5, help="Rate your diet quality from 1 (very poor) to 10 (excellent)")
-        therapy_sessions = st.slider("Therapy Sessions (per month)", min_value=0, max_value=10, value=0, help="Number of therapy sessions you attend per month")
-        caffeine_intake = st.slider("Caffeine Intake (mg/day)", min_value=0, max_value=500, value=100, step=10, help="Approximate daily caffeine intake in mg")
-    
+        age = st.slider("Age", 18, 80, 30)
+        sleep_hours = st.slider("Sleep Hours per Night", 3.0, 12.0, 7.0, 0.5)
+        physical_activity = st.slider("Physical Activity (hours/week)", 0.0, 20.0, 3.0, 0.5)
+        diet_quality = st.slider("Diet Quality (1-10)", 1, 10, 5)
+        therapy_sessions = st.slider("Therapy Sessions (per month)", 0, 10, 0)
+        caffeine_intake = st.slider("Caffeine Intake (mg/day)", 0, 500, 100, 10)
+
     with col2:
         st.subheader("🏥 Health & Lifestyle")
-        stress_level = st.slider("Stress Level (1-10)", min_value=1, max_value=10, value=5, help="Rate your current stress level from 1 (very low) to 10 (very high)")
-        heart_rate = st.slider("Heart Rate (bpm)", min_value=40, max_value=120, value=70, help="Your average resting heart rate")
-        work_hours = st.slider("Work Hours per Week", min_value=0, max_value=80, value=40, help="Average work hours per week")
-    
+        stress_level = st.slider("Stress Level (1-10)", 1, 10, 5)
+        heart_rate = st.slider("Heart Rate (bpm)", 40, 120, 70)
+        work_hours = st.slider("Work Hours per Week", 0, 80, 40)
+
     if st.button("🔮 Predict My Anxiety Level", type="primary"):
         try:
-            # Substitua df_inner por classificacao aqui
-            if not df_clas.empty:
+            if 'df_clas' not in globals() or df_clas.empty:
+                st.error("Dataset for model training is empty or not loaded.")
+            else:
                 colunas_independentes = [
-                    "Age", 
-                    "Sleep Hours", 
-                    "Physical Activity (hrs/week)",
-                    "Diet Quality (1-10)",
-                    "Stress Level (1-10)",
-                    "Therapy Sessions (per month)",
-                    "Caffeine Intake (mg/day)",
-                    "Heart Rate (bpm)",
-                    "Work Hours per Week"
+                    "Age", "Sleep Hours", "Physical Activity (hrs/week)",
+                    "Diet Quality (1-10)", "Stress Level (1-10)",
+                    "Therapy Sessions (per month)", "Caffeine Intake (mg/day)",
+                    "Heart Rate (bpm)", "Work Hours per Week"
                 ]
-                
-                df_model = df_clas[['Stress_Level_Label'] + colunas_independentes].dropna()
 
-                X = df_model[colunas_independentes]
-                y = df_model['Stress_Level_Label']
-
-                from sklearn.model_selection import train_test_split
-                from sklearn.linear_model import LogisticRegression
-                from sklearn.tree import DecisionTreeClassifier
-                from sklearn.ensemble import RandomForestClassifier
-                from sklearn.metrics import accuracy_score
-
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-                models = {
-                    'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000, multi_class='multinomial', solver='lbfgs'),
-                    'Decision Tree': DecisionTreeClassifier(random_state=42),
-                    'Random Forest': RandomForestClassifier(random_state=42)
-                }
-
-                best_model = None
-                best_accuracy = 0
-                best_model_name = ""
-
-                for name, model in models.items():
-                    model.fit(X_train, y_train)
-                    y_pred = model.predict(X_test)
-                    accuracy = accuracy_score(y_test, y_pred)
-                    if accuracy > best_accuracy:
-                        best_accuracy = accuracy
-                        best_model = model
-                        best_model_name = name
-
-                input_data = pd.DataFrame({
-                    "Age": [age],
-                    "Sleep Hours": [sleep_hours],
-                    "Physical Activity (hrs/week)": [physical_activity],
-                    "Diet Quality (1-10)": [diet_quality],
-                    "Stress Level (1-10)": [stress_level],
-                    "Therapy Sessions (per month)": [therapy_sessions],
-                    "Caffeine Intake (mg/day)": [caffeine_intake],
-                    "Heart Rate (bpm)": [heart_rate],
-                    "Work Hours per Week": [work_hours]
-                })
-
-                prediction_class = best_model.predict(input_data)[0]
-
-                if hasattr(best_model, "predict_proba"):
-                    prediction_proba = best_model.predict_proba(input_data)[0]
+                if 'Stress_Level_Label' not in df_clas.columns:
+                    st.error("Target column 'Stress_Level_Label' is missing in the dataset.")
                 else:
-                    prediction_proba = None
+                    df_model = df_clas[['Stress_Level_Label'] + colunas_independentes].dropna()
+                    X = df_model[colunas_independentes]
+                    y = df_model['Stress_Level_Label']
 
-                class_labels = sorted(y.unique())
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-                st.success(f"✅ Prediction Complete with {best_model_name} (Accuracy: {best_accuracy:.2f})")
+                    models = {
+                        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000, multi_class='multinomial', solver='lbfgs'),
+                        'Decision Tree': DecisionTreeClassifier(random_state=42),
+                        'Random Forest': RandomForestClassifier(random_state=42)
+                    }
 
-                st.subheader("🎯 Anxiety Level Prediction")
+                    best_model = None
+                    best_accuracy = 0
+                    best_model_name = ""
 
-                if prediction_class in class_labels:
+                    for name, model in models.items():
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+                        accuracy = accuracy_score(y_test, y_pred)
+                        if accuracy > best_accuracy:
+                            best_accuracy = accuracy
+                            best_model = model
+                            best_model_name = name
+
+                    input_data = pd.DataFrame({
+                        "Age": [age],
+                        "Sleep Hours": [sleep_hours],
+                        "Physical Activity (hrs/week)": [physical_activity],
+                        "Diet Quality (1-10)": [diet_quality],
+                        "Stress Level (1-10)": [stress_level],
+                        "Therapy Sessions (per month)": [therapy_sessions],
+                        "Caffeine Intake (mg/day)": [caffeine_intake],
+                        "Heart Rate (bpm)": [heart_rate],
+                        "Work Hours per Week": [work_hours]
+                    })
+
+                    prediction_class = best_model.predict(input_data)[0]
+
+                    if hasattr(best_model, "predict_proba"):
+                        prediction_proba = best_model.predict_proba(input_data)[0]
+                    else:
+                        prediction_proba = None
+
+                    class_labels = sorted(y.unique())
+
+                    st.success(f"✅ Prediction Complete with {best_model_name} (Accuracy: {best_accuracy:.2f})")
+
+                    st.subheader("🎯 Anxiety Level Prediction")
                     st.write(f"**Predicted Anxiety Level:** {prediction_class}")
+
                     if prediction_proba is not None:
                         prob_df = pd.DataFrame({
                             'Anxiety Level': class_labels,
@@ -1664,59 +1663,53 @@ elif page == "Predict your Anxiety":
                         }).sort_values('Probability (%)', ascending=False)
 
                         st.table(prob_df.style.format({"Probability (%)": "{:.2f}"}))
-                else:
-                    st.warning("Prediction class not recognized.")
 
-                st.subheader("💡 Personalized Recommendations")
-                if prediction_class == 'High':
-                    recs = [
-                        "Consider consulting a mental health professional.",
-                        "Practice stress-reduction techniques like meditation.",
-                        "Maintain good sleep hygiene (7-9 hours).",
-                        "Engage in regular physical activity.",
-                        "Limit caffeine intake if high.",
-                        "Build a strong social support network."
-                    ]
-                elif prediction_class == 'Moderate':
-                    recs = [
-                        "Monitor your stress and anxiety levels regularly.",
-                        "Try relaxation techniques and mindfulness.",
-                        "Keep a balanced diet and regular exercise routine.",
-                        "Maintain a consistent sleep schedule."
-                    ]
-                else:  # Low
-                    recs = [
-                        "Keep up your healthy lifestyle.",
-                        "Stay active physically and mentally.",
-                        "Maintain social connections.",
-                        "Practice stress management as needed."
-                    ]
-                for i, rec in enumerate(recs, 1):
-                    st.write(f"{i}. {rec}")
+                    st.subheader("💡 Personalized Recommendations")
+                    if prediction_class == 'High':
+                        recs = [
+                            "Consider consulting a mental health professional.",
+                            "Practice stress-reduction techniques like meditation.",
+                            "Maintain good sleep hygiene (7-9 hours).",
+                            "Engage in regular physical activity.",
+                            "Limit caffeine intake if high.",
+                            "Build a strong social support network."
+                        ]
+                    elif prediction_class == 'Moderate':
+                        recs = [
+                            "Monitor your stress and anxiety levels regularly.",
+                            "Try relaxation techniques and mindfulness.",
+                            "Keep a balanced diet and regular exercise routine.",
+                            "Maintain a consistent sleep schedule."
+                        ]
+                    else:
+                        recs = [
+                            "Keep up your healthy lifestyle.",
+                            "Stay active physically and mentally.",
+                            "Maintain social connections.",
+                            "Practice stress management as needed."
+                        ]
+                    for i, rec in enumerate(recs, 1):
+                        st.write(f"{i}. {rec}")
 
-                if best_model_name == 'Random Forest':
-                    st.subheader("📈 Factors Influencing Your Prediction")
-                    import plotly.express as px
-                    feature_importance = pd.DataFrame({
-                        'Feature': colunas_independentes,
-                        'Importance': best_model.feature_importances_
-                    }).sort_values('Importance', ascending=False)
-                    fig_importance = px.bar(
-                        feature_importance,
-                        x='Importance',
-                        y='Feature',
-                        orientation='h',
-                        title="Feature Importance in Your Anxiety Risk Prediction",
-                        labels={'Importance': 'Importance Score', 'Feature': 'Health Factors'}
-                    )
-                    fig_importance.update_layout(yaxis={'categoryorder': 'total ascending'})
-                    st.plotly_chart(fig_importance, use_container_width=True)
+                    if best_model_name == 'Random Forest':
+                        st.subheader("📈 Factors Influencing Your Prediction")
+                        feature_importance = pd.DataFrame({
+                            'Feature': colunas_independentes,
+                            'Importance': best_model.feature_importances_
+                        }).sort_values('Importance', ascending=False)
+                        fig_importance = px.bar(
+                            feature_importance,
+                            x='Importance',
+                            y='Feature',
+                            orientation='h',
+                            title="Feature Importance in Your Anxiety Risk Prediction",
+                            labels={'Importance': 'Importance Score', 'Feature': 'Health Factors'}
+                        )
+                        fig_importance.update_layout(yaxis={'categoryorder': 'total ascending'})
+                        st.plotly_chart(fig_importance, use_container_width=True)
 
-                st.info("⚠️ This prediction is based on machine learning models trained on survey data and does not replace professional advice. Please consult a healthcare professional if you have concerns.")
+                    st.info("⚠️ This prediction is based on machine learning models trained on survey data and does not replace professional advice. Please consult a healthcare professional if you have concerns.")
 
-            else:
-                st.error("Dataset for model training is empty or not loaded.")
-        
         except Exception as e:
             st.error(f"❌ An error occurred during prediction: {str(e)}")
             st.info("Please check that all required data is available and try again.")
