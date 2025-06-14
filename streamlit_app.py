@@ -1019,33 +1019,6 @@ elif page == "Classification Model":
 
 elif page == "Dashboard":
 
-    # Reconstruir colunas necessárias a partir de dummies como feito em "Visualizations"
-    if not df_inner.empty:
-        df_dash = df_inner.copy()
-
-        # Reconstruir coluna 'Country'
-        country_cols = [c for c in df_dash.columns if c.startswith('Country_')]
-        if country_cols:
-            df_dash['Country'] = ''
-            for col in country_cols:
-                df_dash.loc[df_dash[col] == 1, 'Country'] = col.replace('Country_', '')
-        else:
-            df_dash['Country'] = 'Unknown'
-
-        # Reconstruir coluna 'Mental Health Condition'
-        condition_cols = [c for c in df_dash.columns if c.startswith('Mental_Health_Condition_')]
-        if condition_cols:
-            def get_condition(row):
-                for col in condition_cols:
-                    if row[col] == 1:
-                        return col.replace('Mental_Health_Condition_', '')
-                return 'None'
-            df_dash['Mental Health Condition'] = df_dash.apply(get_condition, axis=1)
-        else:
-            df_dash['Mental Health Condition'] = 'Unknown'
-
-    st.header("Dashboard Geral de Saúde Mental e Ansiedade")
-
     st.header("Dashboard Geral de Saúde Mental e Ansiedade")
 
     try:
@@ -1055,7 +1028,24 @@ elif page == "Dashboard":
         if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
             st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
         else:
-            df_dash = df_inner.copy().dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
+            df_dash = df_inner.copy()
+
+            # Reconstruir coluna 'Country' a partir das dummies
+            country_cols = [c for c in df_dash.columns if c.startswith('Country_')]
+            if country_cols:
+                df_dash['Country'] = df_dash[country_cols].idxmax(axis=1).str.replace("Country_", "")
+            else:
+                df_dash['Country'] = 'Unknown'
+
+            # Reconstruir coluna 'Mental Health Condition' a partir das dummies
+            condition_cols = [c for c in df_dash.columns if c.startswith('Mental_Health_Condition_')]
+            if condition_cols:
+                df_dash['Mental Health Condition'] = df_dash[condition_cols].idxmax(axis=1).str.replace("Mental_Health_Condition_", "")
+            else:
+                df_dash['Mental Health Condition'] = 'Unknown'
+
+            # Remover registros com dados ausentes nas colunas principais
+            df_dash = df_dash.dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
 
             st.subheader("Média Geral de Ansiedade")
             media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
@@ -1078,7 +1068,6 @@ elif page == "Dashboard":
             )
             st.plotly_chart(fig_top_paises, use_container_width=True)
 
-            # Distribuição de Condição de Saúde Mental por Variáveis Sociodemográficas
             st.subheader("Distribuição de Condições de Saúde Mental por Variáveis Sociodemográficas")
             for col in ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income', 'Country']:
                 if col in df_dash.columns:
