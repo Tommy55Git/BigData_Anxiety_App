@@ -967,30 +967,34 @@ elif page == "Visualizations":
     st.markdown("---")
     st.subheader("Sinais Fisiológicos Médios por Gênero")
 
-    # Verifica se colunas dummy de gênero e os sinais estão no DataFrame
-    genero_cols = ['Gender_Male', 'Gender_Female', 'Gender_Other']
-    if all(col in df_pd.columns for col in genero_cols) and all(col in df_pd.columns for col in sinais_fisiologicos):
-        
-        # Cria a coluna 'Gender' com base nas dummies
+    # Dicionário de colunas dummy
+    sexo_cols = {"Feminino": "Gender_Female", "Masculino": "Gender_Male", "Outro": "Gender_Other"}
+
+    # Lista de sinais fisiológicos (adapte conforme suas colunas)
+    sinais_fisiologicos = [
+        "Heart Rate", 
+        "Respiration Rate", 
+        "Body Temperature", 
+        "Blood Pressure"
+    ]
+
+    # Verifica se colunas dummy e sinais fisiológicos existem no DataFrame
+    if all(col in df_pd.columns for col in sexo_cols.values()) and all(col in df_pd.columns for col in sinais_fisiologicos):
+
+        # Cria a coluna categórica 'Gender' a partir das colunas dummy
         def get_gender(row):
-            if row['Gender_Male'] == 1:
-                return 'Masculino'
-            elif row['Gender_Female'] == 1:
-                return 'Feminino'
-            elif row['Gender_Other'] == 1:
-                return 'Outros'
-            else:
-                return 'Desconhecido'
+            for genero, col in sexo_cols.items():
+                if row[col] == 1:
+                    return genero
+            return 'Desconhecido'
 
         df_pd['Gender'] = df_pd.apply(get_gender, axis=1)
 
-        # Agrupa e calcula a média dos sinais fisiológicos
+        # Agrupa por gênero e calcula a média
         sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
 
-        # Gera o gráfico usando matplotlib
+        # Gráfico
         import matplotlib.pyplot as plt
-        import seaborn as sns
-
         fig, ax = plt.subplots(figsize=(10, 6))
         sinais_por_genero.plot(kind='barh', ax=ax)
         ax.set_title("Sinais Fisiológicos Médios por Gênero")
@@ -999,7 +1003,7 @@ elif page == "Visualizations":
         st.pyplot(fig)
 
     else:
-        st.warning("Colunas de gênero ou sinais fisiológicos ausentes para gerar o gráfico.")
+        st.warning("Colunas necessárias ausentes para gerar o gráfico de sinais fisiológicos por gênero.")
 
 
 
