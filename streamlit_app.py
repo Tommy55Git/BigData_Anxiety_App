@@ -1110,7 +1110,6 @@ elif page == "Dashboard":
 
             import plotly.graph_objects as go
             import pandas as pd
-            import plotly.express as px
             
             # Usar DataFrame já preparado
             df_vis = df_dash.copy()
@@ -1130,6 +1129,21 @@ elif page == "Dashboard":
                 'China': (35.9, 104.2)
             }
             
+            # Emojis de bandeiras (Unicode Regional Indicator Symbols)
+            flag_emojis = {
+                'USA': '🇺🇸',
+                'Brazil': '🇧🇷',
+                'Germany': '🇩🇪',
+                'India': '🇮🇳',
+                'Australia': '🇦🇺',
+                'Canada': '🇨🇦',
+                'Japan': '🇯🇵',
+                'UK': '🇬🇧',
+                'France': '🇫🇷',
+                'Mexico': '🇲🇽',
+                'China': '🇨🇳'
+            }
+            
             # Calcular média de ansiedade por país
             df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
             
@@ -1144,78 +1158,34 @@ elif page == "Dashboard":
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
             
-            # Normalizar os valores de ansiedade para cores na escala Turbo
-            norm = px.colors.sample_colorscale("Turbo", df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x - 1) / 9))
-            
             # Criar figura
             fig = go.Figure()
             
-            # Adicionar cada país com cor derivada da escala e nome na legenda
-            for i, row in df_country_avg.iterrows():
+            # Adicionar países com bandeira emoji como texto
+            for _, row in df_country_avg.iterrows():
+                emoji = flag_emojis.get(row['Country'], '')
                 fig.add_trace(go.Scattergeo(
                     lon=[row['lon']],
                     lat=[row['lat']],
-                    text=f"{row['Country']}: {row['Anxiety Level (1-10)']:.2f}",
-                    marker=dict(
-                        size=10,
-                        color=norm[i],
-                        line_color='black',
-                        line_width=0.5
-                    ),
-                    mode='markers',
+                    text=f"{emoji} {row['Country']}: {row['Anxiety Level (1-10)']:.1f}",
+                    mode='text',
+                    textfont=dict(size=14),
                     name=row['Country'],
-                    showlegend=True
+                    showlegend=False
                 ))
             
-            # Adicionar país em destaque com estrela
+            # País em destaque com estrela
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
-                text=[f"{top_country_name}<br>{top_country_value:.2f}"],
-                marker=dict(
-                    size=18,
-                    color='#FF1744',
-                    line_color='white',
-                    line_width=2,
-                    symbol='star'
-                ),
-                mode='markers+text',
-                textposition='top center',
-                name=f'🔺 Destaque: {top_country_name}'
-            ))
-            
-            # Adicionar trace invisível para a colorbar
-            fig.add_trace(go.Scattergeo(
-                lon=[None],
-                lat=[None],
-                marker=dict(
-                    size=0.1,
-                    color=list(range(1, 11)),
-                    cmin=1,
-                    cmax=10,
-                    colorscale='Turbo',
-                    colorbar=dict(
-                        title=dict(
-                            text='Nível de Ansiedade',
-                            font=dict(color='white')
-                        ),
-                        tickvals=list(range(1, 11)),
-                        tickfont=dict(color='white'),
-                        len=0.5,
-                        lenmode='fraction'
-                    )
-                ),
+                text=[f"⭐ {top_country_name}<br>{top_country_value:.2f}"],
+                mode='text',
+                textfont=dict(size=16, color='red'),
+                name=f'🔺 Destaque: {top_country_name}',
                 showlegend=False
             ))
             
-            # ➕ Adicionar anotação com países ordenados por ansiedade
-            ordered_countries = df_country_avg.sort_values("Anxiety Level (1-10)")
-            legenda_texto = "<b>Países (por ansiedade)</b><br>" + "<br>".join([
-                f"{row['Country']}: {row['Anxiety Level (1-10)']:.1f}"
-                for _, row in ordered_countries.iterrows()
-            ])
-            
-            # Atualizar layout com a anotação lateral
+            # Layout escuro
             fig.update_layout(
                 geo=dict(
                     projection_type='orthographic',
@@ -1227,31 +1197,15 @@ elif page == "Dashboard":
                     bgcolor='black'
                 ),
                 height=700,
-                margin=dict(l=0, r=120, t=50, b=0),  # espaço maior à direita
+                margin=dict(l=0, r=0, t=50, b=0),
                 paper_bgcolor='black',
                 plot_bgcolor='black',
-                font=dict(color='white'),
-                legend=dict(
-                    bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white')
-                ),
-                annotations=[
-                    dict(
-                        x=1.13,
-                        y=0.5,
-                        xref='paper',
-                        yref='paper',
-                        showarrow=False,
-                        align='left',
-                        text=legenda_texto,
-                        font=dict(color='white', size=12),
-                        bgcolor='rgba(0,0,0,0)'
-                    )
-                ]
+                font=dict(color='white')
             )
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
