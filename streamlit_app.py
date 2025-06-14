@@ -1071,101 +1071,101 @@ elif page == "Classification Model":
 
 
 
-    elif page == "Dashboard":
-    
-        st.header("Dashboard Geral de Saúde Mental e Ansiedade")
-    
-        try:
-            import plotly.express as px
-            import plotly.graph_objects as go
-    
-            if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
-                st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
+elif page == "Dashboard":
+
+    st.header("Dashboard Geral de Saúde Mental e Ansiedade")
+
+    try:
+        import plotly.express as px
+        import plotly.graph_objects as go
+
+        if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
+            st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
+        else:
+            df_dash = df_inner.copy()
+
+            # Reconstruir coluna 'Country'
+            country_cols = [c for c in df_dash.columns if c.startswith('Country_')]
+            if country_cols:
+                df_dash['Country'] = df_dash[country_cols].idxmax(axis=1).str.replace("Country_", "")
             else:
-                df_dash = df_inner.copy()
-    
-                # Reconstruir coluna 'Country'
-                country_cols = [c for c in df_dash.columns if c.startswith('Country_')]
-                if country_cols:
-                    df_dash['Country'] = df_dash[country_cols].idxmax(axis=1).str.replace("Country_", "")
-                else:
-                    df_dash['Country'] = 'Unknown'
-    
-                # Reconstruir coluna 'Mental Health Condition'
-                condition_cols = [c for c in df_dash.columns if c.startswith('Mental_Health_Condition_')]
-                if condition_cols:
-                    def get_condition(row):
-                        for col in condition_cols:
-                            if row.get(col, 0) == 1:
-                                return col.replace("Mental_Health_Condition_", "")
-                        return "Unknown"
-                    df_dash['Mental Health Condition'] = df_dash.apply(get_condition, axis=1)
-                else:
-                    df_dash['Mental Health Condition'] = 'Unknown'
-    
-                # Remover registros incompletos
-                df_dash = df_dash.dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
-    
-                # ================= GRÁFICOS ===================
-    
-                st.subheader("Média Geral de Ansiedade")
-                media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
-                st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
-    
-                st.subheader("País com Maior Nível Médio de Ansiedade")
-                media_por_pais = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().sort_values(ascending=False)
-                pais_top_ansiedade = media_por_pais.idxmax()
-                valor_top_ansiedade = media_por_pais.max()
-                st.metric(label="País com Maior Ansiedade Média", value=pais_top_ansiedade, delta=f"{valor_top_ansiedade:.2f}")
-    
-                fig_top_paises = px.bar(
-                    media_por_pais.head(10).reset_index(),
-                    x="Country",
+                df_dash['Country'] = 'Unknown'
+
+            # Reconstruir coluna 'Mental Health Condition'
+            condition_cols = [c for c in df_dash.columns if c.startswith('Mental_Health_Condition_')]
+            if condition_cols:
+                def get_condition(row):
+                    for col in condition_cols:
+                        if row.get(col, 0) == 1:
+                            return col.replace("Mental_Health_Condition_", "")
+                    return "Unknown"
+                df_dash['Mental Health Condition'] = df_dash.apply(get_condition, axis=1)
+            else:
+                df_dash['Mental Health Condition'] = 'Unknown'
+
+            # Remover registros incompletos
+            df_dash = df_dash.dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
+
+            # ================= GRÁFICOS ===================
+
+            st.subheader("Média Geral de Ansiedade")
+            media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
+            st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
+
+            st.subheader("País com Maior Nível Médio de Ansiedade")
+            media_por_pais = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().sort_values(ascending=False)
+            pais_top_ansiedade = media_por_pais.idxmax()
+            valor_top_ansiedade = media_por_pais.max()
+            st.metric(label="País com Maior Ansiedade Média", value=pais_top_ansiedade, delta=f"{valor_top_ansiedade:.2f}")
+
+            fig_top_paises = px.bar(
+                media_por_pais.head(10).reset_index(),
+                x="Country",
+                y="Anxiety Level (1-10)",
+                title="Top 10 Países com Maior Nível Médio de Ansiedade",
+                labels={"Anxiety Level (1-10)": "Ansiedade Média"},
+                color="Anxiety Level (1-10)",
+                color_continuous_scale="Reds"
+            )
+            st.plotly_chart(fig_top_paises, use_container_width=True)
+
+            # CRIAÇÃO DE condicao_pais antes do uso
+            condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
+
+            # GRÁFICO: Top Países com Mais Registros
+            st.subheader("País com Maior Registro de Condições de Saúde Mental")
+            top_condition_country = condicao_pais.groupby("Country")["Total"].sum().reset_index()
+            top_condition_country = top_condition_country.sort_values(by="Total", ascending=False).head(20)
+
+            fig_top_condition = px.bar(
+                top_condition_country,
+                x="Country",
+                y="Total",
+                title="Top Países com Mais Registros de Condições de Saúde Mental",
+                labels={"Total": "Número de Registros"},
+                color="Total",
+                color_continuous_scale="Viridis"
+            )
+            st.plotly_chart(fig_top_condition, use_container_width=True)
+
+            # GRÁFICO: Ansiedade por Gênero
+            st.subheader("Ansiedade por Gênero")
+            if "Gender" in df_dash.columns:
+                ansiedade_genero = df_dash.groupby("Gender")["Anxiety Level (1-10)"].mean().reset_index()
+                fig_genero = px.bar(
+                    ansiedade_genero,
+                    x="Gender",
                     y="Anxiety Level (1-10)",
-                    title="Top 10 Países com Maior Nível Médio de Ansiedade",
+                    title="Média de Ansiedade por Gênero",
                     labels={"Anxiety Level (1-10)": "Ansiedade Média"},
                     color="Anxiety Level (1-10)",
-                    color_continuous_scale="Reds"
+                    color_continuous_scale="Blues"
                 )
-                st.plotly_chart(fig_top_paises, use_container_width=True)
-    
-                # CRIAÇÃO DE condicao_pais antes do uso
-                condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
-    
-                # GRÁFICO: Top Países com Mais Registros
-                st.subheader("País com Maior Registro de Condições de Saúde Mental")
-                top_condition_country = condicao_pais.groupby("Country")["Total"].sum().reset_index()
-                top_condition_country = top_condition_country.sort_values(by="Total", ascending=False).head(20)
-    
-                fig_top_condition = px.bar(
-                    top_condition_country,
-                    x="Country",
-                    y="Total",
-                    title="Top Países com Mais Registros de Condições de Saúde Mental",
-                    labels={"Total": "Número de Registros"},
-                    color="Total",
-                    color_continuous_scale="Viridis"
-                )
-                st.plotly_chart(fig_top_condition, use_container_width=True)
-    
-                # GRÁFICO: Ansiedade por Gênero
-                st.subheader("Ansiedade por Gênero")
-                if "Gender" in df_dash.columns:
-                    ansiedade_genero = df_dash.groupby("Gender")["Anxiety Level (1-10)"].mean().reset_index()
-                    fig_genero = px.bar(
-                        ansiedade_genero,
-                        x="Gender",
-                        y="Anxiety Level (1-10)",
-                        title="Média de Ansiedade por Gênero",
-                        labels={"Anxiety Level (1-10)": "Ansiedade Média"},
-                        color="Anxiety Level (1-10)",
-                        color_continuous_scale="Blues"
-                    )
-                    st.plotly_chart(fig_genero, use_container_width=True)
-    
-        except Exception as e:
-            st.warning("Erro ao carregar o dashboard.")
-            st.exception(e)
+                st.plotly_chart(fig_genero, use_container_width=True)
+
+    except Exception as e:
+        st.warning("Erro ao carregar o dashboard.")
+        st.exception(e)
 
 
 
