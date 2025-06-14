@@ -1262,7 +1262,6 @@ elif page == "Dashboard":
 
 
 
-
             import plotly.graph_objects as go
             import pandas as pd
             import random
@@ -1328,58 +1327,21 @@ elif page == "Dashboard":
                     name=row['Country']
                 ))
             
-            # País em destaque
+            # País em destaque (cor vermelha vibrante)
             fig.add_trace(go.Scattergeo(
-                lon=[None], lat=[None],  # invisível
+                lon=[top_country['lon']],
+                lat=[top_country['lat']],
+                text=[f"{top_country_name}<br>{top_country_value:.2f}"],
                 marker=dict(
-                    size=0.01,
-                    color=df_country_avg['Anxiety Level (1-10)'],  # escala real
-                    colorscale='Turbo',
-                    showscale=True,
-                    colorbar=dict(
-                        title=dict(  # ✅ Correto: dict com 'text' e 'font'
-                            text='Escala de Ansiedade',
-                            font=dict(color='white')
-                        ),
-                        tickvals=[1, 3, 5, 7, 10],
-                        ticktext=["1 (baixa)", "3", "5", "7", "10 (alta)"],
-                        thickness=15,
-                        len=0.35,
-                        y=0.15,  # posição vertical (abaixo da legenda)
-                        yanchor='bottom',
-                        x=1.02,
-                        xanchor='left',
-                        tickfont=dict(color='white')  # ✅ tickfont está OK
-                    )
+                    size=18,
+                    color='#FF1744',
+                    line_color='white',
+                    line_width=2,
+                    symbol='star'
                 ),
-                mode='markers',
-                showlegend=False
-            ))
-
-            # Adicionar traço fantasma para escala de ansiedade
-            fig.add_trace(go.Scattergeo(
-                lon=[None], lat=[None],  # Invisível
-                marker=dict(
-                    size=0.01,
-                    color=df_country_avg['Anxiety Level (1-10)'],  # Escala real
-                    colorscale='Turbo',
-                    showscale=True,
-                    colorbar=dict(
-                        title='Escala de Ansiedade',
-                        tickvals=[1, 3, 5, 7, 10],
-                        ticktext=["1 (baixa)", "3", "5", "7", "10 (alta)"],
-                        thickness=15,
-                        len=0.35,
-                        y=0.15,
-                        yanchor='bottom',
-                        x=1.02,
-                        xanchor='left',
-                        tickfont=dict(color='white'),
-                        titlefont=dict(color='white')
-                    )
-                ),
-                mode='markers',
-                showlegend=False
+                mode='markers+text',
+                textposition='top center',
+                name=f'🔺 Destaque: {top_country_name}'
             ))
             
             # Layout estilizado escuro
@@ -1407,6 +1369,7 @@ elif page == "Dashboard":
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
