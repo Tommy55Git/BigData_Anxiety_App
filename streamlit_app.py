@@ -1328,7 +1328,7 @@ elif page == "Dashboard":
                     name=row['Country']
                 ))
             
-            # País em destaque (cor vermelha vibrante)
+            # País em destaque
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
@@ -1343,6 +1343,32 @@ elif page == "Dashboard":
                 mode='markers+text',
                 textposition='top center',
                 name=f'🔺 Destaque: {top_country_name}'
+            ))
+            
+            # Adicionar traço fantasma para escala de ansiedade
+            fig.add_trace(go.Scattergeo(
+                lon=[None], lat=[None],  # Invisível
+                marker=dict(
+                    size=0.01,
+                    color=df_country_avg['Anxiety Level (1-10)'],  # Escala real
+                    colorscale='Turbo',
+                    showscale=True,
+                    colorbar=dict(
+                        title='Escala de Ansiedade',
+                        tickvals=[1, 3, 5, 7, 10],
+                        ticktext=["1 (baixa)", "3", "5", "7", "10 (alta)"],
+                        thickness=15,
+                        len=0.35,
+                        y=0.15,
+                        yanchor='bottom',
+                        x=1.02,
+                        xanchor='left',
+                        tickfont=dict(color='white'),
+                        titlefont=dict(color='white')
+                    )
+                ),
+                mode='markers',
+                showlegend=False
             ))
             
             # Layout estilizado escuro
@@ -1370,6 +1396,7 @@ elif page == "Dashboard":
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
