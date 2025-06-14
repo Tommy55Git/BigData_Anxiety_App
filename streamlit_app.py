@@ -1136,47 +1136,61 @@ elif page == "Dashboard":
 
             # GRÁFICO: Proporção de Gênero por Quartis de Ansiedade
             st.subheader("Distribuição de Gênero por Quartis de Ansiedade")
-
+            
             try:
-                # Converter para pandas (caso ainda seja PySpark)
                 df_quartis = df_dash.copy()
-
+            
                 # Criar quartis de ansiedade com rótulos descritivos
                 df_quartis['Anxiety Quartile'] = pd.qcut(
                     df_quartis['Anxiety Level (1-10)'],
                     q=4,
                     labels=['Q1 (Baixo)', 'Q2', 'Q3', 'Q4 (Alto)']
                 )
-
-                # Garantir que colunas de gênero binário estejam presentes
+            
+                # Verifica se colunas binárias de gênero existem
                 if 'Gender_Female' in df_quartis.columns and 'Gender_Male' in df_quartis.columns:
-                    # Calcular soma dos gêneros por quartil
+                    # Soma por quartil
                     quartile_gender = df_quartis.groupby('Anxiety Quartile')[['Gender_Female', 'Gender_Male']].sum()
-
-                    # Calcular proporção percentual
                     quartile_gender_percent = quartile_gender.div(quartile_gender.sum(axis=1), axis=0) * 100
-
-                    # Criar gráfico matplotlib
-                    import matplotlib.pyplot as plt
-                    fig, ax = plt.subplots(figsize=(10,6))
-                    quartile_gender_percent.plot(
-                        kind='barh',
-                        stacked=True,
-                        color=['#FF6F61', '#6BAED6'],
-                        ax=ax
+                    quartile_gender_percent = quartile_gender_percent.reset_index()
+            
+                    # Reestruturar para long format para plotly
+                    df_long = quartile_gender_percent.melt(
+                        id_vars='Anxiety Quartile',
+                        value_vars=['Gender_Female', 'Gender_Male'],
+                        var_name='Gênero',
+                        value_name='Percentual'
                     )
-                    ax.set_title(
-                        'Proporção de Gênero por Quartil de Ansiedade\n'
-                        '🔸 Q1 (Baixo): 25% com os menores níveis de ansiedade\n'
-                        '🔸 Q2 e Q3: 50% intermediários\n'
-                        '🔸 Q4 (Alto): 25% com os maiores níveis de ansiedade'
+                    df_long['Gênero'] = df_long['Gênero'].map({
+                        'Gender_Female': 'Feminino',
+                        'Gender_Male': 'Masculino'
+                    })
+            
+                    import plotly.express as px
+            
+                    fig_quartil = px.bar(
+                        df_long,
+                        x='Percentual',
+                        y='Anxiety Quartile',
+                        color='Gênero',
+                        orientation='h',
+                        text='Percentual',
+                        title='Proporção de Gênero por Quartil de Ansiedade<br>'
+                              '🔸 Q1 (Baixo): 25% com os menores níveis de ansiedade<br>'
+                              '🔸 Q2 e Q3: 50% intermediários<br>'
+                              '🔸 Q4 (Alto): 25% com os maiores níveis de ansiedade',
+                        labels={
+                            'Anxiety Quartile': 'Quartil de Ansiedade',
+                            'Percentual': 'Proporção (%)'
+                        }
                     )
-                    ax.set_xlabel('Percentual')
-                    ax.legend(['Feminino', 'Masculino'], title='Gênero')
-                    st.pyplot(fig)
+            
+                    fig_quartil.update_layout(barmode='stack', xaxis=dict(range=[0, 100]))
+                    st.plotly_chart(fig_quartil, use_container_width=True)
+            
                 else:
                     st.info("Colunas de gênero binário ('Gender_Female' e 'Gender_Male') não encontradas nos dados.")
-
+            
             except Exception as e:
                 st.warning("Erro ao gerar gráfico de quartis de ansiedade por gênero.")
                 st.exception(e)
