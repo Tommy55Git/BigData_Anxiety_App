@@ -1108,7 +1108,7 @@ elif page == "Dashboard":
 
             # ================= GRÁFICOS ===================
 
-            # Título da seção
+             # Título da seção
             st.subheader("📊 Visão Geral Global da Ansiedade")
             
             # Estatísticas principais
@@ -1145,24 +1145,25 @@ elif page == "Dashboard":
             # Consumo médio de álcool
             alcool_medio = df_dash["Alcohol Consumption (drinks/week)"].mean()
             
-            # Estilo para as caixas
+            # Estilo aprimorado com gradiente e espaçamento
             box_style = """
             <style>
             .box-metric {
-                background-color: #f0f2f6;
+                background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
                 padding: 1rem;
-                border-radius: 10px;
+                border-radius: 15px;
                 text-align: center;
-                box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+                box-shadow: 2px 2px 10px rgba(0,0,0,0.07);
+                margin: 0.5rem 0.3rem;
             }
             .box-title {
-                font-size: 0.9rem;
+                font-size: 0.95rem;
                 color: #333;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.4rem;
             }
             .box-value {
-                font-size: 1.5rem;
-                font-weight: bold;
+                font-size: 1.6rem;
+                font-weight: 700;
                 color: #0072C6;
             }
             </style>
@@ -1178,22 +1179,29 @@ elif page == "Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Organização em colunas com design
-            cols1 = st.columns(4)
-            render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈")
-            render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊")
-            render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬")
-            render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠")
+            # Organização em colunas com melhor espaçamento
+            with st.container():
+                col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+                with col1: render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈")
+                with col2: render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊")
+                with col3: render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬")
+                with col4: render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠")
             
-            cols2 = st.columns(4)
-            with cols2[0]: render_box("Sexo Mais Ansioso", sexo_top, "🚻")
-            with cols2[1]: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍")
-            with cols2[2]: render_box("Condição Mental + Comum", condicao_top, "⚠️")
-            with cols2[3]: render_box("Idade Média", f"{idade_media:.1f} anos", "👤")
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            cols3 = st.columns(2)
-            with cols3[0]: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
-            with cols3[1]: render_box("Consumo Médio de Álcool", f"{alcool_medio:.1f}/sem", "🍷")
+            with st.container():
+                col5, col6, col7, col8 = st.columns([1, 1, 1, 1])
+                with col5: render_box("Sexo Mais Ansioso", sexo_top, "🚻")
+                with col6: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍")
+                with col7: render_box("Condição Mental + Comum", condicao_top, "⚠️")
+                with col8: render_box("Idade Média", f"{idade_media:.1f} anos", "👤")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            with st.container():
+                col9, col10 = st.columns([1, 1])
+                with col9: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
+                with col10: render_box("Consumo Médio de Álcool", f"{alcool_medio:.1f}/sem", "🍷")
 
 
 
