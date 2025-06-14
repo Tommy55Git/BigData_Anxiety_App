@@ -1307,26 +1307,26 @@ elif page == "Dashboard":
             medicacao = df_dash["Medication_Yes"].mean() * 100
             
             # Estilos aprimorados com gradientes personalizados
-           <style>
+            box_style = """
+            <style>
             .box-metric {
                 padding: 1rem;
                 border-radius: 15px;
                 text-align: center;
-                box-shadow: 2px 2px 10px rgba(0,0,0,0.15);
+                box-shadow: 2px 2px 12px rgba(0,0,0,0.2);
                 margin: 0.5rem 0.3rem;
                 color: white;
                 font-family: 'Segoe UI', sans-serif;
             }
-            .gradient1 { background: linear-gradient(135deg, #fbc2eb, #a6c1ee); }
-            .gradient2 { background: linear-gradient(135deg, #fddb92, #d1fdff); }
-            .gradient3 { background: linear-gradient(135deg, #a1c4fd, #c2e9fb); }
-            .gradient4 { background: linear-gradient(135deg, #d4fc79, #96e6a1); }
-            .gradient5 { background: linear-gradient(135deg, #ffecd2, #fcb69f); }
-            .gradient6 { background: linear-gradient(135deg, #e0c3fc, #8ec5fc); }
-            .gradient7 { background: linear-gradient(135deg, #f6d365, #fda085); }
-            .gradient8 { background: linear-gradient(135deg, #cfd9df, #e2ebf0); }
+            .gradient1 { background: linear-gradient(135deg, #ffb347, #ffcc33); }
+            .gradient2 { background: linear-gradient(135deg, #ff5e62, #ff9966); }
+            .gradient3 { background: linear-gradient(135deg, #36d1dc, #5b86e5); }
+            .gradient4 { background: linear-gradient(135deg, #c471f5, #fa71cd); }
+            .gradient5 { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
+            .gradient6 { background: linear-gradient(135deg, #f77062, #fe5196); }
+            .gradient7 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+            .gradient8 { background: linear-gradient(135deg, #fceabb, #f8b500); }
             </style>
-
             """
             st.markdown(box_style, unsafe_allow_html=True)
             
