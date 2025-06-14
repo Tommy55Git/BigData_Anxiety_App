@@ -1037,16 +1037,22 @@ elif page == "Dashboard":
             else:
                 df_dash['Country'] = 'Unknown'
 
-            # Reconstruir coluna 'Mental Health Condition' a partir das dummies
+            # Reconstruir coluna 'Mental Health Condition' com lógica robusta
             condition_cols = [c for c in df_dash.columns if c.startswith('Mental_Health_Condition_')]
             if condition_cols:
-                df_dash['Mental Health Condition'] = df_dash[condition_cols].idxmax(axis=1).str.replace("Mental_Health_Condition_", "")
+                def get_condition(row):
+                    for col in condition_cols:
+                        if row.get(col, 0) == 1:
+                            return col.replace("Mental_Health_Condition_", "")
+                    return "Unknown"
+                df_dash['Mental Health Condition'] = df_dash.apply(get_condition, axis=1)
             else:
                 df_dash['Mental Health Condition'] = 'Unknown'
 
             # Remover registros com dados ausentes nas colunas principais
             df_dash = df_dash.dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
 
+            # ================= GRÁFICOS ===================
             st.subheader("Média Geral de Ansiedade")
             media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
             st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
@@ -1138,8 +1144,6 @@ elif page == "Dashboard":
     except Exception as e:
         st.warning("Erro ao carregar o dashboard.")
         st.exception(e)
-
-
 
 
 
