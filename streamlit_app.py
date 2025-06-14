@@ -1145,49 +1145,55 @@ elif page == "Dashboard":
         # Consumo médio de álcool
         alcool_medio = df_dash["Alcohol Consumption (drinks/week)"].mean()
         
-        # Exibir caixas informativas
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.markdown("### Média de Ansiedade")
-            st.metric(label="Média (1-10)", value=f"{media_ansiedade:.2f}")
+        # Estilo para as caixas
+        box_style = """
+        <style>
+        .box-metric {
+            background-color: #f0f2f6;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+        }
+        .box-title {
+            font-size: 0.9rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .box-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #0072C6;
+        }
+        </style>
+        """
+        st.markdown(box_style, unsafe_allow_html=True)
         
-        with col2:
-            st.markdown("### Mediana de Ansiedade")
-            st.metric(label="Mediana (1-10)", value=f"{mediana_ansiedade:.2f}")
+        # Função para renderizar uma "caixa"
+        def render_box(title, value, emoji=""):
+            st.markdown(f"""
+            <div class="box-metric">
+                <div class="box-title">{emoji} {title}</div>
+                <div class="box-value">{value}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        with col3:
-            st.markdown("### Média de Sessões de Terapia")
-            st.metric(label="Sessões/mês", value=f"{media_sessoes_terapia:.2f}")
+        # Organização em colunas com design
+        cols1 = st.columns(4)
+        render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈")
+        render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊")
+        render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬")
+        render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠")
         
-        with col4:
-            st.markdown("### % em Terapia")
-            st.metric(label="Com sessões", value=f"{prop_terapia:.1f}%", delta="ativos")
+        cols2 = st.columns(4)
+        with cols2[0]: render_box("Sexo Mais Ansioso", sexo_top, "🚻")
+        with cols2[1]: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍")
+        with cols2[2]: render_box("Condição Mental + Comum", condicao_top, "⚠️")
+        with cols2[3]: render_box("Idade Média", f"{idade_media:.1f} anos", "👤")
         
-        col5, col6, col7, col8 = st.columns(4)
-        with col5:
-            st.markdown("### Sexo Mais Ansioso")
-            st.metric(label="Gênero", value=sexo_top)
-        
-        with col6:
-            st.markdown("### País com Maior Ansiedade")
-            st.metric(label=pais_top, value=f"{pais_top_valor:.2f}")
-        
-        with col7:
-            st.markdown("### Condição Mental + Comum")
-            st.metric(label="Condição", value=condicao_top)
-        
-        with col8:
-            st.markdown("### Idade Média")
-            st.metric(label="Anos", value=f"{idade_media:.1f}")
-        
-        col9, col10 = st.columns(2)
-        with col9:
-            st.markdown("### Sono Médio Diário")
-            st.metric(label="Horas", value=f"{sono_medio:.1f}")
-        
-        with col10:
-            st.markdown("### Consumo Médio de Álcool")
-            st.metric(label="Drinks/semana", value=f"{alcool_medio:.1f}")
+        cols3 = st.columns(2)
+        with cols3[0]: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
+        with cols3[1]: render_box("Consumo Médio de Álcool", f"{alcool_medio:.1f}/sem", "🍷")
 
 
 
