@@ -964,55 +964,47 @@ elif page == "Visualizations":
 
 
     
+    # --- Gráfico de Médias por Gênero ---
     st.markdown("---")
-    st.subheader("Sinais Fisiológicos Médios por Gênero")
+    st.subheader("Comparação de Indicadores Fisiológicos por Gênero")
 
-    # Dicionário de colunas dummy
-    sexo_cols = {"Feminino": "Gender_Female", "Masculino": "Gender_Male", "Outro": "Gender_Other"}
-
-    # Lista de sinais fisiológicos (ajuste conforme os nomes reais do seu dataset)
-    sinais_fisiologicos = [
-        "Heart Rate", 
-        "Respiration Rate", 
-        "Body Temperature", 
-        "Blood Pressure"
+    # Selecionar colunas relevantes
+    colunas_fisio = [
+        'Breathing Rate (breaths/min)',
+        'Heart Rate (bpm)',
+        'Sweating Level (1-5)',
+        'Dizziness_Yes'
     ]
 
-    try:
-        df_base = df_inner.copy()
+    # Agrupar por gênero e calcular a média
+    media_por_genero = df.groupby('Gender')[colunas_fisio].mean().reset_index()
 
-        # Verifica se df_base contém as colunas necessárias
-        if isinstance(df_base, pd.DataFrame) and \
-           all(col in df_base.columns for col in sexo_cols.values()) and \
-           all(col in df_base.columns for col in sinais_fisiologicos):
+    # Reorganizar dados para gráfico horizontal
+    df_melt = media_por_genero.melt(id_vars='Gender', var_name='Indicador', value_name='Média')
 
-            # Cria a coluna categórica 'Gender' a partir das colunas dummy
-            def get_gender(row):
-                for genero, col in sexo_cols.items():
-                    if row[col] == 1:
-                        return genero
-                return 'Desconhecido'
+    # Criar gráfico de barras horizontais com Plotly Express
+    fig_genero = px.bar(
+        df_melt,
+        x='Média',
+        y='Indicador',
+        color='Gender',
+        barmode='group',
+        orientation='h',
+        height=500,
+        title='Média dos Indicadores Fisiológicos por Gênero'
+    )
 
-            df_base['Gender'] = df_base.apply(get_gender, axis=1)
+    fig_genero.update_layout(
+        legend_title='Gênero',
+        xaxis_title='Média',
+        yaxis_title='Indicador',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='black')
+    )
 
-            # Agrupa por gênero e calcula a média
-            sinais_por_genero = df_base.groupby('Gender')[sinais_fisiologicos].mean().T
-
-            # Gráfico
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sinais_por_genero.plot(kind='barh', ax=ax)
-            ax.set_title("Sinais Fisiológicos Médios por Gênero")
-            ax.set_xlabel("Média")
-            plt.tight_layout()
-            st.pyplot(fig)
-
-        else:
-            st.warning("Colunas de gênero ou sinais fisiológicos ausentes no DataFrame.")
-
-    except Exception as e:
-        st.error(f"Ocorreu um erro ao gerar o gráfico: {e}")
-
+    # Exibir gráfico
+    st.plotly_chart(fig_genero, use_container_width=True)
 
 
 
