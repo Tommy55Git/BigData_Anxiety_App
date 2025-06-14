@@ -908,15 +908,15 @@ elif page == "Visualizations":
 
 
 
-
 elif page == "Classification Model":
 
     st.header("Modelos de Classificação para Ansiedade Alta")
 
     try:
-        # 1. Importações
         import pandas as pd
         import matplotlib.pyplot as plt
+        import plotly.express as px
+        import plotly.graph_objects as go
         from sklearn.model_selection import train_test_split
         from sklearn.linear_model import LogisticRegression
         from sklearn.tree import DecisionTreeClassifier
@@ -924,14 +924,12 @@ elif page == "Classification Model":
         from sklearn.neighbors import KNeighborsClassifier
         from sklearn.svm import SVC
         from sklearn.metrics import (
-            accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+            accuracy_score, classification_report, confusion_matrix
         )
 
-        # Verificar se o DataFrame df_inner está disponível
         if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
             st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
         else:
-            # 2. Definir colunas e dados
             colunas_independentes = [
                 'Age',
                 'Sleep Hours',
@@ -946,10 +944,8 @@ elif page == "Classification Model":
             X = df_class[colunas_independentes]
             y = df_class["Anxiety_High"]
 
-            # 3. Dividir treino/teste
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-            # 4. Modelos de classificação
             models = {
                 'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
                 'k-NN': KNeighborsClassifier(),
@@ -958,8 +954,8 @@ elif page == "Classification Model":
                 'SVM': SVC(random_state=42)
             }
 
-            # 5. Avaliação dos modelos
             model_metrics = []
+            confusion_data = []
 
             for name, model in models.items():
                 model.fit(X_train, y_train)
@@ -967,18 +963,7 @@ elif page == "Classification Model":
 
                 accuracy = accuracy_score(y_test, y_pred)
                 report = classification_report(y_test, y_pred, output_dict=True)
-
-                st.subheader(f"{name}")
-                st.markdown(f"**Acurácia:** {accuracy:.4f}")
-                st.text("Relatório de Classificação:")
-                st.text(classification_report(y_test, y_pred))
-
                 cm = confusion_matrix(y_test, y_pred)
-                fig_cm, ax_cm = plt.subplots()
-                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Baixa/Moderada', 'Alta'])
-                disp.plot(cmap='YlGnBu', values_format='d', ax=ax_cm)
-                ax_cm.set_title(f"Matriz de Confusão - {name}")
-                st.pyplot(fig_cm)
 
                 model_metrics.append({
                     'Model': name,
@@ -988,24 +973,42 @@ elif page == "Classification Model":
                     'F1-Score': report['macro avg']['f1-score']
                 })
 
-            # 6. Comparar métricas
+                confusion_data.append((name, cm))
+
             metrics_df = pd.DataFrame(model_metrics)
             st.subheader("Comparação entre Modelos")
             st.dataframe(metrics_df)
 
-            st.subheader("Gráfico Comparativo")
-            fig_bar, ax_bar = plt.subplots(figsize=(10, 6))
-            metrics_df.set_index('Model')[['Accuracy', 'Precision', 'Recall', 'F1-Score']].plot(kind='bar', ax=ax_bar, cmap='Set3')
-            ax_bar.set_title('Comparação dos Modelos de Classificação')
-            ax_bar.set_ylabel('Valor')
-            ax_bar.set_xlabel('Modelo')
-            ax_bar.tick_params(axis='x', rotation=45)
-            st.pyplot(fig_bar)
+            st.subheader("Gráfico Comparativo Interativo")
+            fig = px.bar(
+                metrics_df.melt(id_vars="Model"),
+                x="Model", y="value", color="variable",
+                barmode="group",
+                labels={"value": "Métrica", "variable": "Tipo"},
+                title="Métricas por Modelo"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.subheader("Matrizes de Confusão Interativas")
+            for name, cm in confusion_data:
+                fig_cm = go.Figure(data=go.Heatmap(
+                    z=cm,
+                    x=['Baixa/Moderada', 'Alta'],
+                    y=['Baixa/Moderada', 'Alta'],
+                    colorscale='YlGnBu',
+                    text=cm,
+                    texttemplate="%{text}",
+                    hovertemplate="Predito %{x}<br>Real %{y}<br>Qtd: %{z}<extra></extra>"
+                ))
+                fig_cm.update_layout(title=f"Matriz de Confusão - {name}",
+                                     xaxis_title="Predito",
+                                     yaxis_title="Real")
+                st.plotly_chart(fig_cm, use_container_width=True)
 
     except Exception as e:
         st.warning("Erro ao executar o modelo de classificação. Verifique se os dados foram carregados corretamente.")
         st.exception(e)
-    
+
     
 
 
