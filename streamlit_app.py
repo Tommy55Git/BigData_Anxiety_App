@@ -1037,7 +1037,7 @@ elif page == "Dashboard":
                 for col in country_cols:
                     df_dash.loc[df_dash[col] == 1, 'Country'] = col.replace('Country_', '')
 
-            # Reconstruir coluna 'Mental Health Condition'
+            # Reconstruir coluna 'Mental Health Condition' ANTES do dropna
             condition_cols = [c for c in df_dash.columns if c.startswith('Mental_Health_Condition_')]
             if condition_cols:
                 def get_condition(row):
@@ -1046,10 +1046,13 @@ elif page == "Dashboard":
                             return col.replace('Mental_Health_Condition_', '')
                     return 'None'
                 df_dash['Mental Health Condition'] = df_dash.apply(get_condition, axis=1)
+            else:
+                df_dash['Mental Health Condition'] = 'Unknown'
 
-            # Só após recriar as colunas é que fazemos o dropna
+            # Agora é seguro remover linhas com dados ausentes
             df_dash = df_dash.dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
 
+            # --- Dashboard visualizations ---
             st.subheader("Média Geral de Ansiedade")
             media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
             st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
