@@ -34,6 +34,7 @@ def load_data_from_mongo():
         mental_data = list(db['mental_health'].find())
         df_inner_data = list(db['df_inner'].find())
         cluster_data = list(db['modelação/clusters'].find())
+        var_data = list(db['modelação/clusters'].find())
        # classificacao_data = list(db['classificação'].find())# <- NEW COLLECTION
         
         # Convert to DataFrames
@@ -41,19 +42,20 @@ def load_data_from_mongo():
         df_mental = pd.DataFrame(mental_data)
         df_inner = pd.DataFrame(df_inner_data)
         df_clusters = pd.DataFrame(cluster_data)  # <- NEW DF
+        df_var = pd.DataFrame(var_data)
         #df_clas = pd.DataFrame(classificacao_data)
         # Remove MongoDB _id column if exists
-        for df in [df_anxiety, df_mental, df_inner, df_clusters]:
+        for df in [df_anxiety, df_mental, df_inner, df_clusters, var_data]:
             if '_id' in df.columns:
                 df.drop('_id', axis=1, inplace=True)
         
-        return df_anxiety, df_mental, df_inner, df_clusters
+        return df_anxiety, df_mental, df_inner, df_clusters, var_data
     except Exception as e:
         st.error(f"Error loading data: {e}")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 # Load data
-df_anxiety, df_mental, df_inner, df_clusters = load_data_from_mongo()
+df_anxiety, df_mental, df_inner, df_clusters, var_data = load_data_from_mongo()
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
@@ -1584,7 +1586,7 @@ elif page == "Predict your Anxiety":
     
     if st.button("🔮 Predict My Anxiety Level", type="primary"):
         try:
-            if not df_clusters.empty:
+            if not var_data.empty:
                 colunas_independentes = [
                     "Age", 
                     "Sleep Hours", 
@@ -1598,7 +1600,7 @@ elif page == "Predict your Anxiety":
                 ]
                 
                 # Use a coluna codificada para treino e predição
-                df_model = df_clusters[['Stress_Label_Encoded'] + colunas_independentes].dropna()
+                df_model = var_data[['Stress_Label_Encoded'] + colunas_independentes].dropna()
 
                 X = df_model[colunas_independentes]
                 y = df_model['Stress_Label_Encoded']
