@@ -963,37 +963,6 @@ elif page == "Visualizations":
 
 
 
-    import matplotlib.pyplot as plt
-
-    # Lista de colunas de sinais fisiológicos – substitua pelos nomes reais do seu dataset
-    sinais_fisiologicos = [
-        "Heart Rate", "Blood Pressure", "Respiration Rate", "Body Temperature"
-    ]
-    
-    # Verificar se as colunas existem no DataFrame
-    sinais_validos = [col for col in sinais_fisiologicos if col in df_dash.columns]
-    
-    if 'Gender' in df_dash.columns and sinais_validos:
-        sinais_por_genero = df_dash.groupby('Gender')[sinais_validos].mean().T
-    
-        # Renomear colunas se necessário
-        sinais_por_genero = sinais_por_genero.rename(columns={
-            'Male': 'Masculino',
-            'Female': 'Feminino',
-            'Other': 'Outro'
-        })
-    
-        # Plotar
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sinais_por_genero.plot(kind='barh', ax=ax)
-        ax.set_title("Sinais Fisiológicos Médios por Gênero")
-        ax.set_xlabel("Média")
-        ax.set_ylabel("Sinais Fisiológicos")
-        ax.legend(title="Gênero")
-        plt.tight_layout()
-        st.pyplot(fig)
-    else:
-        st.warning("Coluna 'Gender' ou sinais fisiológicos não encontrados no DataFrame.")
 
 
         
