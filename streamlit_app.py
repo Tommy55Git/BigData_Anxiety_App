@@ -1075,32 +1075,26 @@ elif page == "Dashboard":
             )
             st.plotly_chart(fig_top_paises, use_container_width=True)
 
-            import plotly.express as px
-            import pandas as pd
-            import streamlit as st
-            
-            # Verifica se as colunas necessárias existem
+            # GRÁFICO: Distribuição de Condições Mentais por Faixa Etária
+            st.subheader("Distribuição de Condições Mentais por Faixa Etária")
+
             required_cols = ['Age Group', 'Mental Health Condition']
-            if all(col in filtered_df.columns for col in required_cols):
-                # Conta ocorrências por faixa etária e condição mental
+            if all(col in df_dash.columns for col in required_cols):
                 df_counts = (
-                    filtered_df
+                    df_dash
                     .groupby(['Age Group', 'Mental Health Condition'])
                     .size()
                     .reset_index(name='Contagem')
                 )
-            
-                # Calcula proporção dentro de cada faixa etária
+
                 df_counts['Proporção (%)'] = (
                     df_counts.groupby('Age Group')['Contagem']
                     .transform(lambda x: 100 * x / x.sum())
                 )
-            
-                # Ordena Faixa Etária
+
                 ordem_faixas = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69', '70+']
                 df_counts['Age Group'] = pd.Categorical(df_counts['Age Group'], categories=ordem_faixas, ordered=True)
-            
-                # Gráfico de barras empilhadas
+
                 fig = px.bar(
                     df_counts,
                     x='Age Group',
@@ -1109,19 +1103,18 @@ elif page == "Dashboard":
                     title='Distribuição de Condições Mentais por Faixa Etária',
                     text_auto='.1f'
                 )
-            
+
                 fig.update_layout(
                     xaxis_title="Faixa Etária",
                     yaxis_title="Proporção (%)",
                     legend_title="Condição Mental"
                 )
-            
+
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.warning("O conjunto de dados não contém todas as colunas necessárias.")
+                st.warning("O conjunto de dados não contém todas as colunas necessárias para esse gráfico.")
 
-
-            # NOVO GRÁFICO: Age vs Mental Health Condition
+            # GRÁFICO: Distribuição da Idade por Condição de Saúde Mental
             st.subheader("Distribuição da Idade por Condição de Saúde Mental")
 
             fig_age_mental = px.histogram(
@@ -1134,6 +1127,7 @@ elif page == "Dashboard":
             )
             st.plotly_chart(fig_age_mental, use_container_width=True)
 
+            # GRÁFICOS: Condições de Saúde Mental por Variáveis Sociodemográficas
             st.subheader("Distribuição de Condições de Saúde Mental por Variáveis Sociodemográficas")
             for col in ['Age', 'Gender', 'Education Level', 'Employment Status', 'Income', 'Country']:
                 if col in df_dash.columns:
@@ -1146,6 +1140,7 @@ elif page == "Dashboard":
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
+            # GRÁFICO: Condição de Saúde Mental por País
             st.subheader("Distribuição de Condições de Saúde Mental por País")
             condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
 
@@ -1160,6 +1155,7 @@ elif page == "Dashboard":
             )
             st.plotly_chart(fig_condicao, use_container_width=True)
 
+            # GRÁFICO: Pizza Geral de Condições Mentais
             st.subheader("Proporção de Condições de Saúde Mental (Geral)")
             condicao_geral = df_dash["Mental Health Condition"].value_counts().reset_index()
             condicao_geral.columns = ["Condição", "Total"]
@@ -1172,6 +1168,7 @@ elif page == "Dashboard":
             )
             st.plotly_chart(fig_pizza, use_container_width=True)
 
+            # GRÁFICO: Top Países com Mais Registros
             st.subheader("País com Maior Registro de Condições de Saúde Mental")
             top_condition_country = condicao_pais.groupby("Country")["Total"].sum().reset_index()
             top_condition_country = top_condition_country.sort_values(by="Total", ascending=False).head(20)
@@ -1187,6 +1184,7 @@ elif page == "Dashboard":
             )
             st.plotly_chart(fig_top_condition, use_container_width=True)
 
+            # GRÁFICO: Ansiedade por Gênero
             st.subheader("Ansiedade por Gênero")
             if "Gender" in df_dash.columns:
                 ansiedade_genero = df_dash.groupby("Gender")["Anxiety Level (1-10)"].mean().reset_index()
@@ -1204,7 +1202,6 @@ elif page == "Dashboard":
     except Exception as e:
         st.warning("Erro ao carregar o dashboard.")
         st.exception(e)
-
 
 
 
