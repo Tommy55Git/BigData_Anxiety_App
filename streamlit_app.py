@@ -1215,32 +1215,44 @@ elif page == "Dashboard":
             
             st.markdown("---")
             
-            import matplotlib.pyplot as plt
-    
-            # Dados de exemplo - substitua pelos seus dados reais
-            labels = ['Feminino', 'Masculino', 'Outro']
-            sizes = [33.3, 33.3, 33.3]  # Use os percentuais reais, se disponíveis
-            colors = ['#FFB300', '#F4511E', '#E91E63']
+            import plotly.express as px
             
-            # Título
-            st.markdown("### 🧑‍🤝‍🧑 Distribuição por Gênero")
+            # Calcular a proporção real com base nos dados
+            genero_labels = ['Feminino', 'Masculino', 'Outro']
+            genero_cols = ['Gender_Female', 'Gender_Male', 'Gender_Other']
             
-            # Criar gráfico donut
-            fig, ax = plt.subplots(figsize=(6, 6))
-            wedges, texts, autotexts = ax.pie(
-                sizes,
-                labels=labels,
-                autopct='%1.1f%%',
-                startangle=90,
-                colors=colors,
-                wedgeprops=dict(width=0.4)
+            # Verifica se todas as colunas estão presentes
+            genero_data = {
+                label: df_dash[col].sum() for label, col in zip(genero_labels, genero_cols) if col in df_dash.columns
+            }
+            
+            # Converter para DataFrame
+            df_genero = pd.DataFrame({
+                "Gênero": list(genero_data.keys()),
+                "Total": list(genero_data.values())
+            })
+            
+            # Criar gráfico donut interativo
+            fig = px.pie(
+                df_genero,
+                names="Gênero",
+                values="Total",
+                hole=0.4,
+                color="Gênero",
+                color_discrete_map={
+                    "Feminino": "#FFB300",
+                    "Masculino": "#F4511E",
+                    "Outro": "#E91E63"
+                },
+                title="🧑‍🤝‍🧑 Distribuição por Gênero"
             )
-            ax.axis('equal')  # Mantém o círculo perfeito
-            plt.setp(autotexts, size=12, weight="bold")
-            plt.title("Distribuição de Gênero (%)", fontsize=14)
+            
+            fig.update_traces(textinfo='percent+label', textfont_size=14)
+            fig.update_layout(title_x=0.5)
             
             # Exibir no Streamlit
-            st.pyplot(fig)
+            st.plotly_chart(fig, use_container_width=True)
+
 
 
 
