@@ -963,41 +963,48 @@ elif page == "Visualizations":
 
 
 
-    # --- Gráfico: Sinais Fisiológicos Médios por Gênero ---
+    
+
+    # --- Sinais Fisiológicos Médios por Gênero ---
     st.markdown("---")
     st.subheader("Sinais Fisiológicos Médios por Gênero")
-    
+
     import matplotlib.pyplot as plt
-    
-    # Definir os sinais fisiológicos esperados
+
+    # Criar coluna 'Gender' a partir das colunas binárias
+    df_temp = df_pd.copy()
+    df_temp["Gender"] = None
+    df_temp.loc[df_temp["Gender_Female"] == 1, "Gender"] = "Feminino"
+    df_temp.loc[df_temp["Gender_Male"] == 1, "Gender"] = "Masculino"
+    df_temp.loc[df_temp.get("Gender_Other", 0) == 1, "Gender"] = "Outro"
+
+    # Lista de sinais fisiológicos a analisar
     sinais_fisiologicos = [
-        "Heart Rate", "Blood Pressure", "Respiration Rate", "Body Temperature"
+        "Breathing Rate (breaths/min)",
+        "Heart Rate (bpm)",
+        "Sweating Level (1-5)"
     ]
-    
-    # Filtrar os sinais válidos presentes no DataFrame
-    sinais_validos = [col for col in sinais_fisiologicos if col in df.columns]
-    
-    # Verificar se a coluna 'Gender' e os sinais estão disponíveis
-    if 'Gender' in df.columns and sinais_validos:
-        sinais_por_genero = df.groupby('Gender')[sinais_validos].mean().T
-    
-        # Renomear colunas para português se necessário
-        sinais_por_genero = sinais_por_genero.rename(columns={
-            'Male': 'Masculino',
-            'Female': 'Feminino',
-            'Other': 'Outro'
-        })
-    
-        fig_sinais, ax = plt.subplots(figsize=(10, 6))
+
+    # Verificar colunas válidas
+    sinais_validos = [col for col in sinais_fisiologicos if col in df_temp.columns]
+
+    if sinais_validos:
+        # Agrupar e transpor os dados
+        sinais_por_genero = df_temp.groupby("Gender")[sinais_validos].mean().T
+
+        # Plotar
+        fig, ax = plt.subplots(figsize=(10, 6))
         sinais_por_genero.plot(kind='barh', ax=ax)
         ax.set_title("Sinais Fisiológicos Médios por Gênero")
         ax.set_xlabel("Média")
         ax.set_ylabel("Sinais Fisiológicos")
         ax.legend(title="Gênero")
         plt.tight_layout()
-        st.pyplot(fig_sinais)
+
+        # Mostrar no Streamlit
+        st.pyplot(fig)
     else:
-        st.warning("Coluna 'Gender' ou sinais fisiológicos não encontrados no DataFrame.")
+        st.warning("Colunas de sinais fisiológicos não encontradas no conjunto de dados.")
 
 
 
