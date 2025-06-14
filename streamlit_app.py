@@ -1110,6 +1110,7 @@ elif page == "Dashboard":
 
             import plotly.graph_objects as go
             import pandas as pd
+            import random
             
             # Usar DataFrame já preparado
             df_vis = df_dash.copy()
@@ -1129,21 +1130,6 @@ elif page == "Dashboard":
                 'China': (35.9, 104.2)
             }
             
-            # Emojis de bandeiras (Unicode Regional Indicator Symbols)
-            flag_emojis = {
-                'USA': '🇺🇸',
-                'Brazil': '🇧🇷',
-                'Germany': '🇩🇪',
-                'India': '🇮🇳',
-                'Australia': '🇦🇺',
-                'Canada': '🇨🇦',
-                'Japan': '🇯🇵',
-                'UK': '🇬🇧',
-                'France': '🇫🇷',
-                'Mexico': '🇲🇽',
-                'China': '🇨🇳'
-            }
-            
             # Calcular média de ansiedade por país
             df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
             
@@ -1157,31 +1143,75 @@ elif page == "Dashboard":
             top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
+            df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
+            
+            # Gerar cores distintas por país (exceto destaque)
+            def gerar_cor():
+                return f"hsl({random.randint(0, 360)}, 70%, 60%)"
+            
+            color_map = {
+                country: gerar_cor() for country in df_country_avg['Country'].unique()
+                if country != top_country_name
+            }
             
             # Criar figura
             fig = go.Figure()
             
-            # Adicionar países com bandeira emoji como texto
-            for _, row in df_country_avg.iterrows():
-                emoji = flag_emojis.get(row['Country'], '')
+            # Adicionar países com cores únicas
+            for _, row in df_country_avg[df_country_avg['Country'] != top_country_name].iterrows():
                 fig.add_trace(go.Scattergeo(
                     lon=[row['lon']],
                     lat=[row['lat']],
-                    text=f"{emoji} {row['Country']}: {row['Anxiety Level (1-10)']:.1f}",
-                    mode='text',
-                    textfont=dict(size=14),
+                    text=row['Country'],
+                    marker=dict(
+                        size=10,
+                        color=color_map.get(row['Country'], 'lightgray'),
+                        line_color='black',
+                        line_width=0.5
+                    ),
+                    mode='markers',
                     name=row['Country'],
-                    showlegend=False
+                    showlegend=True
                 ))
             
-            # País em destaque com estrela
+            # Adicionar país em destaque
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
-                text=[f"⭐ {top_country_name}<br>{top_country_value:.2f}"],
-                mode='text',
-                textfont=dict(size=16, color='red'),
-                name=f'🔺 Destaque: {top_country_name}',
+                text=[f"{top_country_name}<br>{top_country_value:.2f}"],
+                marker=dict(
+                    size=18,
+                    color='#FF1744',
+                    line_color='white',
+                    line_width=2,
+                    symbol='star'
+                ),
+                mode='markers+text',
+                textposition='top center',
+                name=f'🔺 Destaque: {top_country_name}'
+            ))
+            
+            # Adicionar trace invisível para a barra de cor (escala de ansiedade)
+            fig.add_trace(go.Scattergeo(
+                lon=[None],
+                lat=[None],
+                marker=dict(
+                    size=0.1,
+                    color=[i for i in range(1, 11)],
+                    cmin=1,
+                    cmax=10,
+                    colorscale='Turbo',
+                    colorbar=dict(
+                        title=dict(
+                            text='Nível de Ansiedade',
+                            font=dict(color='white')
+                        ),
+                        tickvals=list(range(1, 11)),
+                        tickfont=dict(color='white'),
+                        len=0.5,
+                        lenmode='fraction'
+                    )
+                ),
                 showlegend=False
             ))
             
@@ -1200,11 +1230,16 @@ elif page == "Dashboard":
                 margin=dict(l=0, r=0, t=50, b=0),
                 paper_bgcolor='black',
                 plot_bgcolor='black',
-                font=dict(color='white')
+                font=dict(color='white'),
+                legend=dict(
+                    bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='white')
+                )
             )
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
