@@ -1132,6 +1132,53 @@ elif page == "Dashboard":
             # CRIAÇÃO DE condicao_pais antes do uso
             condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
 
+
+
+            # GRÁFICO: Proporção de Gêneros por Faixa de Ansiedade
+            st.subheader("Proporção de Gêneros em Cada Faixa de Ansiedade")
+            
+            try:
+                # Define categorias de ansiedade
+                bins = [0, 3, 6, 10]
+                labels_ansiedade = ['Baixa (1–3)', 'Média (4–6)', 'Alta (7–10)']
+                df_dash['Faixa Ansiedade'] = pd.cut(df_dash['Anxiety Level (1-10)'], bins=bins, labels=labels_ansiedade, include_lowest=True)
+            
+                # Verifica se gênero está disponível
+                if 'Gender' in df_dash.columns:
+                    # Conta proporções por faixa
+                    df_prop = (
+                        df_dash.groupby(['Faixa Ansiedade', 'Gender'])
+                        .size()
+                        .reset_index(name='Total')
+                    )
+            
+                    # Calcula proporção dentro de cada faixa
+                    df_prop['Proporção (%)'] = (
+                        df_prop.groupby('Faixa Ansiedade')['Total']
+                        .transform(lambda x: 100 * x / x.sum())
+                    )
+            
+                    fig_prop = px.bar(
+                        df_prop,
+                        x='Proporção (%)',
+                        y='Faixa Ansiedade',
+                        color='Gender',
+                        orientation='h',
+                        text='Proporção (%)',
+                        title='Proporção de Gêneros em Cada Faixa de Ansiedade',
+                        labels={'Faixa Ansiedade': 'Nível de Ansiedade'}
+                    )
+            
+                    fig_prop.update_layout(barmode='stack', xaxis=dict(range=[0, 100]))
+                    st.plotly_chart(fig_prop, use_container_width=True)
+            
+            except Exception as e:
+                st.warning("Erro ao gerar gráfico de proporção de gênero por ansiedade.")
+                st.exception(e)
+
+
+            
+
             # GRÁFICO: Top Países com Mais Registros
             st.subheader("País com Maior Registro de Condições de Saúde Mental")
             top_condition_country = condicao_pais.groupby("Country")["Total"].sum().reset_index()
