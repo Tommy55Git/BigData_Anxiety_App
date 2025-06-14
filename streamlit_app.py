@@ -1310,8 +1310,11 @@ elif page == "Dashboard":
                 marker=dict(
                     size=10,
                     color=df_country_avg[~df_country_avg['Destaque']]['Anxiety Level (1-10)'],
-                    colorscale='Turbo',  # Cor vibrante como na imagem
-                    colorbar=dict(title='Ansiedade Média', tickcolor='white', titlefont=dict(color='white'), tickfont=dict(color='white')),
+                    colorscale='Turbo',
+                    colorbar=dict(
+                        title=dict(text='Ansiedade Média', font=dict(color='white')),
+                        tickfont=dict(color='white')
+                    ),
                     line_color='black',
                     line_width=0.5
                 ),
@@ -1357,6 +1360,7 @@ elif page == "Dashboard":
             
             # Exibir
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
