@@ -1193,7 +1193,7 @@ elif page == "Dashboard":
             
             # Adicionar trace invisível para a barra de cor (escala de ansiedade)
             fig.add_trace(go.Scattergeo(
-                lon=[None],  # sem ponto visível
+                lon=[None],
                 lat=[None],
                 marker=dict(
                     size=0.1,
@@ -1202,10 +1202,12 @@ elif page == "Dashboard":
                     cmax=10,
                     colorscale='Turbo',
                     colorbar=dict(
-                        title='Nível de Ansiedade',
+                        title=dict(
+                            text='Nível de Ansiedade',
+                            font=dict(color='white')
+                        ),
                         tickvals=list(range(1, 11)),
                         tickfont=dict(color='white'),
-                        titlefont=dict(color='white'),
                         len=0.5,
                         lenmode='fraction'
                     )
@@ -1237,6 +1239,7 @@ elif page == "Dashboard":
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
