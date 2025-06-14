@@ -1152,11 +1152,11 @@ elif page == "Dashboard":
             )
             df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
             
-            # Filtrar intervalo de ansiedade real
-            min_ansiedade = 3
-            max_ansiedade = 4
+            # Ajustar a escala
+            min_ansiedade = 3.5
+            max_ansiedade = 4.0
             
-            # Normalizar cores entre 3 e 4
+            # Cores normalizadas para esse intervalo
             norm_colors = px.colors.sample_colorscale(
                 "Turbo",
                 df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x - min_ansiedade) / (max_ansiedade - min_ansiedade))
@@ -1187,7 +1187,7 @@ elif page == "Dashboard":
                     showlegend=True
                 ))
             
-            # País em destaque
+            # Destaque
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
@@ -1204,26 +1204,26 @@ elif page == "Dashboard":
                 name=f'🔺 Destaque: {top_country_name}'
             ))
             
-            # Barra de cor com intervalo de 3 a 4 à direita
+            # Barra de cor de 3.5 a 4.0
             fig.add_trace(go.Scattergeo(
                 lon=[None],
                 lat=[None],
                 marker=dict(
                     size=0.1,
-                    color=[i / 10 for i in range(30, 41)],  # Valores de 3.0 a 4.0
-                    cmin=3,
-                    cmax=4,
+                    color=[3.5 + 0.05 * i for i in range(11)],  # De 3.5 a 4.0
+                    cmin=3.5,
+                    cmax=4.0,
                     colorscale='Turbo',
                     colorbar=dict(
                         title=dict(
                             text='Nível de Ansiedade',
                             font=dict(color='white')
                         ),
-                        tickvals=[3, 3.5, 4],
+                        tickvals=[3.5, 3.75, 4.0],
                         tickfont=dict(color='white'),
                         len=0.5,
                         lenmode='fraction',
-                        x=1.05,  # Deslocar mais à direita
+                        x=1.05,
                         xanchor='left'
                     )
                 ),
