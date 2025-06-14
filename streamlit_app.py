@@ -1265,6 +1265,7 @@ elif page == "Dashboard":
 
             import plotly.graph_objects as go
             import pandas as pd
+            import random
             
             # Usar DataFrame já preparado
             df_vis = df_dash.copy()
@@ -1299,30 +1300,35 @@ elif page == "Dashboard":
             top_country_value = top_country['Anxiety Level (1-10)']
             df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
             
-            # Criar gráfico esférico com tema escuro e interativo
+            # Gerar cores distintas por país (exceto destaque)
+            def gerar_cor():
+                return f"hsl({random.randint(0, 360)}, 70%, 60%)"
+            
+            color_map = {
+                country: gerar_cor() for country in df_country_avg['Country'].unique()
+                if country != top_country_name
+            }
+            
+            # Criar gráfico
             fig = go.Figure()
             
-            # Países normais
-            fig.add_trace(go.Scattergeo(
-                lon=df_country_avg[~df_country_avg['Destaque']]['lon'],
-                lat=df_country_avg[~df_country_avg['Destaque']]['lat'],
-                text=df_country_avg[~df_country_avg['Destaque']]['Country'],
-                marker=dict(
-                    size=10,
-                    color=df_country_avg[~df_country_avg['Destaque']]['Anxiety Level (1-10)'],
-                    colorscale='Turbo',
-                    colorbar=dict(
-                        title=dict(text='Ansiedade Média', font=dict(color='white')),
-                        tickfont=dict(color='white')
+            # Adicionar cada país (exceto destaque) individualmente com cores únicas
+            for _, row in df_country_avg[df_country_avg['Country'] != top_country_name].iterrows():
+                fig.add_trace(go.Scattergeo(
+                    lon=[row['lon']],
+                    lat=[row['lat']],
+                    text=row['Country'],
+                    marker=dict(
+                        size=10,
+                        color=color_map.get(row['Country'], 'lightgray'),
+                        line_color='black',
+                        line_width=0.5
                     ),
-                    line_color='black',
-                    line_width=0.5
-                ),
-                mode='markers',
-                name='Outros Países'
-            ))
+                    mode='markers',
+                    name=row['Country']
+                ))
             
-            # Destaque em vermelho neon
+            # País em destaque (cor vermelha vibrante)
             fig.add_trace(go.Scattergeo(
                 lon=[top_country['lon']],
                 lat=[top_country['lat']],
@@ -1341,7 +1347,7 @@ elif page == "Dashboard":
             
             # Layout estilizado escuro
             fig.update_layout(
-                title=f"<b style='color:white'>Mapa Esférico da Ansiedade Média por País</b><br><span style='color:#FF1744'>🔺 Destaque: {top_country_name} com {top_country_value:.2f}</span>",
+                title=f"<b style='color:white'>🌐 Mapa Esférico da Ansiedade Média por País</b><br><span style='color:#FF1744'>🔺 Destaque: {top_country_name} com {top_country_value:.2f}</span>",
                 geo=dict(
                     projection_type='orthographic',
                     showland=True,
@@ -1355,11 +1361,16 @@ elif page == "Dashboard":
                 margin=dict(l=0, r=0, t=80, b=0),
                 paper_bgcolor='black',
                 plot_bgcolor='black',
-                font=dict(color='white')
+                font=dict(color='white'),
+                legend=dict(
+                    bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='white')
+                )
             )
             
-            # Exibir
+            # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
