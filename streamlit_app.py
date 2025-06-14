@@ -1220,7 +1220,7 @@ elif page == "Dashboard":
 
             
              # 📊 Visão Geral Global da Ansiedade
-            st.subheader("📊 Visão Geral Global da Ansiedade")
+            st.subheader("Visão Geral Global da Ansiedade")
             
             # Estatísticas principais
             media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
@@ -1356,7 +1356,7 @@ elif page == "Dashboard":
             fig.update_traces(textinfo='percent+label', textfont_size=14)
             fig.update_layout(
                 title={
-                    'text': "🧑‍🤝‍🧑 Distribuição por Género",
+                    st.subheader("Distribuição por Género")
                     'x': 0,  # Alinhar à esquerda
                     'xanchor': 'left'
                 }
@@ -1370,20 +1370,8 @@ elif page == "Dashboard":
 
 
 
-
-
-
-            
-
-
-
-
-            
-
-
-
             # GRÁFICO: Proporção de Gênero por Quartis de Ansiedade (com Others)
-            st.subheader("Distribuição de Gênero por Quartis de Ansiedade")
+            st.subheader("Distribuição de Género por Quartis de Ansiedade")
             
             try:
                 df_quartis = df_dash.copy()
