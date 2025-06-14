@@ -965,29 +965,29 @@ elif page == "Visualizations":
 
     import matplotlib.pyplot as plt
 
-# Exemplo de definição se ainda não estiver no código:
-sinais_fisiologicos = [
-    "Heart Rate", "Blood Pressure", "Respiration Rate", "Body Temperature"
-]  # substitua pelos nomes reais
-
-# Certifique-se que df_pd contém as colunas 'Gender' e os sinais acima
-sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
-
-# Renomear colunas para legibilidade
-sinais_por_genero = sinais_por_genero.rename(columns={
-    'Male': 'Masculino',
-    'Female': 'Feminino',
-    'Other': 'Outro'
-})
-
-# Plotar
-sinais_por_genero.plot(kind='barh', figsize=(10, 6))
-plt.title("Sinais Fisiológicos Médios por Gênero")
-plt.xlabel("Média")
-plt.ylabel("Sinais Fisiológicos")
-plt.legend(title="Gênero")
-plt.tight_layout()
-plt.show()
+    # Exemplo de definição se ainda não estiver no código:
+    sinais_fisiologicos = [
+        "Heart Rate", "Blood Pressure", "Respiration Rate", "Body Temperature"
+    ]  # substitua pelos nomes reais
+    
+    # Certifique-se que df_pd contém as colunas 'Gender' e os sinais acima
+    sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
+    
+    # Renomear colunas para legibilidade
+    sinais_por_genero = sinais_por_genero.rename(columns={
+        'Male': 'Masculino',
+        'Female': 'Feminino',
+        'Other': 'Outro'
+    })
+    
+    # Plotar
+    sinais_por_genero.plot(kind='barh', figsize=(10, 6))
+    plt.title("Sinais Fisiológicos Médios por Gênero")
+    plt.xlabel("Média")
+    plt.ylabel("Sinais Fisiológicos")
+    plt.legend(title="Gênero")
+    plt.tight_layout()
+    plt.show()
 
         
 
