@@ -1075,6 +1075,52 @@ elif page == "Dashboard":
             )
             st.plotly_chart(fig_top_paises, use_container_width=True)
 
+            import plotly.express as px
+            import pandas as pd
+            import streamlit as st
+            
+            # Verifica se as colunas necessárias existem
+            required_cols = ['Age Group', 'Mental Health Condition']
+            if all(col in filtered_df.columns for col in required_cols):
+                # Conta ocorrências por faixa etária e condição mental
+                df_counts = (
+                    filtered_df
+                    .groupby(['Age Group', 'Mental Health Condition'])
+                    .size()
+                    .reset_index(name='Contagem')
+                )
+            
+                # Calcula proporção dentro de cada faixa etária
+                df_counts['Proporção (%)'] = (
+                    df_counts.groupby('Age Group')['Contagem']
+                    .transform(lambda x: 100 * x / x.sum())
+                )
+            
+                # Ordena Faixa Etária
+                ordem_faixas = ['10–19', '20–29', '30–39', '40–49', '50–59', '60–69', '70+']
+                df_counts['Age Group'] = pd.Categorical(df_counts['Age Group'], categories=ordem_faixas, ordered=True)
+            
+                # Gráfico de barras empilhadas
+                fig = px.bar(
+                    df_counts,
+                    x='Age Group',
+                    y='Proporção (%)',
+                    color='Mental Health Condition',
+                    title='Distribuição de Condições Mentais por Faixa Etária',
+                    text_auto='.1f'
+                )
+            
+                fig.update_layout(
+                    xaxis_title="Faixa Etária",
+                    yaxis_title="Proporção (%)",
+                    legend_title="Condição Mental"
+                )
+            
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("O conjunto de dados não contém todas as colunas necessárias.")
+
+
             # NOVO GRÁFICO: Age vs Mental Health Condition
             st.subheader("Distribuição da Idade por Condição de Saúde Mental")
 
