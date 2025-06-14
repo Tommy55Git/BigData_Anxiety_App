@@ -966,7 +966,7 @@ elif page == "Visualizations":
     
     # --- Gráfico de Médias por Gênero ---
     st.markdown("---")
-    st.subheader("Comparação de Indicadores Fisiológicos por Gênero")
+    st.subheader("Comparação de Indicadores Fisiológicos por Género")
 
     # Selecionar colunas relevantes
     colunas_fisio = [
@@ -1005,6 +1005,40 @@ elif page == "Visualizations":
 
     # Exibir gráfico
     st.plotly_chart(fig_genero, use_container_width=True)
+
+    # --- Gráfico de Estresse e Terapia por País ---
+    st.markdown("---")
+    st.subheader("Estresse e Sessões de Terapia por País")
+
+    # Agrupar dados por país
+    df_pais = df.groupby('Country')[['Stress Level (1-10)', 'Therapy Sessions (per month)']].mean().reset_index()
+
+    # Reformatar para gráfico
+    df_melt_pais = df_pais.melt(id_vars='Country', var_name='Indicador', value_name='Média')
+
+    # Gráfico de barras agrupadas
+    fig_pais = px.bar(
+        df_melt_pais,
+        x='Country',
+        y='Média',
+        color='Indicador',
+        barmode='group',
+        height=500,
+        title='Estresse e Sessões de Terapia por País'
+    )
+
+    fig_pais.update_layout(
+        xaxis_title='País',
+        yaxis_title='Média',
+        legend_title='Indicador',
+        xaxis_tickangle=-45,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='black')
+    )
+
+    st.plotly_chart(fig_pais, use_container_width=True)
+
 
 
 
