@@ -33,26 +33,27 @@ def load_data_from_mongo():
         anxiety_data = list(db['anxiety'].find())
         mental_data = list(db['mental_health'].find())
         df_inner_data = list(db['df_inner'].find())
-        cluster_data = list(db['modelação/clusters'].find())  # <- NEW COLLECTION
+        cluster_data = list(db['modelação/clusters'].find())
+        classificacao_data = list(db['classificação'].find())# <- NEW COLLECTION
         
         # Convert to DataFrames
         df_anxiety = pd.DataFrame(anxiety_data)
         df_mental = pd.DataFrame(mental_data)
         df_inner = pd.DataFrame(df_inner_data)
         df_clusters = pd.DataFrame(cluster_data)  # <- NEW DF
-        
+        df_clas = pd.DataFrame(classificacao_data)
         # Remove MongoDB _id column if exists
-        for df in [df_anxiety, df_mental, df_inner, df_clusters]:
+        for df in [df_anxiety, df_mental, df_inner, df_clusters, df_clas]:
             if '_id' in df.columns:
                 df.drop('_id', axis=1, inplace=True)
         
-        return df_anxiety, df_mental, df_inner, df_clusters
+        return df_anxiety, df_mental, df_inner, df_clusters, df_clas
     except Exception as e:
         st.error(f"Error loading data: {e}")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 # Load data
-df_anxiety, df_mental, df_inner, df_clusters = load_data_from_mongo()
+df_anxiety, df_mental, df_inner, df_clusters, df_clas = load_data_from_mongo()
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
@@ -1583,7 +1584,8 @@ elif page == "Predict your Anxiety":
     
     if st.button("🔮 Predict My Anxiety Level", type="primary"):
         try:
-            if not df_inner.empty:
+            # Substitua df_inner por classificacao aqui
+            if not df_clas.empty:
                 colunas_independentes = [
                     "Age", 
                     "Sleep Hours", 
@@ -1596,10 +1598,10 @@ elif page == "Predict your Anxiety":
                     "Work Hours per Week"
                 ]
                 
-                df_inner_model = df_inner[['Stress_Level_Label'] + colunas_independentes].dropna()
+                df_model = df_clas[['Stress_Level_Label'] + colunas_independentes].dropna()
 
-                X = df_inner_model[colunas_independentes]
-                y = df_inner_model['Stress_Level_Label']
+                X = df_model[colunas_independentes]
+                y = df_model['Stress_Level_Label']
 
                 from sklearn.model_selection import train_test_split
                 from sklearn.linear_model import LogisticRegression
@@ -1642,14 +1644,12 @@ elif page == "Predict your Anxiety":
 
                 prediction_class = best_model.predict(input_data)[0]
 
-                # Para modelos que suportam predict_proba
                 if hasattr(best_model, "predict_proba"):
                     prediction_proba = best_model.predict_proba(input_data)[0]
                 else:
                     prediction_proba = None
 
-                # Mapeando classes para labels amigáveis
-                class_labels = sorted(y.unique())  # ex: ['Low', 'Moderate', 'High']
+                class_labels = sorted(y.unique())
 
                 st.success(f"✅ Prediction Complete with {best_model_name} (Accuracy: {best_accuracy:.2f})")
 
@@ -1658,7 +1658,6 @@ elif page == "Predict your Anxiety":
                 if prediction_class in class_labels:
                     st.write(f"**Predicted Anxiety Level:** {prediction_class}")
                     if prediction_proba is not None:
-                        # Mostra probabilidade para cada classe
                         prob_df = pd.DataFrame({
                             'Anxiety Level': class_labels,
                             'Probability (%)': prediction_proba * 100
@@ -1668,7 +1667,6 @@ elif page == "Predict your Anxiety":
                 else:
                     st.warning("Prediction class not recognized.")
 
-                # Recomendações baseadas na classe
                 st.subheader("💡 Personalized Recommendations")
                 if prediction_class == 'High':
                     recs = [
@@ -1696,7 +1694,6 @@ elif page == "Predict your Anxiety":
                 for i, rec in enumerate(recs, 1):
                     st.write(f"{i}. {rec}")
 
-                # Importância das features para Random Forest
                 if best_model_name == 'Random Forest':
                     st.subheader("📈 Factors Influencing Your Prediction")
                     import plotly.express as px
