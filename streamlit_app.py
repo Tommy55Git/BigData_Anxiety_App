@@ -1147,92 +1147,87 @@ elif page == "Dashboard":
             eventos = df_dash["Recent Major Life Event_Yes"].mean() * 100
             medicacao = df_dash["Medication_Yes"].mean() * 100
             
-            # Estilo visual
+            # Estilos aprimorados com gradientes personalizados
             box_style = """
             <style>
             .box-metric {
-                background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
                 padding: 1rem;
                 border-radius: 15px;
                 text-align: center;
-                box-shadow: 2px 2px 10px rgba(0,0,0,0.07);
+                box-shadow: 2px 2px 12px rgba(0,0,0,0.2);
                 margin: 0.5rem 0.3rem;
+                color: white;
+                font-family: 'Segoe UI', sans-serif;
             }
-            .box-title {
-                font-size: 0.95rem;
-                color: #333;
-                margin-bottom: 0.4rem;
-            }
-            .box-value {
-                font-size: 1.6rem;
-                font-weight: 700;
-                color: #0072C6;
-            }
+            .gradient1 { background: linear-gradient(135deg, #ffb347, #ffcc33); }
+            .gradient2 { background: linear-gradient(135deg, #ff5e62, #ff9966); }
+            .gradient3 { background: linear-gradient(135deg, #36d1dc, #5b86e5); }
+            .gradient4 { background: linear-gradient(135deg, #c471f5, #fa71cd); }
+            .gradient5 { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
+            .gradient6 { background: linear-gradient(135deg, #f77062, #fe5196); }
+            .gradient7 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+            .gradient8 { background: linear-gradient(135deg, #fceabb, #f8b500); }
             </style>
             """
             st.markdown(box_style, unsafe_allow_html=True)
             
-            # Função render_box
-            def render_box(title, value, emoji=""):
+            # Função render_box com classe CSS de cor
+            def render_box(title, value, emoji, gradient_class="gradient1"):
                 st.markdown(f"""
-                <div class="box-metric">
-                    <div class="box-title">{emoji} {title}</div>
-                    <div class="box-value">{value}</div>
+                <div class="box-metric {gradient_class}">
+                    <div style='font-size:0.95rem; margin-bottom: 0.4rem'>{emoji} {title}</div>
+                    <div style='font-size:1.6rem; font-weight:700;'>{value}</div>
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Blocos 1 a 4
+            # Blocos de exibição com gradientes
             with st.container():
                 col1, col2, col3, col4 = st.columns(4)
-                with col1: render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈")
-                with col2: render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊")
-                with col3: render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬")
-                with col4: render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠")
+                with col1: render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈", "gradient1")
+                with col2: render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊", "gradient2")
+                with col3: render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬", "gradient3")
+                with col4: render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠", "gradient4")
             
             with st.container():
                 col5, col6, col7, col8 = st.columns(4)
-                with col5: render_box("Sexo Mais Ansioso", sexo_top, "🚻")
-                with col6: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍")
-                with col7: render_box("Condição Mental + Comum", condicao_top, "⚠️")
-                with col8: render_box("Idade Média", f"{idade_media:.1f} anos", "👤")
+                with col5: render_box("Sexo Mais Ansioso", sexo_top, "🚻", "gradient5")
+                with col6: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍", "gradient6")
+                with col7: render_box("Condição Mental + Comum", condicao_top, "⚠️", "gradient7")
+                with col8: render_box("Idade Média", f"{idade_media:.1f} anos", "👤", "gradient8")
             
             with st.container():
                 col9, col10, col11, col12 = st.columns(4)
-                with col9: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
-                with col10: render_box("Álcool Médio", f"{alcool_medio:.1f}/sem", "🍷")
-                with col11: render_box("Tempo de Tela", f"{tela_medio:.1f}h/dia", "📺")
-                with col12: render_box("Horas de Trabalho", f"{trabalho_medio:.1f}/sem", "💻")
+                with col9: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌", "gradient2")
+                with col10: render_box("Álcool Médio", f"{alcool_medio:.1f}/sem", "🍷", "gradient3")
+                with col11: render_box("Tempo de Tela", f"{tela_medio:.1f}h/dia", "📺", "gradient4")
+                with col12: render_box("Horas de Trabalho", f"{trabalho_medio:.1f}/sem", "💻", "gradient1")
             
             with st.container():
                 col13, col14, col15 = st.columns(3)
-                with col13: render_box("Cafeína Média", f"{cafeina_medio:.0f} mg/dia", "☕")
-                with col14: render_box("% Fumantes", f"{fumantes:.1f}%", "🚬")
-                with col15: render_box("% Com Evento Recente", f"{eventos:.1f}%", "😰")
+                with col13: render_box("Cafeína Média", f"{cafeina_medio:.0f} mg/dia", "☕", "gradient5")
+                with col14: render_box("% Fumantes", f"{fumantes:.1f}%", "🚬", "gradient6")
+                with col15: render_box("% Com Evento Recente", f"{eventos:.1f}%", "😰", "gradient7")
             
             with st.container():
                 col16 = st.columns(1)[0]
-                with col16: render_box("% Usa Medicação", f"{medicacao:.1f}%", "💊")
+                with col16: render_box("% Usa Medicação", f"{medicacao:.1f}%", "💊", "gradient8")
             
             st.markdown("---")
             
+            # Donut Chart: Distribuição de Gênero
             import plotly.express as px
             
-            # Calcular a proporção real com base nos dados
             genero_labels = ['Feminino', 'Masculino', 'Outro']
             genero_cols = ['Gender_Female', 'Gender_Male', 'Gender_Other']
-            
-            # Verifica se todas as colunas estão presentes
             genero_data = {
                 label: df_dash[col].sum() for label, col in zip(genero_labels, genero_cols) if col in df_dash.columns
             }
             
-            # Converter para DataFrame
             df_genero = pd.DataFrame({
                 "Gênero": list(genero_data.keys()),
                 "Total": list(genero_data.values())
             })
             
-            # Criar gráfico donut interativo
             fig = px.pie(
                 df_genero,
                 names="Gênero",
@@ -1250,8 +1245,8 @@ elif page == "Dashboard":
             fig.update_traces(textinfo='percent+label', textfont_size=14)
             fig.update_layout(title_x=0.5)
             
-            # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
