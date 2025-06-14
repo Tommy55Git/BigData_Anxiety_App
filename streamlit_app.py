@@ -922,90 +922,92 @@ elif page == "Classification Model":
         'Stress Level (1-10)'
     ]
 
-    # Transformar dados do Spark para Pandas e criar variável alvo
-    df_class = df.select(*colunas_independentes, "Anxiety Level (1-10)").dropna().toPandas()
-    df_class["Anxiety_High"] = (df_class["Anxiety Level (1-10)"] > 6).astype(int)
+    # Verificar se df_inner está carregado
+    if not df_inner.empty and all(col in df_inner.columns for col in colunas_independentes + ["Anxiety Level (1-10)"]):
+        df_class = df_inner[colunas_independentes + ["Anxiety Level (1-10)"]].dropna()
+        df_class["Anxiety_High"] = (df_class["Anxiety Level (1-10)"] > 6).astype(int)
 
-    X = df_class[colunas_independentes]
-    y = df_class["Anxiety_High"]
+        X = df_class[colunas_independentes]
+        y = df_class["Anxiety_High"]
 
-    # 2. Dividir os dados
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # 2. Dividir os dados
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # 3. Definir modelos
-    models = {
-        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-        'k-NN': KNeighborsClassifier(),
-        'Decision Tree': DecisionTreeClassifier(random_state=42),
-        'Random Forest': RandomForestClassifier(random_state=42),
-        'SVM': SVC(random_state=42)
-    }
+        # 3. Definir modelos
+        models = {
+            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
+            'k-NN': KNeighborsClassifier(),
+            'Decision Tree': DecisionTreeClassifier(random_state=42),
+            'Random Forest': RandomForestClassifier(random_state=42),
+            'SVM': SVC(random_state=42)
+        }
 
-    # 4. Avaliar modelos
-    model_metrics = []
-    confusion_matrices = {}
+        # 4. Avaliar modelos
+        model_metrics = []
+        confusion_matrices = {}
 
-    for name, model in models.items():
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+        for name, model in models.items():
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
 
-        accuracy = accuracy_score(y_test, y_pred)
-        report = classification_report(y_test, y_pred, output_dict=True)
-        cm = confusion_matrix(y_test, y_pred)
+            accuracy = accuracy_score(y_test, y_pred)
+            report = classification_report(y_test, y_pred, output_dict=True)
+            cm = confusion_matrix(y_test, y_pred)
 
-        # Armazenar métricas e matriz de confusão
-        model_metrics.append({
-            'Model': name,
-            'Accuracy': accuracy,
-            'Precision': report['macro avg']['precision'],
-            'Recall': report['macro avg']['recall'],
-            'F1-Score': report['macro avg']['f1-score']
-        })
-        confusion_matrices[name] = cm
+            model_metrics.append({
+                'Model': name,
+                'Accuracy': accuracy,
+                'Precision': report['macro avg']['precision'],
+                'Recall': report['macro avg']['recall'],
+                'F1-Score': report['macro avg']['f1-score']
+            })
+            confusion_matrices[name] = cm
 
-    metrics_df = pd.DataFrame(model_metrics)
+        metrics_df = pd.DataFrame(model_metrics)
 
-    # 5. Exibir tabela de métricas
-    st.markdown("### Métricas dos Modelos")
-    st.dataframe(metrics_df.style.format({
-        "Accuracy": "{:.2%}",
-        "Precision": "{:.2%}",
-        "Recall": "{:.2%}",
-        "F1-Score": "{:.2%}"
-    }))
+        # 5. Exibir tabela de métricas
+        st.markdown("### Métricas dos Modelos")
+        st.dataframe(metrics_df.style.format({
+            "Accuracy": "{:.2%}",
+            "Precision": "{:.2%}",
+            "Recall": "{:.2%}",
+            "F1-Score": "{:.2%}"
+        }))
 
-    # 6. Gráfico interativo com Plotly
-    st.markdown("### Comparação Gráfica dos Modelos")
-    fig = px.bar(
-        metrics_df.melt(id_vars="Model", var_name="Métrica", value_name="Valor"),
-        x="Model",
-        y="Valor",
-        color="Métrica",
-        barmode="group",
-        title="Desempenho dos Modelos de Classificação",
-        text_auto=".2f"
-    )
-    fig.update_layout(xaxis_title="Modelo", yaxis_title="Pontuação", legend_title="Métrica")
-    st.plotly_chart(fig, use_container_width=True)
+        # 6. Gráfico interativo
+        st.markdown("### Comparação Gráfica dos Modelos")
+        fig = px.bar(
+            metrics_df.melt(id_vars="Model", var_name="Métrica", value_name="Valor"),
+            x="Model",
+            y="Valor",
+            color="Métrica",
+            barmode="group",
+            title="Desempenho dos Modelos de Classificação",
+            text_auto=".2f"
+        )
+        fig.update_layout(xaxis_title="Modelo", yaxis_title="Pontuação", legend_title="Métrica")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # 7. Seletor para matriz de confusão interativa
-    st.markdown("### Matriz de Confusão por Modelo")
-    selected_model = st.selectbox("Selecione um modelo para visualizar a matriz de confusão:", list(confusion_matrices.keys()))
+        # 7. Matriz de confusão
+        st.markdown("### Matriz de Confusão por Modelo")
+        selected_model = st.selectbox("Selecione um modelo para visualizar a matriz de confusão:", list(confusion_matrices.keys()))
 
-    cm = confusion_matrices[selected_model]
-    cm_labels = ['Baixa/Moderada', 'Alta']
+        cm = confusion_matrices[selected_model]
+        cm_labels = ['Baixa/Moderada', 'Alta']
 
-    # Plotly para matriz de confusão
-    z = cm
-    z_text = [[str(y) for y in x] for x in z]
-    fig_cm = ff.create_annotated_heatmap(
-        z, x=cm_labels, y=cm_labels,
-        annotation_text=z_text, colorscale='YlGnBu',
-        showscale=True
-    )
-    fig_cm.update_layout(title=f"Matriz de Confusão - {selected_model}",
-                         xaxis_title="Previsto", yaxis_title="Real")
-    st.plotly_chart(fig_cm, use_container_width=True)
+        z = cm
+        z_text = [[str(y) for y in x] for x in z]
+        fig_cm = ff.create_annotated_heatmap(
+            z, x=cm_labels, y=cm_labels,
+            annotation_text=z_text, colorscale='YlGnBu',
+            showscale=True
+        )
+        fig_cm.update_layout(title=f"Matriz de Confusão - {selected_model}",
+                             xaxis_title="Previsto", yaxis_title="Real")
+        st.plotly_chart(fig_cm, use_container_width=True)
+    else:
+        st.warning("Dados insuficientes ou colunas ausentes para realizar a classificação.")
+
     
                 
         
