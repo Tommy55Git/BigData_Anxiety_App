@@ -961,6 +961,31 @@ elif page == "Visualizations":
     # Exibir gráfico
     st.plotly_chart(fig, use_container_width=True)
 
+
+
+    import matplotlib.pyplot as plt
+
+    # Certifique-se de que a coluna 'Gender' existe e contém valores como 'Feminino', 'Masculino', 'Outro'
+    # E que sinais_fisiologicos é uma lista de colunas com os dados a serem analisados
+    sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
+    
+    # Renomear colunas se necessário
+    sinais_por_genero = sinais_por_genero.rename(columns={
+        'Male': 'Masculino',
+        'Female': 'Feminino',
+        'Other': 'Outro'
+    })
+    
+    # Plotagem
+    sinais_por_genero.plot(kind='barh', figsize=(10, 6))
+    plt.title("Sinais Fisiológicos Médios por Gênero")
+    plt.xlabel("Média")
+    plt.ylabel("Sinais Fisiológicos")
+    plt.legend(title="Gênero")
+    plt.tight_layout()
+    plt.show()
+
+
         
 
 
