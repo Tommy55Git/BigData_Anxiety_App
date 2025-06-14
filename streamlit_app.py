@@ -1134,51 +1134,59 @@ elif page == "Dashboard":
 
 
 
-            # GRÁFICO: Proporção de Gêneros por Faixa de Ansiedade
-            st.subheader("Proporção de Gêneros em Cada Faixa de Ansiedade")
-            
+            # GRÁFICO: Proporção de Gênero por Quartis de Ansiedade
+            st.subheader("Distribuição de Gênero por Quartis de Ansiedade")
+
             try:
-                # Define categorias de ansiedade
-                bins = [0, 3, 6, 10]
-                labels_ansiedade = ['Baixa (1–3)', 'Média (4–6)', 'Alta (7–10)']
-                df_dash['Faixa Ansiedade'] = pd.cut(df_dash['Anxiety Level (1-10)'], bins=bins, labels=labels_ansiedade, include_lowest=True)
-            
-                # Verifica se gênero está disponível
-                if 'Gender' in df_dash.columns:
-                    # Conta proporções por faixa
-                    df_prop = (
-                        df_dash.groupby(['Faixa Ansiedade', 'Gender'])
-                        .size()
-                        .reset_index(name='Total')
+                # Converter para pandas (caso ainda seja PySpark)
+                df_quartis = df_dash.copy()
+
+                # Criar quartis de ansiedade com rótulos descritivos
+                df_quartis['Anxiety Quartile'] = pd.qcut(
+                    df_quartis['Anxiety Level (1-10)'],
+                    q=4,
+                    labels=['Q1 (Baixo)', 'Q2', 'Q3', 'Q4 (Alto)']
+                )
+
+                # Garantir que colunas de gênero binário estejam presentes
+                if 'Gender_Female' in df_quartis.columns and 'Gender_Male' in df_quartis.columns:
+                    # Calcular soma dos gêneros por quartil
+                    quartile_gender = df_quartis.groupby('Anxiety Quartile')[['Gender_Female', 'Gender_Male']].sum()
+
+                    # Calcular proporção percentual
+                    quartile_gender_percent = quartile_gender.div(quartile_gender.sum(axis=1), axis=0) * 100
+
+                    # Criar gráfico matplotlib
+                    import matplotlib.pyplot as plt
+                    fig, ax = plt.subplots(figsize=(10,6))
+                    quartile_gender_percent.plot(
+                        kind='barh',
+                        stacked=True,
+                        color=['#FF6F61', '#6BAED6'],
+                        ax=ax
                     )
-            
-                    # Calcula proporção dentro de cada faixa
-                    df_prop['Proporção (%)'] = (
-                        df_prop.groupby('Faixa Ansiedade')['Total']
-                        .transform(lambda x: 100 * x / x.sum())
+                    ax.set_title(
+                        'Proporção de Gênero por Quartil de Ansiedade\n'
+                        '🔸 Q1 (Baixo): 25% com os menores níveis de ansiedade\n'
+                        '🔸 Q2 e Q3: 50% intermediários\n'
+                        '🔸 Q4 (Alto): 25% com os maiores níveis de ansiedade'
                     )
-            
-                    fig_prop = px.bar(
-                        df_prop,
-                        x='Proporção (%)',
-                        y='Faixa Ansiedade',
-                        color='Gender',
-                        orientation='h',
-                        text='Proporção (%)',
-                        title='Proporção de Gêneros em Cada Faixa de Ansiedade',
-                        labels={'Faixa Ansiedade': 'Nível de Ansiedade'}
-                    )
-            
-                    fig_prop.update_layout(barmode='stack', xaxis=dict(range=[0, 100]))
-                    st.plotly_chart(fig_prop, use_container_width=True)
-            
+                    ax.set_xlabel('Percentual')
+                    ax.legend(['Feminino', 'Masculino'], title='Gênero')
+                    st.pyplot(fig)
+                else:
+                    st.info("Colunas de gênero binário ('Gender_Female' e 'Gender_Male') não encontradas nos dados.")
+
             except Exception as e:
-                st.warning("Erro ao gerar gráfico de proporção de gênero por ansiedade.")
+                st.warning("Erro ao gerar gráfico de quartis de ansiedade por gênero.")
                 st.exception(e)
 
-
             
 
+
+
+
+            
             # GRÁFICO: Top Países com Mais Registros
             st.subheader("País com Maior Registro de Condições de Saúde Mental")
             top_condition_country = condicao_pais.groupby("Country")["Total"].sum().reset_index()
