@@ -1358,10 +1358,7 @@ elif page == "Dashboard":
             
             # Atualizar layout do gráfico
             fig.update_traces(textinfo='percent+label', textfont_size=14)
-            fig.update_layout(
-                title={
-                    'x': 0,  # Alinhar à esquerda
-                    'xanchor': 'left'
+
     }
 )
 
