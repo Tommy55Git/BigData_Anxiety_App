@@ -963,6 +963,43 @@ elif page == "Visualizations":
 
 
 
+    # --- Gráfico: Sinais Fisiológicos Médios por Gênero ---
+    st.markdown("---")
+    st.subheader("Sinais Fisiológicos Médios por Gênero")
+    
+    import matplotlib.pyplot as plt
+    
+    # Definir os sinais fisiológicos esperados
+    sinais_fisiologicos = [
+        "Heart Rate", "Blood Pressure", "Respiration Rate", "Body Temperature"
+    ]
+    
+    # Filtrar os sinais válidos presentes no DataFrame
+    sinais_validos = [col for col in sinais_fisiologicos if col in df.columns]
+    
+    # Verificar se a coluna 'Gender' e os sinais estão disponíveis
+    if 'Gender' in df.columns and sinais_validos:
+        sinais_por_genero = df.groupby('Gender')[sinais_validos].mean().T
+    
+        # Renomear colunas para português se necessário
+        sinais_por_genero = sinais_por_genero.rename(columns={
+            'Male': 'Masculino',
+            'Female': 'Feminino',
+            'Other': 'Outro'
+        })
+    
+        fig_sinais, ax = plt.subplots(figsize=(10, 6))
+        sinais_por_genero.plot(kind='barh', ax=ax)
+        ax.set_title("Sinais Fisiológicos Médios por Gênero")
+        ax.set_xlabel("Média")
+        ax.set_ylabel("Sinais Fisiológicos")
+        ax.legend(title="Gênero")
+        plt.tight_layout()
+        st.pyplot(fig_sinais)
+    else:
+        st.warning("Coluna 'Gender' ou sinais fisiológicos não encontrados no DataFrame.")
+
+
 
 
         
