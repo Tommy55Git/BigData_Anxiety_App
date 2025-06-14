@@ -910,9 +910,9 @@ elif page == "Visualizations":
 
 
 
-    elif page == "Classification Model":
+ elif page == "Classification Model":
     st.header("Modelos de Classificação para Ansiedade Alta")
-    
+
     # 1. Importações
     import pandas as pd
     import matplotlib.pyplot as plt
@@ -925,7 +925,7 @@ elif page == "Visualizations":
     from sklearn.metrics import (
         accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
     )
-    
+
     # 2. Definir colunas e dados
     colunas_independentes = [
         'Age',
@@ -934,17 +934,17 @@ elif page == "Visualizations":
         'Diet Quality (1-10)',
         'Stress Level (1-10)'
     ]
-    
-    if not df.empty:
+
+    if 'df' in globals() and df is not None and not df.empty:
         df_class = df.select(*colunas_independentes, "Anxiety Level (1-10)").dropna().toPandas()
         df_class["Anxiety_High"] = (df_class["Anxiety Level (1-10)"] > 6).astype(int)
-    
+
         X = df_class[colunas_independentes]
         y = df_class["Anxiety_High"]
-    
+
         # 3. Dividir treino/teste
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
+
         # 4. Modelos de classificação
         models = {
             'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
@@ -953,29 +953,29 @@ elif page == "Visualizations":
             'Random Forest': RandomForestClassifier(random_state=42),
             'SVM': SVC(random_state=42)
         }
-    
+
         # 5. Avaliação dos modelos
         model_metrics = []
-    
+
         for name, model in models.items():
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
-    
+
             accuracy = accuracy_score(y_test, y_pred)
             report = classification_report(y_test, y_pred, output_dict=True)
-    
+
             st.subheader(f"{name}")
             st.markdown(f"**Acurácia:** {accuracy:.4f}")
             st.text("Relatório de Classificação:")
             st.text(classification_report(y_test, y_pred))
-    
+
             cm = confusion_matrix(y_test, y_pred)
             fig_cm, ax_cm = plt.subplots()
             disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Baixa/Moderada', 'Alta'])
             disp.plot(cmap='YlGnBu', values_format='d', ax=ax_cm)
             ax_cm.set_title(f"Matriz de Confusão - {name}")
             st.pyplot(fig_cm)
-    
+
             model_metrics.append({
                 'Model': name,
                 'Accuracy': accuracy,
@@ -983,12 +983,12 @@ elif page == "Visualizations":
                 'Recall': report['macro avg']['recall'],
                 'F1-Score': report['macro avg']['f1-score']
             })
-    
+
         # 6. Comparar métricas
         metrics_df = pd.DataFrame(model_metrics)
         st.subheader("Comparação entre Modelos")
         st.dataframe(metrics_df)
-    
+
         st.subheader("Gráfico Comparativo")
         fig_bar, ax_bar = plt.subplots(figsize=(10, 6))
         metrics_df.set_index('Model')[['Accuracy', 'Precision', 'Recall', 'F1-Score']].plot(kind='bar', ax=ax_bar, cmap='Set3')
@@ -999,7 +999,6 @@ elif page == "Visualizations":
         st.pyplot(fig_bar)
     else:
         st.warning("Dados insuficientes para análise de classificação.")
-    
 
     
     
