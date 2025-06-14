@@ -1028,7 +1028,27 @@ elif page == "Dashboard":
         if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
             st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
         else:
-            df_dash = df_inner.copy().dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
+            df_dash = df_inner.copy()
+
+            # Reconstruir coluna 'Country'
+            country_cols = [c for c in df_dash.columns if c.startswith('Country_')]
+            if country_cols:
+                df_dash['Country'] = ''
+                for col in country_cols:
+                    df_dash.loc[df_dash[col] == 1, 'Country'] = col.replace('Country_', '')
+
+            # Reconstruir coluna 'Mental Health Condition'
+            condition_cols = [c for c in df_dash.columns if c.startswith('Mental_Health_Condition_')]
+            if condition_cols:
+                def get_condition(row):
+                    for col in condition_cols:
+                        if row[col] == 1:
+                            return col.replace('Mental_Health_Condition_', '')
+                    return 'None'
+                df_dash['Mental Health Condition'] = df_dash.apply(get_condition, axis=1)
+
+            # Remover linhas com dados ausentes nas colunas principais
+            df_dash = df_dash.dropna(subset=["Country", "Anxiety Level (1-10)", "Mental Health Condition"])
 
             st.subheader("Média Geral de Ansiedade")
             media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
