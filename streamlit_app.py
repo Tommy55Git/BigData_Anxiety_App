@@ -1108,7 +1108,7 @@ elif page == "Dashboard":
 
             # ================= GRÁFICOS ===================
 
-             # Título da seção
+             # 📊 Visão Geral Global da Ansiedade
             st.subheader("📊 Visão Geral Global da Ansiedade")
             
             # Estatísticas principais
@@ -1136,16 +1136,18 @@ elif page == "Dashboard":
             condicoes = [col for col in df_dash.columns if col.startswith("Mental Health Condition_")]
             condicao_top = max(condicoes, key=lambda c: df_dash[c].sum()).replace("Mental Health Condition_", "")
             
-            # Idade média
+            # Outras métricas
             idade_media = df_dash["Age"].mean()
-            
-            # Sono médio
             sono_medio = df_dash["Sleep Hours"].mean()
-            
-            # Consumo médio de álcool
             alcool_medio = df_dash["Alcohol Consumption (drinks/week)"].mean()
+            tela_medio = df_dash["Screen Time per Day (Hours)"].mean()
+            trabalho_medio = df_dash["Work Hours per Week"].mean()
+            cafeina_medio = df_dash["Caffeine Intake (mg/day)"].mean()
+            fumantes = df_dash["Smoking_Yes"].mean() * 100
+            eventos = df_dash["Recent Major Life Event_Yes"].mean() * 100
+            medicacao = df_dash["Medication_Yes"].mean() * 100
             
-            # Estilo aprimorado com gradiente e espaçamento
+            # Estilo visual
             box_style = """
             <style>
             .box-metric {
@@ -1170,7 +1172,7 @@ elif page == "Dashboard":
             """
             st.markdown(box_style, unsafe_allow_html=True)
             
-            # Função para renderizar uma "caixa"
+            # Função render_box
             def render_box(title, value, emoji=""):
                 st.markdown(f"""
                 <div class="box-metric">
@@ -1179,29 +1181,44 @@ elif page == "Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Organização em colunas com melhor espaçamento
+            # Blocos 1 a 4
             with st.container():
-                col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+                col1, col2, col3, col4 = st.columns(4)
                 with col1: render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈")
                 with col2: render_box("Mediana de Ansiedade", f"{mediana_ansiedade:.2f}", "📊")
                 with col3: render_box("Média Sessões Terapia", f"{media_sessoes_terapia:.2f}", "💬")
                 with col4: render_box("% em Terapia", f"{prop_terapia:.1f}%", "🧠")
             
-            st.markdown("<br>", unsafe_allow_html=True)
-            
             with st.container():
-                col5, col6, col7, col8 = st.columns([1, 1, 1, 1])
+                col5, col6, col7, col8 = st.columns(4)
                 with col5: render_box("Sexo Mais Ansioso", sexo_top, "🚻")
                 with col6: render_box("País com Maior Ansiedade", f"{pais_top} ({pais_top_valor:.2f})", "🌍")
                 with col7: render_box("Condição Mental + Comum", condicao_top, "⚠️")
                 with col8: render_box("Idade Média", f"{idade_media:.1f} anos", "👤")
             
-            st.markdown("<br>", unsafe_allow_html=True)
+            with st.container():
+                col9, col10, col11, col12 = st.columns(4)
+                with col9: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
+                with col10: render_box("Álcool Médio", f"{alcool_medio:.1f}/sem", "🍷")
+                with col11: render_box("Tempo de Tela", f"{tela_medio:.1f}h/dia", "📺")
+                with col12: render_box("Horas de Trabalho", f"{trabalho_medio:.1f}/sem", "💻")
             
             with st.container():
-                col9, col10 = st.columns([1, 1])
-                with col9: render_box("Sono Médio Diário", f"{sono_medio:.1f}h", "🛌")
-                with col10: render_box("Consumo Médio de Álcool", f"{alcool_medio:.1f}/sem", "🍷")
+                col13, col14, col15 = st.columns(3)
+                with col13: render_box("Cafeína Média", f"{cafeina_medio:.0f} mg/dia", "☕")
+                with col14: render_box("% Fumantes", f"{fumantes:.1f}%", "🚬")
+                with col15: render_box("% Com Evento Recente", f"{eventos:.1f}%", "😰")
+            
+            with st.container():
+                col16 = st.columns(1)[0]
+                with col16: render_box("% Usa Medicação", f"{medicacao:.1f}%", "💊")
+            
+            st.markdown("---")
+            
+            # Gráfico Donut de Gênero
+            st.markdown("### 🧑‍🤝‍🧑 Distribuição por Gênero")
+            st.image("/mnt/data/distribuicao_genero.png", caption="Distribuição de Gênero na Amostra", use_column_width=True)
+
 
 
 
