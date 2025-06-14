@@ -1562,9 +1562,8 @@ elif page == "Dashboard":
 
 elif page == "Predict your Anxiety":
     st.header("🧠 Predict Your Anxiety Level")
-    st.markdown("Fill in your personal information below to get a prediction of your anxiety level (1-10 scale)")
+    st.markdown("Fill in your personal information below to get a prediction of your anxiety level (Low, Moderate, High)")
     
-    # Criar colunas para layout
     col1, col2 = st.columns(2)
 
     with col1:
@@ -1584,9 +1583,7 @@ elif page == "Predict your Anxiety":
     
     if st.button("🔮 Predict My Anxiety Level", type="primary"):
         try:
-            # Verifica se df_inner está disponível e contém dados
             if not df_inner.empty:
-                # Definir colunas independentes usadas no modelo
                 colunas_independentes = [
                     "Age", 
                     "Sleep Hours", 
@@ -1599,24 +1596,21 @@ elif page == "Predict your Anxiety":
                     "Work Hours per Week"
                 ]
                 
-                # Seleciona dados relevantes e remove NaNs
-                df_inner_model = df_inner[['Mental Health Condition_Anxiety'] + colunas_independentes].dropna()
+                df_inner_model = df_inner[['Stress_Level_Label'] + colunas_independentes].dropna()
 
                 X = df_inner_model[colunas_independentes]
-                y = df_inner_model['Mental Health Condition_Anxiety']
+                y = df_inner_model['Stress_Level_Label']
 
-                # Dividir treino/teste
                 from sklearn.model_selection import train_test_split
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-                # Usar apenas os 3 modelos que funcionam bem
                 from sklearn.linear_model import LogisticRegression
                 from sklearn.tree import DecisionTreeClassifier
                 from sklearn.ensemble import RandomForestClassifier
                 from sklearn.metrics import accuracy_score
 
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
                 models = {
-                    'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
+                    'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000, multi_class='multinomial', solver='lbfgs'),
                     'Decision Tree': DecisionTreeClassifier(random_state=42),
                     'Random Forest': RandomForestClassifier(random_state=42)
                 }
@@ -1634,7 +1628,6 @@ elif page == "Predict your Anxiety":
                         best_model = model
                         best_model_name = name
 
-                # Preparar input para previsão
                 input_data = pd.DataFrame({
                     "Age": [age],
                     "Sleep Hours": [sleep_hours],
@@ -1647,10 +1640,63 @@ elif page == "Predict your Anxiety":
                     "Work Hours per Week": [work_hours]
                 })
 
-                # Previsão
                 prediction_class = best_model.predict(input_data)[0]
 
-                # Para RandomForest, temos feature_importances_, mas não para os outros modelos
+                # Para modelos que suportam predict_proba
+                if hasattr(best_model, "predict_proba"):
+                    prediction_proba = best_model.predict_proba(input_data)[0]
+                else:
+                    prediction_proba = None
+
+                # Mapeando classes para labels amigáveis
+                class_labels = sorted(y.unique())  # ex: ['Low', 'Moderate', 'High']
+
+                st.success(f"✅ Prediction Complete with {best_model_name} (Accuracy: {best_accuracy:.2f})")
+
+                st.subheader("🎯 Anxiety Level Prediction")
+
+                if prediction_class in class_labels:
+                    st.write(f"**Predicted Anxiety Level:** {prediction_class}")
+                    if prediction_proba is not None:
+                        # Mostra probabilidade para cada classe
+                        prob_df = pd.DataFrame({
+                            'Anxiety Level': class_labels,
+                            'Probability (%)': prediction_proba * 100
+                        }).sort_values('Probability (%)', ascending=False)
+
+                        st.table(prob_df.style.format({"Probability (%)": "{:.2f}"}))
+                else:
+                    st.warning("Prediction class not recognized.")
+
+                # Recomendações baseadas na classe
+                st.subheader("💡 Personalized Recommendations")
+                if prediction_class == 'High':
+                    recs = [
+                        "Consider consulting a mental health professional.",
+                        "Practice stress-reduction techniques like meditation.",
+                        "Maintain good sleep hygiene (7-9 hours).",
+                        "Engage in regular physical activity.",
+                        "Limit caffeine intake if high.",
+                        "Build a strong social support network."
+                    ]
+                elif prediction_class == 'Moderate':
+                    recs = [
+                        "Monitor your stress and anxiety levels regularly.",
+                        "Try relaxation techniques and mindfulness.",
+                        "Keep a balanced diet and regular exercise routine.",
+                        "Maintain a consistent sleep schedule."
+                    ]
+                else:  # Low
+                    recs = [
+                        "Keep up your healthy lifestyle.",
+                        "Stay active physically and mentally.",
+                        "Maintain social connections.",
+                        "Practice stress management as needed."
+                    ]
+                for i, rec in enumerate(recs, 1):
+                    st.write(f"{i}. {rec}")
+
+                # Importância das features para Random Forest
                 if best_model_name == 'Random Forest':
                     st.subheader("📈 Factors Influencing Your Prediction")
                     import plotly.express as px
@@ -1669,40 +1715,10 @@ elif page == "Predict your Anxiety":
                     fig_importance.update_layout(yaxis={'categoryorder': 'total ascending'})
                     st.plotly_chart(fig_importance, use_container_width=True)
 
-                # Mostrar resultado de forma simples
-                st.success(f"✅ Prediction Complete with {best_model_name} (Accuracy: {best_accuracy:.2f})")
-
-                if prediction_class == 1:
-                    st.warning("⚠️ High Anxiety Risk predicted based on your inputs.")
-                else:
-                    st.success("🌟 Low-Moderate Anxiety Risk predicted based on your inputs.")
-
-                # Recomendações (simplificadas)
-                st.subheader("💡 Personalized Recommendations")
-                if prediction_class == 1:
-                    recs = [
-                        "Consider consulting a mental health professional.",
-                        "Practice stress-reduction techniques like meditation.",
-                        "Maintain good sleep hygiene (7-9 hours).",
-                        "Engage in regular physical activity.",
-                        "Limit caffeine intake if high.",
-                        "Build a strong social support network."
-                    ]
-                else:
-                    recs = [
-                        "Maintain your healthy lifestyle.",
-                        "Keep up regular physical activity.",
-                        "Continue good sleep habits.",
-                        "Stay aware of your mental health."
-                    ]
-                for i, rec in enumerate(recs, 1):
-                    st.write(f"{i}. {rec}")
-
-                # Disclaimer
-                st.info("⚠️ This prediction is based on ML models trained on survey data and does not replace professional advice. If you experience persistent anxiety, seek help from a healthcare professional.")
+                st.info("⚠️ This prediction is based on machine learning models trained on survey data and does not replace professional advice. Please consult a healthcare professional if you have concerns.")
 
             else:
-                st.error("The dataset for training the model is empty or not loaded.")
+                st.error("Dataset for model training is empty or not loaded.")
         
         except Exception as e:
             st.error(f"❌ An error occurred during prediction: {str(e)}")
