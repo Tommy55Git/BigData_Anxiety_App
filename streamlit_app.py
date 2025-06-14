@@ -832,7 +832,7 @@ elif page == "Visualizations":
         st.plotly_chart(fig_interativo, use_container_width=True)
 
 
-    # --- Gráfico Interativo com Linhas de Tendência ---
+        # --- Gráfico Interativo com Linhas de Tendência como Nível Médio ---
     st.markdown("---")
     st.subheader("Análise Detalhada de Fatores de Estilo de Vida e Ansiedade")
 
@@ -862,7 +862,9 @@ elif page == "Visualizations":
     # Criar traços do gráfico
     data_traces = []
 
+    # Evento Recente
     if not event_data.empty:
+        media_evento = event_data['Anxiety Level (1-10)'].mean()
         data_traces.append(go.Bar(
             x=event_data['Evento Recente'],
             y=event_data['Anxiety Level (1-10)'],
@@ -870,109 +872,100 @@ elif page == "Visualizations":
             marker_color='lightcoral',
             visible=True
         ))
+        data_traces.append(go.Scatter(
+            x=event_data['Evento Recente'],
+            y=[media_evento] * len(event_data),
+            name='Nível Médio de Ansiedade',
+            mode='lines',
+            line=dict(color='crimson', dash='dot', width=2),
+            visible=True
+        ))
 
+    # Tempo de Tela
     if not screen_data.empty:
+        media_tela = screen_data['Anxiety Level (1-10)'].mean()
         data_traces.append(go.Bar(
             x=screen_data['Tela (horas)'].astype(str),
             y=screen_data['Anxiety Level (1-10)'],
-            name='Tempo de Tela (Média)',
+            name='Tempo de Tela',
             marker_color='lightsteelblue',
             visible=False
         ))
         data_traces.append(go.Scatter(
             x=screen_data['Tela (horas)'].astype(str),
-            y=screen_data['Anxiety Level (1-10)'],
-            name='Tendência Tela',
-            mode='lines+markers',
+            y=[media_tela] * len(screen_data),
+            name='Nível Médio de Ansiedade',
+            mode='lines',
             line=dict(color='darkblue', dash='dot', width=2),
-            marker=dict(size=8, symbol='circle-open'),
             visible=False
         ))
 
+    # Terapia
     if not therapy_data.empty:
+        media_terapia = therapy_data['Anxiety Level (1-10)'].mean()
         data_traces.append(go.Bar(
             x=therapy_data['Terapia (mês)'].astype(str),
             y=therapy_data['Anxiety Level (1-10)'],
-            name='Terapia (Média)',
+            name='Terapia',
             marker_color='lightgreen',
             visible=False
         ))
         data_traces.append(go.Scatter(
             x=therapy_data['Terapia (mês)'].astype(str),
-            y=therapy_data['Anxiety Level (1-10)'],
-            name='Tendência Terapia',
-            mode='lines+markers',
+            y=[media_terapia] * len(therapy_data),
+            name='Nível Médio de Ansiedade',
+            mode='lines',
             line=dict(color='darkgreen', dash='dot', width=2),
-            marker=dict(size=8, symbol='circle-open'),
             visible=False
         ))
 
+    # Interação Social
     if not social_data.empty:
+        media_social = social_data['Anxiety Level (1-10)'].mean()
         data_traces.append(go.Bar(
             x=social_data['Interação'].astype(str),
             y=social_data['Anxiety Level (1-10)'],
-            name='Interação Social (Média)',
+            name='Interação Social',
             marker_color='mediumorchid',
             visible=False
         ))
         data_traces.append(go.Scatter(
             x=social_data['Interação'].astype(str),
-            y=social_data['Anxiety Level (1-10)'],
-            name='Tendência Interação',
-            mode='lines+markers',
+            y=[media_social] * len(social_data),
+            name='Nível Médio de Ansiedade',
+            mode='lines',
             line=dict(color='darkmagenta', dash='dot', width=2),
-            marker=dict(size=8, symbol='circle-open'),
             visible=False
         ))
 
     # Inicializar figura
     fig = go.Figure(data=data_traces)
 
-    # Criar botões do menu dropdown
+    # Botões do menu dropdown
     buttons = []
+    step = 2  # dois traços por grupo (barra + linha)
+    labels = ['Evento Recente', 'Tempo de Tela', 'Terapia por Mês', 'Interação Social']
+    titles = [
+        'Ansiedade por Evento de Vida Recente',
+        'Ansiedade por Tempo de Tela',
+        'Ansiedade por Sessões de Terapia',
+        'Ansiedade por Interação Social'
+    ]
+    x_labels = ['Evento Recente', 'Tempo de Tela (h/dia)', 'Sessões de Terapia (mês)', 'Interação Social']
 
-    # Evento Recente
-    event_visibility = [True] + [False] * (len(data_traces) - 1) if not event_data.empty else [False] * len(data_traces)
-    buttons.append(
-        dict(label='Evento Recente',
+    for i in range(0, len(data_traces), step):
+        visibility = [False] * len(data_traces)
+        visibility[i] = True
+        visibility[i + 1] = True
+        idx = i // step
+        buttons.append(dict(
+            label=labels[idx],
             method='update',
-            args=[{'visible': event_visibility},
-                {'title': 'Ansiedade por Evento de Vida Recente',
-                    'xaxis': {'title': 'Evento Recente'}}])
-    )
-
-    # Tempo de Tela
-    screen_start_idx = 1 if not event_data.empty else 0
-    screen_visibility = [False] * screen_start_idx + [True, True] + [False] * (len(data_traces) - screen_start_idx - 2) if not screen_data.empty else [False] * len(data_traces)
-    buttons.append(
-        dict(label='Tempo de Tela',
-            method='update',
-            args=[{'visible': screen_visibility},
-                {'title': 'Ansiedade por Tempo de Tela',
-                    'xaxis': {'title': 'Tempo de Tela (horas/dia)'}}])
-    )
-
-    # Terapia
-    therapy_start_idx = screen_start_idx + 2 if not screen_data.empty else screen_start_idx
-    therapy_visibility = [False] * therapy_start_idx + [True, True] + [False] * (len(data_traces) - therapy_start_idx - 2) if not therapy_data.empty else [False] * len(data_traces)
-    buttons.append(
-        dict(label='Terapia por Mês',
-            method='update',
-            args=[{'visible': therapy_visibility},
-                {'title': 'Ansiedade por Sessões de Terapia',
-                    'xaxis': {'title': 'Sessões de Terapia (mês)'}}])
-    )
-
-    # Interação Social
-    social_start_idx = therapy_start_idx + 2 if not therapy_data.empty else therapy_start_idx
-    social_visibility = [False] * social_start_idx + [True, True] + [False] * (len(data_traces) - social_start_idx - 2) if not social_data.empty else [False] * len(data_traces)
-    buttons.append(
-        dict(label='Interação Social',
-            method='update',
-            args=[{'visible': social_visibility},
-                {'title': 'Ansiedade por Interação Social',
-                    'xaxis': {'title': 'Interação Social'}}])
-    )
+            args=[
+                {'visible': visibility},
+                {'title': titles[idx], 'xaxis': {'title': x_labels[idx]}}
+            ]
+        ))
 
     # Layout final
     fig.update_layout(
@@ -986,10 +979,10 @@ elif page == "Visualizations":
                 yanchor='top',
                 buttons=buttons
             )
-        ] if buttons else [],
-        title="Ansiedade por Evento de Vida Recente",
+        ],
+        title=titles[0],
         yaxis_title="Ansiedade Média",
-        xaxis_title="Evento Recente",
+        xaxis_title=x_labels[0],
         barmode='group',
         legend_title="Indicador",
         height=500,
