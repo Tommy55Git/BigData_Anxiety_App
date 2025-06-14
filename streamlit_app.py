@@ -1583,20 +1583,23 @@ elif page == "Predict your Anxiety":
         stress_level = st.slider("Stress Level (1-10)", min_value=1, max_value=10, value=5, help="Rate your current stress level from 1 (very low) to 10 (very high)")
         heart_rate = st.slider("Heart Rate (bpm)", min_value=40, max_value=120, value=70, help="Your average resting heart rate")
         work_hours = st.slider("Work Hours per Week", min_value=0, max_value=80, value=40, help="Average work hours per week")
+        recent_event = st.checkbox("Experienced a recent major life event?")
+        family_history = st.checkbox("Family history of anxiety?")
     
     if st.button("🔮 Predict My Anxiety Level", type="primary"):
         try:
             if not df_clusters.empty:
                 colunas_independentes = [
-                    "Age", 
+                     "Age", 
                     "Sleep Hours", 
                     "Physical Activity (hrs/week)",
                     "Diet Quality (1-10)",
                     "Stress Level (1-10)",
-                    "Therapy Sessions (per month)",
-                    "Caffeine Intake (mg/day)",
-                    "Heart Rate (bpm)",
-                    "Work Hours per Week"
+                    'Therapy Sessions (per month)',   # 0.388127
+                    'Caffeine Intake (mg/day)',       # 0.321323
+                    'Heart Rate (bpm)',
+                    'Recent Major Life Event_Yes',
+                    'Family History of Anxiety_Yes'
                 ]
                 
                 # Use a coluna codificada para treino e predição
@@ -1633,15 +1636,16 @@ elif page == "Predict your Anxiety":
                         best_model_name = name
 
                 input_data = pd.DataFrame({
-                    "Age": [age],
-                    "Sleep Hours": [sleep_hours],
-                    "Physical Activity (hrs/week)": [physical_activity],
-                    "Diet Quality (1-10)": [diet_quality],
-                    "Stress Level (1-10)": [stress_level],
-                    "Therapy Sessions (per month)": [therapy_sessions],
-                    "Caffeine Intake (mg/day)": [caffeine_intake],
-                    "Heart Rate (bpm)": [heart_rate],
-                    "Work Hours per Week": [work_hours]
+                   "Age", 
+                    "Sleep Hours", 
+                    "Physical Activity (hrs/week)",
+                    "Diet Quality (1-10)",
+                    "Stress Level (1-10)",
+                    'Therapy Sessions (per month)',   # 0.388127
+                    'Caffeine Intake (mg/day)',       # 0.321323
+                    'Heart Rate (bpm)',
+                    'Recent Major Life Event_Yes',
+                    'Family History of Anxiety_Yes'
                 })
 
                 prediction_encoded = best_model.predict(input_data)[0]
