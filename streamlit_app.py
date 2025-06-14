@@ -832,7 +832,7 @@ elif page == "Visualizations":
         st.plotly_chart(fig_interativo, use_container_width=True)
 
 
-        # --- Gráfico Interativo com Linhas de Tendência como Nível Médio ---
+        # --- Gráfico Interativo com Linha de Tendência Real ---
     st.markdown("---")
     st.subheader("Análise Detalhada de Fatores de Estilo de Vida e Ansiedade")
 
@@ -848,7 +848,7 @@ elif page == "Visualizations":
     # Mapear eventos recentes
     pdf['Evento Recente'] = pdf['Recent Major Life Event_Yes'].map({0: 'Não', 1: 'Sim'})
 
-    # Categorizar variáveis contínuas com pd.cut (4 faixas para mais detalhe)
+    # Categorizar variáveis contínuas com pd.cut
     pdf['Tela (horas)'] = pd.cut(pdf['Screen Time per Day (Hours)'], bins=4, labels=[f'{i}-{i+1}' for i in range(4)])
     pdf['Terapia (mês)'] = pd.cut(pdf['Therapy Sessions (per month)'], bins=4, labels=[f'{i}-{i+1}' for i in range(4)])
     pdf['Interação'] = pd.cut(pdf['Social Interaction Score'], bins=4, labels=[f'{i}-{i+1}' for i in range(4)])
@@ -863,80 +863,72 @@ elif page == "Visualizations":
     data_traces = []
 
     # Evento Recente
-    if not event_data.empty:
-        media_evento = event_data['Anxiety Level (1-10)'].mean()
-        data_traces.append(go.Bar(
-            x=event_data['Evento Recente'],
-            y=event_data['Anxiety Level (1-10)'],
-            name='Evento Recente',
-            marker_color='lightcoral',
-            visible=True
-        ))
-        data_traces.append(go.Scatter(
-            x=event_data['Evento Recente'],
-            y=[media_evento] * len(event_data),
-            name='Nível Médio de Ansiedade',
-            mode='lines',
-            line=dict(color='crimson', dash='dot', width=2),
-            visible=True
-        ))
+    data_traces.append(go.Bar(
+        x=event_data['Evento Recente'],
+        y=event_data['Anxiety Level (1-10)'],
+        name='Evento Recente',
+        marker_color='lightcoral',
+        visible=True
+    ))
+    data_traces.append(go.Scatter(
+        x=event_data['Evento Recente'],
+        y=event_data['Anxiety Level (1-10)'],
+        name='Tendência de Ansiedade',
+        mode='lines+markers',
+        line=dict(color='crimson', width=3),
+        visible=True
+    ))
 
     # Tempo de Tela
-    if not screen_data.empty:
-        media_tela = screen_data['Anxiety Level (1-10)'].mean()
-        data_traces.append(go.Bar(
-            x=screen_data['Tela (horas)'].astype(str),
-            y=screen_data['Anxiety Level (1-10)'],
-            name='Tempo de Tela',
-            marker_color='lightsteelblue',
-            visible=False
-        ))
-        data_traces.append(go.Scatter(
-            x=screen_data['Tela (horas)'].astype(str),
-            y=[media_tela] * len(screen_data),
-            name='Nível Médio de Ansiedade',
-            mode='lines',
-            line=dict(color='darkblue', dash='dot', width=2),
-            visible=False
-        ))
+    data_traces.append(go.Bar(
+        x=screen_data['Tela (horas)'].astype(str),
+        y=screen_data['Anxiety Level (1-10)'],
+        name='Tempo de Tela',
+        marker_color='lightsteelblue',
+        visible=False
+    ))
+    data_traces.append(go.Scatter(
+        x=screen_data['Tela (horas)'].astype(str),
+        y=screen_data['Anxiety Level (1-10)'],
+        name='Tendência de Ansiedade',
+        mode='lines+markers',
+        line=dict(color='darkblue', width=3),
+        visible=False
+    ))
 
     # Terapia
-    if not therapy_data.empty:
-        media_terapia = therapy_data['Anxiety Level (1-10)'].mean()
-        data_traces.append(go.Bar(
-            x=therapy_data['Terapia (mês)'].astype(str),
-            y=therapy_data['Anxiety Level (1-10)'],
-            name='Terapia',
-            marker_color='lightgreen',
-            visible=False
-        ))
-        data_traces.append(go.Scatter(
-            x=therapy_data['Terapia (mês)'].astype(str),
-            y=[media_terapia] * len(therapy_data),
-            name='Nível Médio de Ansiedade',
-            mode='lines',
-            line=dict(color='darkgreen', dash='dot', width=2),
-            visible=False
-        ))
+    data_traces.append(go.Bar(
+        x=therapy_data['Terapia (mês)'].astype(str),
+        y=therapy_data['Anxiety Level (1-10)'],
+        name='Terapia',
+        marker_color='lightgreen',
+        visible=False
+    ))
+    data_traces.append(go.Scatter(
+        x=therapy_data['Terapia (mês)'].astype(str),
+        y=therapy_data['Anxiety Level (1-10)'],
+        name='Tendência de Ansiedade',
+        mode='lines+markers',
+        line=dict(color='darkgreen', width=3),
+        visible=False
+    ))
 
     # Interação Social
-    if not social_data.empty:
-        media_social = social_data['Anxiety Level (1-10)'].mean()
-        data_traces.append(go.Bar(
-            x=social_data['Interação'].astype(str),
-            y=social_data['Anxiety Level (1-10)'],
-            name='Interação Social',
-            marker_color='mediumorchid',
-            visible=False
-        ))
-        data_traces.append(go.Scatter(
-            x=social_data['Interação'].astype(str),
-            y=[media_social] * len(social_data),
-            name='Nível Médio de Ansiedade',
-            mode='lines',
-            line=dict(color='darkmagenta', dash='dot', width=2),
-            visible=False
-        ))
+    data_traces.append(go.Bar(
+        x=social_data['Interação'].astype(str),
+        y=social_data['Anxiety Level (1-10)'],
+        name='Interação Social',
+        marker_color='mediumorchid',
+        visible=False
+    ))
+    data_traces.append(go.Scatter(
+        x=social_data['Interação'].astype(str),
+        y=social_data['Anxiety Level (1-10)'],
+        name='Tendência de Ansiedade',
+        mode='lines+markers',
+        line=dict(color='darkmagenta', width=3),
+        visible=False
+    ))
 
     # Inicializar figura
     fig = go.Figure(data=data_traces)
