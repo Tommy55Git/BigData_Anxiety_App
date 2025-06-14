@@ -1112,6 +1112,71 @@ elif page == "Dashboard":
             media_ansiedade = df_dash["Anxiety Level (1-10)"].mean()
             st.metric(label="Ansiedade Média (1-10)", value=f"{media_ansiedade:.2f}")
 
+
+
+
+            import plotly.graph_objects as go
+            import numpy as np
+            import pandas as pd
+            
+            # Simulação de coordenadas celestes (RA e Dec) + intensidade
+            np.random.seed(42)
+            num_objs = 30
+            data = pd.DataFrame({
+                'Object': [f'Obj{i}' for i in range(num_objs)],
+                'RA': np.random.uniform(0, 360, num_objs),      # Longitude (0 a 360)
+                'Dec': np.random.uniform(-90, 90, num_objs),    # Latitude (-90 a 90)
+                'Intensity': np.random.uniform(0, 2, num_objs),
+                'Type': np.random.choice(['Star', 'Galaxy', 'Planet'], num_objs)
+            })
+            
+            # Criar gráfico Plotly como "mapa esférico"
+            fig = go.Figure()
+            
+            # Adicionar pontos com escala de cor
+            fig.add_trace(go.Scattergeo(
+                lon=data['RA'],
+                lat=data['Dec'],
+                text=data['Object'],
+                marker=dict(
+                    size=10,
+                    color=data['Intensity'],
+                    colorscale='Viridis',
+                    colorbar_title='Intensidade',
+                    line_color='black',
+                    line_width=0.5
+                ),
+                mode='markers+text',
+                textposition='top center',
+                name='Objetos'
+            ))
+            
+            # Layout semelhante ao mapa celeste
+            fig.update_layout(
+                title='Mapa Celeste Simulado (RA/Dec com Intensidade)',
+                geo=dict(
+                    projection_type='orthographic',
+                    showland=False,
+                    showocean=False,
+                    showlakes=False,
+                    showframe=False,
+                    showcountries=False,
+                    showcoastlines=False,
+                    lataxis=dict(showgrid=True),
+                    lonaxis=dict(showgrid=True)
+                ),
+                height=700,
+                margin=dict(l=0, r=0, t=50, b=0)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+
+
+
+
+            
+
             st.subheader("País com Maior Nível Médio de Ansiedade")
             media_por_pais = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().sort_values(ascending=False)
             pais_top_ansiedade = media_por_pais.idxmax()
