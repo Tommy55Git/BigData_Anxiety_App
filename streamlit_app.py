@@ -964,48 +964,29 @@ elif page == "Visualizations":
 
 
     
-    # --- Sinais Fisiológicos Médios por Gênero ---
-    st.markdown("---")
-    st.subheader("Sinais Fisiológicos Médios por Gênero")
+    # Recria a coluna categórica 'Gender' com base nas colunas one-hot
+    def get_gender(row):
+        if row['Gender_Male'] == 1:
+            return 'Masculino'
+        elif row['Gender_Female'] == 1:
+            return 'Feminino'
+        elif row['Gender_Other'] == 1:
+            return 'Outros'
+        else:
+            return 'Desconhecido'
     
-    import matplotlib.pyplot as plt
+    df_pd['Gender'] = df_pd.apply(get_gender, axis=1)
     
-    # Usar o DataFrame principal
-    df_temp = df_dash.copy()
+    # Agrupa por gênero e calcula a média dos sinais fisiológicos
+    sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
     
-    # Criar coluna 'Gender' a partir das colunas binárias
-    df_temp["Gender"] = None
-    df_temp.loc[df_temp["Gender_Female"] == 1, "Gender"] = "Feminino"
-    df_temp.loc[df_temp["Gender_Male"] == 1, "Gender"] = "Masculino"
-    df_temp.loc[df_temp.get("Gender_Other", 0) == 1, "Gender"] = "Outro"
-    
-    # Lista de sinais fisiológicos a analisar
-    sinais_fisiologicos = [
-        "Breathing Rate (breaths/min)",
-        "Heart Rate (bpm)",
-        "Sweating Level (1-5)"
-    ]
-    
-    # Verificar colunas válidas
-    sinais_validos = [col for col in sinais_fisiologicos if col in df_temp.columns]
-    
-    if sinais_validos:
-        # Agrupar e transpor os dados
-        sinais_por_genero = df_temp.groupby("Gender")[sinais_validos].mean().T
-    
-        # Plotar
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sinais_por_genero.plot(kind='barh', ax=ax)
-        ax.set_title("Sinais Fisiológicos Médios por Gênero")
-        ax.set_xlabel("Média")
-        ax.set_ylabel("Sinais Fisiológicos")
-        ax.legend(title="Gênero")
-        plt.tight_layout()
-    
-        # Mostrar no Streamlit
-        st.pyplot(fig)
-    else:
-        st.warning("Colunas de sinais fisiológicos não encontradas no conjunto de dados.")
+    # Plota o gráfico
+    sinais_por_genero.plot(kind='barh', figsize=(10, 6))
+    plt.title("Sinais Fisiológicos Médios por Gênero")
+    plt.xlabel("Média")
+    plt.tight_layout()
+    plt.show()
+
 
 
 
