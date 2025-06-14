@@ -1306,31 +1306,31 @@ elif page == "Dashboard":
             eventos = df_dash["Recent Major Life Event_Yes"].mean() * 100
             medicacao = df_dash["Medication_Yes"].mean() * 100
             
-            # Estilos aprimorados com gradientes personalizados
+            # Estilos com gradientes suaves
             box_style = """
             <style>
             .box-metric {
                 padding: 1rem;
                 border-radius: 15px;
                 text-align: center;
-                box-shadow: 2px 2px 12px rgba(0,0,0,0.2);
+                box-shadow: 2px 2px 10px rgba(0,0,0,0.15);
                 margin: 0.5rem 0.3rem;
                 color: white;
                 font-family: 'Segoe UI', sans-serif;
             }
-            .gradient1 { background: linear-gradient(135deg, #ffb347, #ffcc33); }
-            .gradient2 { background: linear-gradient(135deg, #ff5e62, #ff9966); }
-            .gradient3 { background: linear-gradient(135deg, #36d1dc, #5b86e5); }
-            .gradient4 { background: linear-gradient(135deg, #c471f5, #fa71cd); }
-            .gradient5 { background: linear-gradient(135deg, #84fab0, #8fd3f4); }
-            .gradient6 { background: linear-gradient(135deg, #f77062, #fe5196); }
-            .gradient7 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
-            .gradient8 { background: linear-gradient(135deg, #fceabb, #f8b500); }
+            .gradient1 { background: linear-gradient(135deg, #fbc2eb, #a6c1ee); }
+            .gradient2 { background: linear-gradient(135deg, #fddb92, #d1fdff); }
+            .gradient3 { background: linear-gradient(135deg, #a1c4fd, #c2e9fb); }
+            .gradient4 { background: linear-gradient(135deg, #d4fc79, #96e6a1); }
+            .gradient5 { background: linear-gradient(135deg, #ffecd2, #fcb69f); }
+            .gradient6 { background: linear-gradient(135deg, #e0c3fc, #8ec5fc); }
+            .gradient7 { background: linear-gradient(135deg, #f6d365, #fda085); }
+            .gradient8 { background: linear-gradient(135deg, #cfd9df, #e2ebf0); }
             </style>
             """
             st.markdown(box_style, unsafe_allow_html=True)
             
-            # Função render_box com classe CSS de cor
+            # Função de renderização das métricas
             def render_box(title, value, emoji, gradient_class="gradient1"):
                 st.markdown(f"""
                 <div class="box-metric {gradient_class}">
@@ -1339,7 +1339,7 @@ elif page == "Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Blocos de exibição com gradientes
+            # Blocos de exibição
             with st.container():
                 col1, col2, col3, col4 = st.columns(4)
                 with col1: render_box("Média de Ansiedade", f"{media_ansiedade:.2f}", "📈", "gradient1")
@@ -1372,42 +1372,7 @@ elif page == "Dashboard":
                 with col16: render_box("% Usa Medicação", f"{medicacao:.1f}%", "💊", "gradient8")
             
             st.markdown("---")
-            
-            # Donut Chart: Distribuição de Gênero
-            import plotly.express as px
-            
-            genero_labels = ['Feminino', 'Masculino', 'Outro']
-            genero_cols = ['Gender_Female', 'Gender_Male', 'Gender_Other']
-            genero_data = {
-                label: df_dash[col].sum() for label, col in zip(genero_labels, genero_cols) if col in df_dash.columns
-            }
-            
-            df_genero = pd.DataFrame({
-                "Gênero": list(genero_data.keys()),
-                "Total": list(genero_data.values())
-            })
-            
-            fig = px.pie(
-                df_genero,
-                names="Gênero",
-                values="Total",
-                hole=0.4,
-                color="Gênero",
-                color_discrete_map={
-                    "Feminino": "#FFB300",
-                    "Masculino": "#F4511E",
-                    "Outro": "#E91E63"
-                }
-            )
-            
-            # Atualizar layout para alinhar o título à esquerda
-            st.subheader("Distribuição por Género")
-            
-            # Atualizar layout do gráfico (sem título)
-            fig.update_traces(textinfo='percent+label', textfont_size=14)
-            
-            # Exibir no Streamlit
-            st.plotly_chart(fig, use_container_width=True)
+
 
 
 
