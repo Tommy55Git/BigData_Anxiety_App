@@ -1115,100 +1115,125 @@ elif page == "Dashboard":
 
 
 
-        import plotly.graph_objects as go
-        import pandas as pd
+        elif page == "Visualizations":
+            st.header(" Mapa Global")
         
-        # ✅ Usar o DataFrame correto contendo informações de países
-        df_vis = df_dash.copy()
+            # Cópia de trabalho segura do DataFrame de clusters
+            df_map = df_clusters.copy()
         
-        # ✅ Garantir que há uma coluna 'Country'
-        if 'Country' not in df_vis.columns:
-            st.warning("A coluna 'Country' não está disponível nos dados carregados.")
-        else:
-            # Agrupar por país e calcular média de ansiedade
-            df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
+            # Criar coluna 'Country' se não existir, a partir de colunas binárias 'Country_XXX'
+            if 'Country' not in df_map.columns:
+                country_cols = [col for col in df_map.columns if col.startswith('Country_')]
+                if country_cols:
+                    df_map['Country'] = ''
+                    for col in country_cols:
+                        country_name = col.replace('Country_', '')
+                        df_map.loc[df_map[col] == 1, 'Country'] = country_name
         
-            # Identificar o país com maior média
-            top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
-            top_country_name = top_country['Country']
-            top_country_value = top_country['Anxiety Level (1-10)']
+            # Remover linhas sem país válido
+            df_map = df_map[df_map['Country'].notna() & (df_map['Country'] != '')]
         
-            # Marcar país como destaque
-            df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
+            # Verificar se colunas necessárias estão presentes
+            required_cols = [
+                'Country', 'Anxiety Level (1-10)', 'Sleep_Stress_Ratio',
+                'Therapy Sessions (per month)', 'Work_Exercise_Ratio'
+            ]
         
-            # ✅ Adicionar coordenadas com geopy (ou substitua por mapeamento prévio)
-            from geopy.geocoders import Nominatim
-            geolocator = Nominatim(user_agent="geoapi")
+            if all(col in df_map.columns for col in required_cols):
         
-            @st.cache_data(show_spinner=False)
-            def get_coords(country):
-                try:
-                    location = geolocator.geocode(country, timeout=10)
-                    return pd.Series([location.latitude, location.longitude])
-                except:
-                    return pd.Series([None, None])
+                st.subheader("🧭 Mapa Esférico com Destaque do País com Maior Ansiedade Média")
         
-            df_country_avg[['lat', 'lon']] = df_country_avg['Country'].apply(get_coords)
+                # Lista mínima de coordenadas de países
+                country_coords = {
+                    'USA': (38.0, -97.0),
+                    'Brazil': (-14.2, -51.9),
+                    'Germany': (51.2, 10.5),
+                    'India': (20.6, 78.9),
+                    'Australia': (-25.0, 133.0),
+                    'Canada': (56.1, -106.3),
+                    'Japan': (36.2, 138.2),
+                    'UK': (55.3, -3.4),
+                    'France': (46.2, 2.2),
+                    'Mexico': (23.6, -102.5),
+                    'China': (35.9, 104.2)
+                    # ➕ Adicione mais países conforme necessário
+                }
         
-            # Remover países sem coordenadas
-            df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
+                # Agrupar e calcular média de ansiedade por país
+                df_country_avg = df_map.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
         
-            # Criar o mapa esférico com Plotly
-            fig = go.Figure()
+                # Adicionar colunas de latitude e longitude com base no dicionário
+                df_country_avg[['lat', 'lon']] = df_country_avg['Country'].apply(
+                    lambda x: pd.Series(country_coords.get(x, (None, None)))
+                )
         
-            # Países normais
-            fig.add_trace(go.Scattergeo(
-                lon=df_country_avg[~df_country_avg['Destaque']]['lon'],
-                lat=df_country_avg[~df_country_avg['Destaque']]['lat'],
-                text=df_country_avg[~df_country_avg['Destaque']]['Country'],
-                marker=dict(
-                    size=10,
-                    color=df_country_avg[~df_country_avg['Destaque']]['Anxiety Level (1-10)'],
-                    colorscale='Viridis',
-                    colorbar_title='Ansiedade Média',
-                    line_color='black',
-                    line_width=0.5
-                ),
-                mode='markers',
-                name='Outros Países'
-            ))
+                # Remover países sem coordenadas conhecidas
+                df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
         
-            # País com maior ansiedade
-            fig.add_trace(go.Scattergeo(
-                lon=[top_country['lon']],
-                lat=[top_country['lat']],
-                text=[f"{top_country_name}<br>{top_country_value:.2f}"],
-                marker=dict(
-                    size=18,
-                    color='red',
-                    line_color='black',
-                    line_width=2,
-                    symbol='star'
-                ),
-                mode='markers+text',
-                textposition='top center',
-                name=f'Destaque: {top_country_name}'
-            ))
+                # Identificar país com maior ansiedade
+                top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
+                top_country_name = top_country['Country']
+                top_country_value = top_country['Anxiety Level (1-10)']
+                df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
         
-            # Layout esférico
-            fig.update_layout(
-                title=(
-                    f'<b>Mapa Esférico da Ansiedade Média por País</b><br>'
-                    f'<sub>🔺 Destaque: {top_country_name} com ansiedade média de {top_country_value:.2f}</sub>'
-                ),
-                geo=dict(
-                    projection_type='orthographic',
-                    showland=True,
-                    showcountries=True,
-                    showcoastlines=True,
-                    landcolor='rgb(230, 230, 230)',
-                    countrycolor='white'
-                ),
-                height=700,
-                margin=dict(l=0, r=0, t=80, b=0)
-            )
+                # Criar gráfico
+                import plotly.graph_objects as go
+                fig = go.Figure()
         
-            st.plotly_chart(fig, use_container_width=True)
+                # Países normais
+                fig.add_trace(go.Scattergeo(
+                    lon=df_country_avg[~df_country_avg['Destaque']]['lon'],
+                    lat=df_country_avg[~df_country_avg['Destaque']]['lat'],
+                    text=df_country_avg[~df_country_avg['Destaque']]['Country'],
+                    marker=dict(
+                        size=10,
+                        color=df_country_avg[~df_country_avg['Destaque']]['Anxiety Level (1-10)'],
+                        colorscale='Viridis',
+                        colorbar_title='Ansiedade Média',
+                        line_color='black',
+                        line_width=0.5
+                    ),
+                    mode='markers',
+                    name='Outros Países'
+                ))
+        
+                # Destaque
+                fig.add_trace(go.Scattergeo(
+                    lon=[top_country['lon']],
+                    lat=[top_country['lat']],
+                    text=[f"{top_country_name}<br>{top_country_value:.2f}"],
+                    marker=dict(
+                        size=18,
+                        color='red',
+                        line_color='black',
+                        line_width=2,
+                        symbol='star'
+                    ),
+                    mode='markers+text',
+                    textposition='top center',
+                    name=f'Destaque: {top_country_name}'
+                ))
+        
+                # Layout do globo
+                fig.update_layout(
+                    title=f"<b>Mapa Esférico da Ansiedade Média por País</b><br><sub>🔺 Destaque: {top_country_name} com {top_country_value:.2f}</sub>",
+                    geo=dict(
+                        projection_type='orthographic',
+                        showland=True,
+                        showcountries=True,
+                        showcoastlines=True,
+                        landcolor='rgb(230, 230, 230)',
+                        countrycolor='white'
+                    ),
+                    height=700,
+                    margin=dict(l=0, r=0, t=80, b=0)
+                )
+        
+                st.plotly_chart(fig, use_container_width=True)
+        
+            else:
+                st.warning("❗ Algumas colunas obrigatórias estão ausentes no dataset. Verifique seu arquivo de dados.")
+
 
 
             
