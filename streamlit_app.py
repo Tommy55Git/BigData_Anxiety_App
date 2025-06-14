@@ -1101,7 +1101,7 @@ elif page == "Visualizations":
         barmode='group',
         legend_title="Indicador",
         height=500,
-        font=dict(color='white'),
+        font=dict(color='black'),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         hovermode="x unified"
