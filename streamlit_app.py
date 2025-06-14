@@ -388,25 +388,24 @@ elif page == "Visualizations":
             )
             fig3.update_layout(yaxis=dict(title='Nível Médio de Ansiedade'))
             st.plotly_chart(fig3, use_container_width=True)
-
-
-        # GRÁFICO: Distribuição da Idade por Condição de Saúde Mental (usando PySpark + matplotlib)
+        
+            # GRÁFICO: Distribuição da Idade por Condição de Saúde Mental (PySpark + matplotlib)
             st.subheader("Distribuição da Idade por Condição de Saúde Mental (matplotlib)")
         
-            from pyspark.sql.functions import when
+            from pyspark.sql.functions import when, col
             import matplotlib.pyplot as plt
         
             try:
                 # Etapa 1: Identificar colunas de condição mental
-                condition_cols = [col for col in df.columns if col.startswith('Mental Health Condition_')]
+                condition_cols = [c for c in df.columns if c.startswith('Mental Health Condition_')]
         
-                # Etapa 2: Criar expressão encadeada
-                condition_expr = when(df[condition_cols[0]] == 1, condition_cols[0].replace('Mental Health Condition_', ''))
-                for col_name in condition_cols[1:]:
-                    condition_expr = condition_expr.when(df[col_name] == 1, col_name.replace('Mental Health Condition_', ''))
+                # Etapa 2: Criar expressão encadeada com col()
+                condition_expr = when(col(condition_cols[0]) == 1, condition_cols[0].replace('Mental Health Condition_', ''))
+                for c in condition_cols[1:]:
+                    condition_expr = condition_expr.when(col(c) == 1, c.replace('Mental Health Condition_', ''))
                 condition_expr = condition_expr.otherwise('Unknown')
         
-                # Etapa 3: Adicionar coluna categórica
+                # Etapa 3: Criar nova coluna
                 df = df.withColumn("Mental Health Condition", condition_expr)
         
                 # Etapa 4: Agrupar por idade e condição
@@ -433,7 +432,7 @@ elif page == "Visualizations":
                 plt.tight_layout()
         
                 st.pyplot(plt.gcf())
-                plt.clf()  # limpa para evitar conflitos
+                plt.clf()
         
             except Exception as e:
                 st.warning("Erro ao gerar gráfico com matplotlib.")
