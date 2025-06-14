@@ -1110,6 +1110,7 @@ elif page == "Dashboard":
 
             import plotly.graph_objects as go
             import pandas as pd
+            import plotly.express as px
             
             # Usar DataFrame já preparado
             df_vis = df_dash.copy()
@@ -1143,37 +1144,28 @@ elif page == "Dashboard":
             top_country_name = top_country['Country']
             top_country_value = top_country['Anxiety Level (1-10)']
             
+            # Normalizar os valores de ansiedade para cores
+            norm = px.colors.sample_colorscale("Turbo", df_country_avg['Anxiety Level (1-10)'].apply(lambda x: (x-1)/9))
+            
             # Criar figura
             fig = go.Figure()
             
-            # Adicionar países com cor da escala baseada no nível de ansiedade
-            fig.add_trace(go.Scattergeo(
-                lon=df_country_avg['lon'],
-                lat=df_country_avg['lat'],
-                text=df_country_avg.apply(lambda row: f"{row['Country']}: {row['Anxiety Level (1-10)']:.2f}", axis=1),
-                mode='markers',
-                marker=dict(
-                    size=12,
-                    color=df_country_avg['Anxiety Level (1-10)'],
-                    colorscale='Turbo',
-                    cmin=1,
-                    cmax=10,
-                    colorbar=dict(
-                        title=dict(
-                            text='Nível de Ansiedade',
-                            font=dict(color='white')
-                        ),
-                        tickvals=list(range(1, 11)),
-                        tickfont=dict(color='white'),
-                        len=0.5,
-                        lenmode='fraction'
+            # Adicionar cada país com cor derivada da escala e nome na legenda
+            for i, row in df_country_avg.iterrows():
+                fig.add_trace(go.Scattergeo(
+                    lon=[row['lon']],
+                    lat=[row['lat']],
+                    text=f"{row['Country']}: {row['Anxiety Level (1-10)']:.2f}",
+                    marker=dict(
+                        size=10,
+                        color=norm[i],
+                        line_color='black',
+                        line_width=0.5
                     ),
-                    line_color='black',
-                    line_width=0.5
-                ),
-                showlegend=False,
-                name='Nível de Ansiedade'
-            ))
+                    mode='markers',
+                    name=row['Country'],
+                    showlegend=True
+                ))
             
             # Adicionar país em destaque com estrela
             fig.add_trace(go.Scattergeo(
@@ -1190,6 +1182,30 @@ elif page == "Dashboard":
                 mode='markers+text',
                 textposition='top center',
                 name=f'🔺 Destaque: {top_country_name}'
+            ))
+            
+            # Adicionar trace invisível só para mostrar a barra de cor contínua
+            fig.add_trace(go.Scattergeo(
+                lon=[None],
+                lat=[None],
+                marker=dict(
+                    size=0.1,
+                    color=list(range(1, 11)),
+                    cmin=1,
+                    cmax=10,
+                    colorscale='Turbo',
+                    colorbar=dict(
+                        title=dict(
+                            text='Nível de Ansiedade',
+                            font=dict(color='white')
+                        ),
+                        tickvals=list(range(1, 11)),
+                        tickfont=dict(color='white'),
+                        len=0.5,
+                        lenmode='fraction'
+                    )
+                ),
+                showlegend=False
             ))
             
             # Layout escuro
@@ -1216,6 +1232,7 @@ elif page == "Dashboard":
             
             # Exibir no Streamlit
             st.plotly_chart(fig, use_container_width=True)
+
 
 
 
