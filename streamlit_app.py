@@ -1116,60 +1116,93 @@ elif page == "Dashboard":
 
 
             import plotly.graph_objects as go
-            import numpy as np
             import pandas as pd
             
-            # Simulação de coordenadas celestes (RA e Dec) + intensidade
-            np.random.seed(42)
-            num_objs = 30
-            data = pd.DataFrame({
-                'Object': [f'Obj{i}' for i in range(num_objs)],
-                'RA': np.random.uniform(0, 360, num_objs),      # Longitude (0 a 360)
-                'Dec': np.random.uniform(-90, 90, num_objs),    # Latitude (-90 a 90)
-                'Intensity': np.random.uniform(0, 2, num_objs),
-                'Type': np.random.choice(['Star', 'Galaxy', 'Planet'], num_objs)
-            })
+            # Dados de entrada do DataFrame (use seu df_dash ou df_map com países e ansiedade)
+            df_vis = df_map.copy()
             
-            # Criar gráfico Plotly como "mapa esférico"
+            # Agrupar por país e calcular média de ansiedade
+            df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
+            
+            # Identificar país com maior média
+            top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
+            top_country_name = top_country['Country']
+            top_country_value = top_country['Anxiety Level (1-10)']
+            
+            # Marcar país como destaque
+            df_country_avg['Destaque'] = df_country_avg['Country'].apply(lambda x: x == top_country_name)
+            
+            # Adicionar coordenadas lat/lon aproximadas por país (substitua por mapeamento real se tiver)
+            # Para visualização simulada, usamos centroids fictícios com plotly geopandas ou pode usar:
+            from geopy.geocoders import Nominatim
+            geolocator = Nominatim(user_agent="geoapi")
+            
+            def get_coords(country):
+                try:
+                    location = geolocator.geocode(country)
+                    return pd.Series([location.latitude, location.longitude])
+                except:
+                    return pd.Series([None, None])
+            
+            df_country_avg[['lat', 'lon']] = df_country_avg['Country'].apply(get_coords)
+            
+            # Remover países sem coordenadas
+            df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
+            
+            # Criar o mapa esférico com destaque
             fig = go.Figure()
             
-            # Adicionar pontos com escala de cor
+            # Adicionar países normais
             fig.add_trace(go.Scattergeo(
-                lon=data['RA'],
-                lat=data['Dec'],
-                text=data['Object'],
+                lon=df_country_avg[~df_country_avg['Destaque']]['lon'],
+                lat=df_country_avg[~df_country_avg['Destaque']]['lat'],
+                text=df_country_avg[~df_country_avg['Destaque']]['Country'],
                 marker=dict(
                     size=10,
-                    color=data['Intensity'],
+                    color=df_country_avg[~df_country_avg['Destaque']]['Anxiety Level (1-10)'],
                     colorscale='Viridis',
-                    colorbar_title='Intensidade',
+                    colorbar_title='Ansiedade Média',
                     line_color='black',
                     line_width=0.5
                 ),
-                mode='markers+text',
-                textposition='top center',
-                name='Objetos'
+                mode='markers',
+                name='Outros Países'
             ))
             
-            # Layout semelhante ao mapa celeste
+            # Adicionar país com maior ansiedade com destaque visual
+            fig.add_trace(go.Scattergeo(
+                lon=[top_country['lon']],
+                lat=[top_country['lat']],
+                text=[f"{top_country_name}<br>{top_country_value:.2f}"],
+                marker=dict(
+                    size=18,
+                    color='red',
+                    line_color='black',
+                    line_width=2,
+                    symbol='star'
+                ),
+                mode='markers+text',
+                textposition='top center',
+                name=f'Destaque: {top_country_name}'
+            ))
+            
+            # Layout
             fig.update_layout(
-                title='Mapa Celeste Simulado (RA/Dec com Intensidade)',
+                title=f'<b>Mapa Esférico da Ansiedade Média por País</b><br><sub>Destaque: {top_country_name} com {top_country_value:.2f}</sub>',
                 geo=dict(
                     projection_type='orthographic',
-                    showland=False,
-                    showocean=False,
-                    showlakes=False,
-                    showframe=False,
-                    showcountries=False,
-                    showcoastlines=False,
-                    lataxis=dict(showgrid=True),
-                    lonaxis=dict(showgrid=True)
+                    showland=True,
+                    showcountries=True,
+                    showcoastlines=True,
+                    landcolor='rgb(230, 230, 230)',
+                    countrycolor='white'
                 ),
                 height=700,
-                margin=dict(l=0, r=0, t=50, b=0)
+                margin=dict(l=0, r=0, t=80, b=0)
             )
             
             st.plotly_chart(fig, use_container_width=True)
+
             
 
 
