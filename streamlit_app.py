@@ -913,29 +913,30 @@ elif page == "Classification Model":
 
     st.header("Modelos de Classificação para Ansiedade Alta")
 
-    # 1. Importações
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    from sklearn.model_selection import train_test_split
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.neighbors import KNeighborsClassifier
-    from sklearn.svm import SVC
-    from sklearn.metrics import (
-        accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
-    )
+    try:
+        # 1. Importações
+        import pandas as pd
+        import matplotlib.pyplot as plt
+        from sklearn.model_selection import train_test_split
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.tree import DecisionTreeClassifier
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.neighbors import KNeighborsClassifier
+        from sklearn.svm import SVC
+        from sklearn.metrics import (
+            accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+        )
 
-    # 2. Definir colunas e dados
-    colunas_independentes = [
-        'Age',
-        'Sleep Hours',
-        'Physical Activity (hrs/week)',
-        'Diet Quality (1-10)',
-        'Stress Level (1-10)'
-    ]
+        # 2. Definir colunas e dados
+        colunas_independentes = [
+            'Age',
+            'Sleep Hours',
+            'Physical Activity (hrs/week)',
+            'Diet Quality (1-10)',
+            'Stress Level (1-10)'
+        ]
 
-    if 'df' in globals() and df is not None and not df.empty:
+        # Aqui o alvo será ansiedade alta (ex: ansiedade > 6)
         df_class = df.select(*colunas_independentes, "Anxiety Level (1-10)").dropna().toPandas()
         df_class["Anxiety_High"] = (df_class["Anxiety Level (1-10)"] > 6).astype(int)
 
@@ -997,9 +998,10 @@ elif page == "Classification Model":
         ax_bar.set_xlabel('Modelo')
         ax_bar.tick_params(axis='x', rotation=45)
         st.pyplot(fig_bar)
-    else:
-        st.warning("Dados insuficientes para análise de classificação.")
 
+    except Exception as e:
+        st.warning("Erro ao executar o modelo de classificação. Verifique se os dados foram carregados corretamente.")
+        st.exception(e)
 
     
     
