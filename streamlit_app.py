@@ -1384,26 +1384,6 @@ elif page == "Dashboard":
 
             
 
-            st.subheader("País com Maior Nível Médio de Ansiedade")
-            media_por_pais = df_dash.groupby("Country")["Anxiety Level (1-10)"].mean().sort_values(ascending=False)
-            pais_top_ansiedade = media_por_pais.idxmax()
-            valor_top_ansiedade = media_por_pais.max()
-            st.metric(label="País com Maior Ansiedade Média", value=pais_top_ansiedade, delta=f"{valor_top_ansiedade:.2f}")
-
-            fig_top_paises = px.bar(
-                media_por_pais.head(10).reset_index(),
-                x="Country",
-                y="Anxiety Level (1-10)",
-                title="Top 10 Países com Maior Nível Médio de Ansiedade",
-                labels={"Anxiety Level (1-10)": "Ansiedade Média"},
-                color="Anxiety Level (1-10)",
-                color_continuous_scale="Reds"
-            )
-            st.plotly_chart(fig_top_paises, use_container_width=True)
-
-            # CRIAÇÃO DE condicao_pais antes do uso
-            condicao_pais = df_dash.groupby(["Country", "Mental Health Condition"]).size().reset_index(name="Total")
-
 
 
             # GRÁFICO: Proporção de Gênero por Quartis de Ansiedade (com Others)
