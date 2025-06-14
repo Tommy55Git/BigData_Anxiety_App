@@ -1600,10 +1600,10 @@ elif page == "Predict your Anxiety":
                 ]
                 
                 # Use a coluna codificada para treino e predição
-                df_model = df_clusters[['Stress_Label_Encoded'] + colunas_independentes].dropna()
+                df_model = df_clusters[['Anx_Level_Encoded'] + colunas_independentes].dropna()
 
                 X = df_model[colunas_independentes]
-                y = df_model['Stress_Label_Encoded']
+                y = df_model['Anx_Level_Encoded']
 
                 from sklearn.model_selection import train_test_split
                 from sklearn.linear_model import LogisticRegression
