@@ -970,7 +970,7 @@ elif page == "Visualizations":
     # Dicionário de colunas dummy
     sexo_cols = {"Feminino": "Gender_Female", "Masculino": "Gender_Male", "Outro": "Gender_Other"}
 
-    # Lista de sinais fisiológicos (substitua conforme necessário)
+    # Lista de sinais fisiológicos (ajuste conforme os nomes reais do seu dataset)
     sinais_fisiologicos = [
         "Heart Rate", 
         "Respiration Rate", 
@@ -979,10 +979,12 @@ elif page == "Visualizations":
     ]
 
     try:
-        # Verifica se df_pd existe e contém as colunas necessárias
-        if isinstance(df_pd, pd.DataFrame) and \
-           all(col in df_pd.columns for col in sexo_cols.values()) and \
-           all(col in df_pd.columns for col in sinais_fisiologicos):
+        df_base = df_inner.copy()
+
+        # Verifica se df_base contém as colunas necessárias
+        if isinstance(df_base, pd.DataFrame) and \
+           all(col in df_base.columns for col in sexo_cols.values()) and \
+           all(col in df_base.columns for col in sinais_fisiologicos):
 
             # Cria a coluna categórica 'Gender' a partir das colunas dummy
             def get_gender(row):
@@ -991,10 +993,10 @@ elif page == "Visualizations":
                         return genero
                 return 'Desconhecido'
 
-            df_pd['Gender'] = df_pd.apply(get_gender, axis=1)
+            df_base['Gender'] = df_base.apply(get_gender, axis=1)
 
             # Agrupa por gênero e calcula a média
-            sinais_por_genero = df_pd.groupby('Gender')[sinais_fisiologicos].mean().T
+            sinais_por_genero = df_base.groupby('Gender')[sinais_fisiologicos].mean().T
 
             # Gráfico
             import matplotlib.pyplot as plt
@@ -1008,8 +1010,8 @@ elif page == "Visualizations":
         else:
             st.warning("Colunas de gênero ou sinais fisiológicos ausentes no DataFrame.")
 
-    except NameError:
-        st.error("O DataFrame 'df_pd' não está definido. Verifique o carregamento dos dados.")
+    except Exception as e:
+        st.error(f"Ocorreu um erro ao gerar o gráfico: {e}")
 
 
 
