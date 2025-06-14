@@ -1078,115 +1078,112 @@ elif page == "Dashboard":
     try:
         import plotly.express as px
         import plotly.graph_objects as go
-
-
-        import plotly.graph_objects as go
-            import pandas as pd
-            import random
-            
-            # Usar DataFrame já preparado
-            df_vis = df_dash.copy()
-            
-            # Coordenadas conhecidas
-            country_coords = {
-                'USA': (38.0, -97.0),
-                'Brazil': (-14.2, -51.9),
-                'Germany': (51.2, 10.5),
-                'India': (20.6, 78.9),
-                'Australia': (-25.0, 133.0),
-                'Canada': (56.1, -106.3),
-                'Japan': (36.2, 138.2),
-                'UK': (55.3, -3.4),
-                'France': (46.2, 2.2),
-                'Mexico': (23.6, -102.5),
-                'China': (35.9, 104.2)
-            }
-            
-            # Calcular média de ansiedade por país
-            df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
-            
-            # Adicionar latitude e longitude
-            df_country_avg[['lat', 'lon']] = df_country_avg['Country'].apply(
-                lambda x: pd.Series(country_coords.get(x, (None, None)))
-            )
-            df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
-            
-            # Identificar o país com maior ansiedade
-            top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
-            top_country_name = top_country['Country']
-            top_country_value = top_country['Anxiety Level (1-10)']
-            df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
-            
-            # Gerar cores distintas por país (exceto destaque)
-            def gerar_cor():
-                return f"hsl({random.randint(0, 360)}, 70%, 60%)"
-            
-            color_map = {
-                country: gerar_cor() for country in df_country_avg['Country'].unique()
-                if country != top_country_name
-            }
-            
-            # Criar gráfico
-            fig = go.Figure()
-            
-            # Adicionar cada país (exceto destaque) individualmente com cores únicas
-            for _, row in df_country_avg[df_country_avg['Country'] != top_country_name].iterrows():
-                fig.add_trace(go.Scattergeo(
-                    lon=[row['lon']],
-                    lat=[row['lat']],
-                    text=row['Country'],
-                    marker=dict(
-                        size=10,
-                        color=color_map.get(row['Country'], 'lightgray'),
-                        line_color='black',
-                        line_width=0.5
-                    ),
-                    mode='markers',
-                    name=row['Country']
-                ))
-            
-            # País em destaque (cor vermelha vibrante)
+        import pandas as pd
+        import random
+        
+        # Usar DataFrame já preparado
+        df_vis = df_dash.copy()
+        
+        # Coordenadas conhecidas
+        country_coords = {
+            'USA': (38.0, -97.0),
+            'Brazil': (-14.2, -51.9),
+            'Germany': (51.2, 10.5),
+            'India': (20.6, 78.9),
+            'Australia': (-25.0, 133.0),
+            'Canada': (56.1, -106.3),
+            'Japan': (36.2, 138.2),
+            'UK': (55.3, -3.4),
+            'France': (46.2, 2.2),
+            'Mexico': (23.6, -102.5),
+            'China': (35.9, 104.2)
+        }
+        
+        # Calcular média de ansiedade por país
+        df_country_avg = df_vis.groupby('Country', as_index=False)['Anxiety Level (1-10)'].mean()
+        
+        # Adicionar latitude e longitude
+        df_country_avg[['lat', 'lon']] = df_country_avg['Country'].apply(
+            lambda x: pd.Series(country_coords.get(x, (None, None)))
+        )
+        df_country_avg = df_country_avg.dropna(subset=['lat', 'lon'])
+        
+        # Identificar o país com maior ansiedade
+        top_country = df_country_avg.loc[df_country_avg['Anxiety Level (1-10)'].idxmax()]
+        top_country_name = top_country['Country']
+        top_country_value = top_country['Anxiety Level (1-10)']
+        df_country_avg['Destaque'] = df_country_avg['Country'] == top_country_name
+        
+        # Gerar cores distintas por país (exceto destaque)
+        def gerar_cor():
+            return f"hsl({random.randint(0, 360)}, 70%, 60%)"
+        
+        color_map = {
+            country: gerar_cor() for country in df_country_avg['Country'].unique()
+            if country != top_country_name
+        }
+        
+        # Criar gráfico
+        fig = go.Figure()
+        
+        # Adicionar cada país (exceto destaque) individualmente com cores únicas
+        for _, row in df_country_avg[df_country_avg['Country'] != top_country_name].iterrows():
             fig.add_trace(go.Scattergeo(
-                lon=[top_country['lon']],
-                lat=[top_country['lat']],
-                text=[f"{top_country_name}<br>{top_country_value:.2f}"],
+                lon=[row['lon']],
+                lat=[row['lat']],
+                text=row['Country'],
                 marker=dict(
-                    size=18,
-                    color='#FF1744',
-                    line_color='white',
-                    line_width=2,
-                    symbol='star'
+                    size=10,
+                    color=color_map.get(row['Country'], 'lightgray'),
+                    line_color='black',
+                    line_width=0.5
                 ),
-                mode='markers+text',
-                textposition='top center',
-                name=f'🔺 Destaque: {top_country_name}'
+                mode='markers',
+                name=row['Country']
             ))
-            
-            # Layout estilizado escuro
-            fig.update_layout(
-                title=f"<b style='color:white'>🌐 Mapa Esférico da Ansiedade Média por País</b><br><span style='color:#FF1744'>🔺 Destaque: {top_country_name} com {top_country_value:.2f}</span>",
-                geo=dict(
-                    projection_type='orthographic',
-                    showland=True,
-                    showcountries=True,
-                    showcoastlines=True,
-                    landcolor='rgba(255,255,255,0.1)',
-                    countrycolor='white',
-                    bgcolor='black'
-                ),
-                height=700,
-                margin=dict(l=0, r=0, t=80, b=0),
-                paper_bgcolor='black',
-                plot_bgcolor='black',
-                font=dict(color='white'),
-                legend=dict(
-                    bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white')
-                )
+        
+        # País em destaque (cor vermelha vibrante)
+        fig.add_trace(go.Scattergeo(
+            lon=[top_country['lon']],
+            lat=[top_country['lat']],
+            text=[f"{top_country_name}<br>{top_country_value:.2f}"],
+            marker=dict(
+                size=18,
+                color='#FF1744',
+                line_color='white',
+                line_width=2,
+                symbol='star'
+            ),
+            mode='markers+text',
+            textposition='top center',
+            name=f'🔺 Destaque: {top_country_name}'
+        ))
+        
+        # Layout estilizado escuro
+        fig.update_layout(
+            title=f"<b style='color:white'>🌐 Mapa Esférico da Ansiedade Média por País</b><br><span style='color:#FF1744'>🔺 Destaque: {top_country_name} com {top_country_value:.2f}</span>",
+            geo=dict(
+                projection_type='orthographic',
+                showland=True,
+                showcountries=True,
+                showcoastlines=True,
+                landcolor='rgba(255,255,255,0.1)',
+                countrycolor='white',
+                bgcolor='black'
+            ),
+            height=700,
+            margin=dict(l=0, r=0, t=80, b=0),
+            paper_bgcolor='black',
+            plot_bgcolor='black',
+            font=dict(color='white'),
+            legend=dict(
+                bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white')
             )
-            
-            # Exibir no Streamlit
-            st.plotly_chart(fig, use_container_width=True)
+        )
+        
+        # Exibir no Streamlit
+        st.plotly_chart(fig, use_container_width=True)
 
 
 
