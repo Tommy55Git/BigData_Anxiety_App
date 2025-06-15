@@ -1574,7 +1574,6 @@ elif page == "Predict your Anxiety":
         age = st.slider("Age", min_value=18, max_value=80, value=30, help="Your current age")
         sleep_hours = st.slider("Sleep Hours per Night", min_value=3.0, max_value=12.0, value=7.0, step=0.5, help="Average hours of sleep per night")
         physical_activity = st.slider("Physical Activity (hours/week)", min_value=0.0, max_value=20.0, value=3.0, step=0.5, help="Hours of physical exercise per week")
-        diet_quality = st.slider("Diet Quality (1-10)", min_value=1, max_value=10, value=5, help="Rate your diet quality from 1 (very poor) to 10 (excellent)")
         therapy_sessions = st.slider("Therapy Sessions (per month)", min_value=0, max_value=10, value=0, help="Number of therapy sessions you attend per month")
         caffeine_intake = st.slider("Caffeine Intake (mg/day)", min_value=1, max_value=599, value=100, step=10, help="Approximate daily caffeine intake in mg")
     
@@ -1593,7 +1592,6 @@ elif page == "Predict your Anxiety":
                      "Age", 
                     "Sleep Hours", 
                     "Physical Activity (hrs/week)",
-                    "Diet Quality (1-10)",
                     "Stress Level (1-10)",
                     'Therapy Sessions (per month)',   
                     'Caffeine Intake (mg/day)',      
@@ -1639,7 +1637,6 @@ elif page == "Predict your Anxiety":
                    "Age": [age],
                     "Sleep Hours": [sleep_hours],
                     "Physical Activity (hrs/week)": [physical_activity],
-                    "Diet Quality (1-10)": [diet_quality],
                     "Stress Level (1-10)": [stress_level],
                     "Therapy Sessions (per month)": [therapy_sessions],
                     "Caffeine Intake (mg/day)": [caffeine_intake],
