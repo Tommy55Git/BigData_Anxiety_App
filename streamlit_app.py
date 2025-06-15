@@ -1576,7 +1576,7 @@ elif page == "Predict your Anxiety":
         physical_activity = st.slider("Physical Activity (hours/week)", min_value=0.0, max_value=20.0, value=3.0, step=0.5, help="Hours of physical exercise per week")
         diet_quality = st.slider("Diet Quality (1-10)", min_value=1, max_value=10, value=5, help="Rate your diet quality from 1 (very poor) to 10 (excellent)")
         therapy_sessions = st.slider("Therapy Sessions (per month)", min_value=0, max_value=10, value=0, help="Number of therapy sessions you attend per month")
-        caffeine_intake = st.slider("Caffeine Intake (mg/day)", min_value=0, max_value=500, value=100, step=10, help="Approximate daily caffeine intake in mg")
+        caffeine_intake = st.slider("Caffeine Intake (mg/day)", min_value=1, max_value=599, value=100, step=10, help="Approximate daily caffeine intake in mg")
     
     with col2:
         st.subheader("🏥 Health & Lifestyle")
@@ -1595,8 +1595,8 @@ elif page == "Predict your Anxiety":
                     "Physical Activity (hrs/week)",
                     "Diet Quality (1-10)",
                     "Stress Level (1-10)",
-                    'Therapy Sessions (per month)',   # 0.388127
-                    'Caffeine Intake (mg/day)',       # 0.321323
+                    'Therapy Sessions (per month)',   
+                    'Caffeine Intake (mg/day)',      
                     'Heart Rate (bpm)',
                     'Recent Major Life Event_Yes',
                     'Family History of Anxiety_Yes'
