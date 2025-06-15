@@ -1581,7 +1581,6 @@ elif page == "Predict your Anxiety":
         st.subheader("🏥 Health & Lifestyle")
         stress_level = st.slider("Stress Level (1-10)", min_value=1, max_value=10, value=5, help="Rate your current stress level from 1 (very low) to 10 (very high)")
         heart_rate = st.slider("Heart Rate (bpm)", min_value=40, max_value=120, value=70, help="Your average resting heart rate")
-        work_hours = st.slider("Work Hours per Week", min_value=0, max_value=80, value=40, help="Average work hours per week")
         recent_event = st.checkbox("Experienced a recent major life event?")
         family_history = st.checkbox("Family history of anxiety?")
     
