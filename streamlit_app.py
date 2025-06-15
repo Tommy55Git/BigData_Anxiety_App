@@ -1029,7 +1029,7 @@ elif page == "Visualizations":
         color='Indicador',
         barmode='group',
         height=500,
-        title='Estresse e Sessões de Terapia por País'
+        title='Stress e Sessões de Terapia por País'
     )
 
     fig_pais.update_layout(
