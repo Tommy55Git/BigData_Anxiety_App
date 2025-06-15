@@ -782,7 +782,7 @@ elif page == "Visualizations":
                             y=1.15,
                             yanchor="top"
                         )],
-                        title=f"Densidade de Ansiedade - {nome_inicial}",
+                        title=f"Densidade de Ansiedade",
                         xaxis_title="Nível de Ansiedade (1-10)",
                         yaxis_title="Densidade Estimada",
                         showlegend=False
