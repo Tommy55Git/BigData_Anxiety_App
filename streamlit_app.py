@@ -719,7 +719,7 @@ elif page == "Visualizations":
 
         
         # --- Gráfico 7: Densidade de Ansiedade por Categoria de Sono (interativo, não invertido) ---
-        st.subheader("Distribuição de Ansiedade por Categoria de Sono (interativo)")
+        st.subheader("Distribuição de Ansiedade por Categoria de Sono")
         
         sim_data = df_clusters.copy()
         
@@ -768,7 +768,7 @@ elif page == "Visualizations":
                                 method="update",
                                 args=[
                                     {"x": [x_vals], "y": [y_vals]},
-                                    {"layout": {"title": f"Densidade de Ansiedade - {nome}"}}
+                                    {"layout": {"title": f"Densidade de Ansiedade"}}
                                 ]
                             )
                         )
