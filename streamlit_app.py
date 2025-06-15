@@ -998,7 +998,7 @@ elif page == "Visualizations":
     )
 
     fig_genero.update_layout(
-        legend_title='Gênero',
+        legend_title='Género',
         xaxis_title='Média',
         yaxis_title='Indicador',
         plot_bgcolor='rgba(0,0,0,0)',
