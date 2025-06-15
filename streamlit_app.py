@@ -1636,16 +1636,16 @@ elif page == "Predict your Anxiety":
                         best_model_name = name
 
                 input_data = pd.DataFrame({
-                   "Age", 
-                    "Sleep Hours", 
-                    "Physical Activity (hrs/week)",
-                    "Diet Quality (1-10)",
-                    "Stress Level (1-10)",
-                    'Therapy Sessions (per month)',   # 0.388127
-                    'Caffeine Intake (mg/day)',       # 0.321323
-                    'Heart Rate (bpm)',
-                    'Recent Major Life Event_Yes',
-                    'Family History of Anxiety_Yes'
+                   "Age": [age],
+                    "Sleep Hours": [sleep_hours],
+                    "Physical Activity (hrs/week)": [physical_activity],
+                    "Diet Quality (1-10)": [diet_quality],
+                    "Stress Level (1-10)": [stress_level],
+                    "Therapy Sessions (per month)": [therapy_sessions],
+                    "Caffeine Intake (mg/day)": [caffeine_intake],
+                    "Heart Rate (bpm)": [heart_rate],
+                    "Recent Major Life Event_Yes": [1 if recent_event == "Yes" else 0],
+                    "Family History of Anxiety_Yes": [1 if family_history == "Yes" else 0]
                 })
 
                 prediction_encoded = best_model.predict(input_data)[0]
