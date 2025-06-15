@@ -61,7 +61,7 @@ df_anxiety, df_mental, df_inner, df_clusters = load_data_from_mongo()
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox(
     "Choose a page", 
-    ["Dashboard", "Data Overview", "Visualizations", "Classification Model",  "Predict your Anxiety"]
+    ["Dashboard", "Data Overview", "Visualizations", "Predict your Anxiety"]
 )
 
 
@@ -1044,116 +1044,6 @@ elif page == "Visualizations":
 
     st.plotly_chart(fig_pais, use_container_width=True)
 
-
-
-
-
-
-
-        
-
-
-
-elif page == "Classification Model":
-
-    st.header("Modelos de Classificação para Ansiedade Alta")
-
-    try:
-        import pandas as pd
-        import matplotlib.pyplot as plt
-        import plotly.express as px
-        import plotly.graph_objects as go
-        from sklearn.model_selection import train_test_split
-        from sklearn.linear_model import LogisticRegression
-        from sklearn.tree import DecisionTreeClassifier
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.neighbors import KNeighborsClassifier
-        from sklearn.svm import SVC
-        from sklearn.metrics import (
-            accuracy_score, classification_report, confusion_matrix
-        )
-
-        if 'df_inner' not in globals() or df_inner is None or df_inner.empty:
-            st.warning("Dados não carregados ou indisponíveis. Carregue os dados antes de prosseguir.")
-        else:
-            colunas_independentes = [
-                'Age',
-                'Sleep Hours',
-                'Physical Activity (hrs/week)',
-                'Diet Quality (1-10)',
-                'Stress Level (1-10)'
-            ]
-
-            df_class = df_inner[colunas_independentes + ["Anxiety Level (1-10)"]].dropna()
-            df_class["Anxiety_High"] = (df_class["Anxiety Level (1-10)"] > 6).astype(int)
-
-            X = df_class[colunas_independentes]
-            y = df_class["Anxiety_High"]
-
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-            models = {
-                'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-                'k-NN': KNeighborsClassifier(),
-                'Decision Tree': DecisionTreeClassifier(random_state=42),
-                'Random Forest': RandomForestClassifier(random_state=42),
-                'SVM': SVC(random_state=42)
-            }
-
-            model_metrics = []
-            confusion_data = []
-
-            for name, model in models.items():
-                model.fit(X_train, y_train)
-                y_pred = model.predict(X_test)
-
-                accuracy = accuracy_score(y_test, y_pred)
-                report = classification_report(y_test, y_pred, output_dict=True)
-                cm = confusion_matrix(y_test, y_pred)
-
-                model_metrics.append({
-                    'Model': name,
-                    'Accuracy': accuracy,
-                    'Precision': report['macro avg']['precision'],
-                    'Recall': report['macro avg']['recall'],
-                    'F1-Score': report['macro avg']['f1-score']
-                })
-
-                confusion_data.append((name, cm))
-
-            metrics_df = pd.DataFrame(model_metrics)
-            st.subheader("Comparação entre Modelos")
-            st.dataframe(metrics_df)
-
-            st.subheader("Gráfico Comparativo Interativo")
-            fig = px.bar(
-                metrics_df.melt(id_vars="Model"),
-                x="Model", y="value", color="variable",
-                barmode="group",
-                labels={"value": "Métrica", "variable": "Tipo"},
-                title="Métricas por Modelo"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.subheader("Matrizes de Confusão Interativas")
-            for name, cm in confusion_data:
-                fig_cm = go.Figure(data=go.Heatmap(
-                    z=cm,
-                    x=['Baixa/Moderada', 'Alta'],
-                    y=['Baixa/Moderada', 'Alta'],
-                    colorscale='YlGnBu',
-                    text=cm,
-                    texttemplate="%{text}",
-                    hovertemplate="Predito %{x}<br>Real %{y}<br>Qtd: %{z}<extra></extra>"
-                ))
-                fig_cm.update_layout(title=f"Matriz de Confusão - {name}",
-                                     xaxis_title="Predito",
-                                     yaxis_title="Real")
-                st.plotly_chart(fig_cm, use_container_width=True)
-
-    except Exception as e:
-        st.warning("Erro ao executar o modelo de classificação. Verifique se os dados foram carregados corretamente.")
-        st.exception(e)
 
 
 
