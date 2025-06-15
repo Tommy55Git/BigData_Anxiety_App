@@ -222,7 +222,7 @@ elif page == "Visualizations":
             df['Age Group'] = pd.cut(df['Age'], bins=bins, labels=labels, right=False)
 
             # Filtros do usuário
-            filter_type = st.selectbox("Filtrar por:", options=["Nenhum", "País", "Ocupação", "Gênero", "Faixa Etária"])
+            filter_type = st.selectbox("Filtrar por:", options=["Nenhum", "País", "Ocupação", "Género", "Faixa Etária"])
 
             if filter_type == "País":
                 options = sorted(df['Country'].unique())
