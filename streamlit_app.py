@@ -994,7 +994,7 @@ elif page == "Visualizations":
         barmode='group',
         orientation='h',
         height=500,
-        title='Média dos Indicadores Fisiológicos por Gênero'
+        title='Média dos Indicadores Fisiológicos por Género'
     )
 
     fig_genero.update_layout(
